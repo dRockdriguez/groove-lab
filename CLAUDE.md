@@ -59,24 +59,18 @@ If a new agent directory appears in `/agents`, treat it as an active agent and r
 
 ## Skill Discovery
 
-Domain business logic lives in `/skills`. Skills are organized by domain:
+Skills are Claude Code agent definitions that automate specific workflow steps.
+They live in `.claude/agents/` as Markdown files.
 
-```
-skills/
-  midi/       ← MIDI parsing, note detection, GM drum map
-  rhythm/     ← BPM, timing, metronome
-  practice/   ← Session management, exercises
-  analysis/   ← Feedback, scoring, timing analysis
-```
+**Currently available skills:**
 
-**Before writing any business logic:**
-1. Run `ls skills/` to discover available skill directories.
-2. Check if the required functionality already exists inside a skill.
-3. Extend an existing skill rather than creating logic elsewhere.
-4. Never place business logic inside `apps/web` or `apps/api` directly — it belongs in a skill.
+| Skill | File | When to use |
+|---|---|---|
+| `spec-writer` | `.claude/agents/spec-writer.md` | Turning a feature request into a spec document |
+| `test-writer` | `.claude/agents/test-writer.md` | Generating test stubs from a spec's acceptance criteria |
+| `feature-builder` | `.claude/agents/feature-builder.md` | Implementing code to make failing tests pass |
 
-Each skill may contain frontend (TypeScript) and backend (Python) subdirectories.
-Tests live alongside skill code, not in a separate top-level test directory.
+Skills are **not** business logic — they are workflow automation tools for contributors (human and AI).
 
 ---
 
@@ -158,7 +152,6 @@ apps/api        → FastAPI backend (Python 3.11+)
 packages/ui     → Atomic React component library (@groovelab/ui)
 packages/types  → Shared TypeScript interfaces
 packages/utils  → Shared utilities
-skills/         → Domain business logic (organized by feature domain)
 specs/          → Feature specifications — source of truth before any code
 agents/         → Agent definitions for human and AI contributors
 workflows/      → High-level workflow documentation
@@ -170,7 +163,6 @@ prompts/        → Prompt templates used by the spec CLI workflow
 
 - `apps/web` — UI only. No business logic.
 - `apps/api` — API routing only. No business logic.
-- `skills/*` — All domain business logic lives here.
 - `packages/types` — Shared TypeScript types. Import via `@groovelab/types`.
 - `packages/utils` — Shared utilities. Import via `@groovelab/utils`.
 - `packages/ui` — Shared React components. Import via `@groovelab/ui`.
@@ -182,7 +174,6 @@ prompts/        → Prompt templates used by the spec CLI workflow
 apps/web       → @groovelab/ui, @groovelab/types
 apps/api       → (Python, no TS packages)
 packages/utils → @groovelab/types
-skills/*       → @groovelab/types, @groovelab/utils
 ```
 
 ### UI Components

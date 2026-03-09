@@ -26,7 +26,7 @@ they will test.
 
 **Frontend (TypeScript/React):**
 ```ts
-// skills/midi/frontend/midi-parser.test.ts
+// apps/web/tests/midi-parser.test.ts
 describe('MidiParser', () => {
   it('parses a note-on event', () => { ... });
   it('rejects invalid velocity', () => { ... });
@@ -35,7 +35,7 @@ describe('MidiParser', () => {
 
 **Backend (Python):**
 ```python
-# skills/midi/backend/test_midi_parser.py
+# apps/api/tests/test_midi_parser.py
 def test_parse_note_on_event():
     ...
 

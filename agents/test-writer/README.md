@@ -21,13 +21,12 @@ ready for implementation.
 1. Read the spec file
 2. Parse the Acceptance Criteria section
 3. Determine whether the feature is frontend (TS) or backend (Python) or both
-4. Create test file(s) in the appropriate skill directory
+4. Create test file(s) in the appropriate directory
 5. Name each test after the acceptance criterion it covers
 
 ## Example Output (TypeScript)
 
 ```ts
-// skills/midi/frontend/midi-parser.test.ts
 import { describe, it } from 'vitest';
 
 describe('MidiParser — note-on detection', () => {
@@ -47,7 +46,6 @@ describe('MidiParser — GM drum map', () => {
 ## Example Output (Python)
 
 ```python
-# skills/midi/backend/test_midi_parser.py
 import pytest
 
 @pytest.mark.skip(reason="not implemented")

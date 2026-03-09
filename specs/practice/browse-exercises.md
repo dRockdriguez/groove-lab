@@ -123,8 +123,8 @@ export interface InstrumentExercises {
 
 ### Mock Data Location
 
-Static mock data lives in `skills/practice/frontend/mockExercises.ts`. Business logic for
-filtering exercises by instrument type belongs in `skills/practice/`, not in `apps/web`.
+Static mock data lives in `mocks/frontend/mockExercises.ts`. Business logic for
+filtering exercises by instrument type belongs in `apps/web`.
 
 ### Component Location
 
@@ -186,7 +186,7 @@ No utilities from `@groovelab/utils` are required for this feature (`GM_DRUM_MAP
 - [ ] Spec reviewed and accepted
 - [ ] New types (`Exercise`, `ExerciseSection`, `InstrumentExercises`) added to `packages/types`
 - [ ] Tests written covering all acceptance criteria
-- [ ] Mock data defined in `skills/practice/frontend/mockExercises.ts`
+- [ ] Mock data defined in `mocks/frontend/mockExercises.ts`
 - [ ] UI components implemented in `packages/ui` and consumed in `apps/web`
 - [ ] Instrument switching works correctly in the browser
 - [ ] Clicking an exercise navigates to the placeholder playback route

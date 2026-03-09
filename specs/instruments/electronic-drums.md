@@ -54,20 +54,17 @@ timing feedback, session recording) is possible.
 
 ### Backend
 - Use `python-rtmidi` for MIDI device access on the server side.
-- Implement in `skills/midi/backend/`.
+- Implement in `apps/midi/api/`.
 - Input validation using `isValidVelocity()` and `isValidNote()` from `packages/utils`.
 
 ### Frontend
 - Use `navigator.requestMIDIAccess()` (Web MIDI API).
-- Implement in `skills/midi/frontend/`.
+- Implement in `apps/midi/web/`.
 - Wrap Web MIDI API in an abstraction layer for testability.
 
 ### Shared
 - `MidiEvent` type defined in `packages/types/src/index.ts`.
 - `GM_DRUM_MAP` and helpers in `packages/utils/src/index.ts`.
-
-### Skill module
-- Implementation lives in `skills/midi/`.
 
 ---
 
@@ -86,5 +83,4 @@ timing feedback, session recording) is possible.
 - [ ] Spec reviewed and accepted
 - [ ] Tests written (covering all acceptance criteria)
 - [ ] Implementation passes all tests
-- [ ] `skills/midi/README.md` updated with implementation notes
 - [ ] No regressions in existing tests

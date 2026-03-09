@@ -15,7 +15,8 @@
     "spec:analyze": "ts-node tools/cli/spec-cli.ts analyze",
     "spec:test": "ts-node tools/cli/spec-cli.ts test",
     "spec:implement": "ts-node tools/cli/spec-cli.ts implement",
-    "spec:verify": "ts-node tools/cli/spec-cli.ts verify"
+    "spec:verify": "ts-node tools/cli/spec-cli.ts verify",
+    "spec:run": "ts-node tools/cli/spec-cli.ts run"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

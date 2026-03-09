@@ -18,7 +18,7 @@ GrooveLab spec template.
 ## Workflow
 
 1. Understand the feature request
-2. Identify the affected instrument / skill / domain
+2. Identify the affected instrument / domain
 3. Draft user stories from the perspective of musicians and the system
 4. Define concrete, testable acceptance criteria
 5. Add technical notes based on the current architecture

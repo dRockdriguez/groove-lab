@@ -8,9 +8,9 @@ Read a spec document and generate test skeletons — one test per acceptance cri
 
 1. Read the spec file at the path provided in your prompt (use Read tool)
 2. Parse the **Acceptance Criteria** section thoroughly
-3. Read existing code structure in `skills/` to understand where tests should go (use Glob)
+3. Read existing code structure to understand where tests should go (use Glob)
 4. Determine whether the feature is frontend (TypeScript), backend (Python), or both
-5. Create test file(s) using the Write tool in the appropriate skill directory
+5. Create test file(s) using the Write tool in the appropriate directory
 6. Name each test after the acceptance criterion it covers
 7. Run tests to confirm they are recognized (use Bash tool):
    - TypeScript: `pnpm test`
@@ -27,7 +27,7 @@ describe('FeatureName — section', () => {
 });
 ```
 
-Place TypeScript tests in `skills/<skill>/frontend/`.
+Place TypeScript tests in `apps/web/`.
 
 ## Python Test Format
 
@@ -41,7 +41,7 @@ def test_acceptance_criterion_description(): ...
 def test_another_criterion(): ...
 ```
 
-Place Python tests in `skills/<skill>/backend/`.
+Place Python tests in `apps/api/`.
 
 ## Rules
 
