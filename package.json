@@ -1,0 +1,25 @@
+{
+  "name": "groovelab",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @groovelab/web dev",
+    "dev:api": "cd apps/api && uvicorn app.main:app --reload",
+    "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:api\"",
+    "build": "pnpm --filter @groovelab/web build",
+    "test": "pnpm --filter \"./apps/web\" test && pnpm --filter \"./packages/ui\" test",
+    "test:api": "cd apps/api && pytest",
+    "test:all": "pnpm test && pnpm test:api",
+    "lint": "eslint . --ext .ts,.tsx,.astro && cd apps/api && ruff check .",
+    "format": "prettier --write . && cd apps/api && black .",
+    "storybook": "pnpm --filter @groovelab/ui storybook"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "skills": {
+    "astro": {
+      "source": "astrolicious/agent-skills",
+      "sourceType": "github",
+      "computedHash": "597a4587f30f1152d3ab2923e84db842a18604e09e16885ffa067730fb435d9d"
+    },
+    "backend-development": {
+      "source": "skillcreatorai/ai-agent-skills",
+      "sourceType": "github",
+      "computedHash": "a6f0fe9a150a807bcc78db493b304ddff7e1de756e6087201cc3aea7e9380033"
+    },
+    "code-refactoring": {
+      "source": "skillcreatorai/ai-agent-skills",
+      "sourceType": "github",
+      "computedHash": "6f19dccc896d729e152f34c4486d8f0fb38a694b8fbeaf002a8e4cf5380896da"
+    },
+    "create-readme": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "computedHash": "d0ece1b2164ce1376e4ab6e98d6ac079df3a2a94f5f02224362b6a1ce2516ae9"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "6412eb4eb3b91595ebab937f0c69501240e7ba761b3d82510b5cf506ec5c7adc"
+    },
+    "front-end-developer": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "c33c2e51eac1a90e094407dfd61457ec7c3ba3fa9587e7389b747ea90c7bb0eb"
+    },
+    "mastering-typescript": {
+      "source": "spillwavesolutions/mastering-typescript-skill",
+      "sourceType": "github",
+      "computedHash": "1cba0ac27ae3ceb517b93bb6ccf053607b8ba939a1c1c9d4716eed7e4d9175b2"
+    },
+    "python-development": {
+      "source": "skillcreatorai/ai-agent-skills",
+      "sourceType": "github",
+      "computedHash": "3ec97771659c043f6fe337908a46f10b28d4b55131eeadb4ced859382ee32f3b"
+    },
+    "tailwind-best-practices": {
+      "source": "ofershap/tailwind-best-practices",
+      "sourceType": "github",
+      "computedHash": "6a6c5101bb0f507bd19b777e737fe68598d4c8bddb1313ea9d456db92580ea4b"
+    },
+    "tdd-cycle": {
+      "source": "swiftyjunnos/claude-code-with-tdd",
+      "sourceType": "github",
+      "computedHash": "6c269d9d6e0b37305f7d46196a1355e0b834b81414c703bb227c90d5da4b99dd"
+    }
+  }
+}
