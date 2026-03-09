@@ -11,15 +11,24 @@
     "test:all": "pnpm test && pnpm test:api",
     "lint": "eslint . --ext .ts,.tsx,.astro && cd apps/api && ruff check .",
     "format": "prettier --write . && cd apps/api && black .",
-    "storybook": "pnpm --filter @groovelab/ui storybook"
+    "storybook": "pnpm --filter @groovelab/ui storybook",
+    "spec:analyze": "ts-node tools/cli/spec-cli.ts analyze",
+    "spec:test": "ts-node tools/cli/spec-cli.ts test",
+    "spec:implement": "ts-node tools/cli/spec-cli.ts implement",
+    "spec:verify": "ts-node tools/cli/spec-cli.ts verify"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "eslint": "^8.57.0",
-    "prettier": "^3.2.5",
+    "@types/node": "^25.4.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "commander": "^14.0.3",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.0",
-    "eslint-plugin-react-hooks": "^4.6.0"
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.2.5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
