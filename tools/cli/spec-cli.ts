@@ -11,7 +11,7 @@ function runPrompt(promptFile: string, specPath: string) {
   const promptTemplate = fs.readFileSync(promptFile, 'utf-8');
   const prompt = promptTemplate.replace('{{SPEC_PATH}}', specPath);
 
-  execSync(`claude --no-interactive`, {
+  execSync(`claude`, {
     input: prompt,
     stdio: ['pipe', 'inherit', 'inherit'],
   });
@@ -56,7 +56,7 @@ program
         const promptTemplate = fs.readFileSync(promptFile, 'utf-8');
         const prompt = promptTemplate.replace('{{SPEC_PATH}}', spec);
 
-        execSync('claude --no-interactive', {
+        execSync('claude', {
           input: prompt,
           stdio: ['pipe', 'inherit', 'inherit'],
         });

@@ -25,6 +25,25 @@ export interface MidiEvent {
   type: MidiEventType;
 }
 
+// ─── Exercises ──────────────────────────────────────────────────────────────
+
+export interface Exercise {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface ExerciseSection {
+  id: string;
+  title: string;
+  exercises: Exercise[];
+}
+
+export interface InstrumentExercises {
+  instrumentType: InstrumentType;
+  sections: ExerciseSection[];
+}
+
 // ─── Practice Sessions ───────────────────────────────────────────────────────
 
 export interface PracticeSession {

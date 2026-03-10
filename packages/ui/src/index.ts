@@ -13,6 +13,8 @@ export { Tooltip } from './components/atoms/Tooltip';
 export type { TooltipProps } from './components/atoms/Tooltip';
 export { Slider } from './components/atoms/Slider';
 export type { SliderProps } from './components/atoms/Slider';
+export { InstrumentButton } from './components/atoms/InstrumentButton';
+export type { InstrumentButtonProps } from './components/atoms/InstrumentButton';
 
 // Molecules
 export { Card } from './components/molecules/Card';
@@ -23,7 +25,13 @@ export { Tabs } from './components/molecules/Tabs';
 export type { TabsProps } from './components/molecules/Tabs';
 export { Menu } from './components/molecules/Menu';
 export type { MenuProps } from './components/molecules/Menu';
+export { ExerciseCard } from './components/molecules/ExerciseCard';
+export type { ExerciseCardProps } from './components/molecules/ExerciseCard';
+export { ExerciseSectionList } from './components/molecules/ExerciseSectionList';
+export type { ExerciseSectionListProps } from './components/molecules/ExerciseSectionList';
 
 // Organisms
 export { Table } from './components/organisms/Table';
 export type { TableProps, Column } from './components/organisms/Table';
+export { ExerciseBrowser } from './components/organisms/ExerciseBrowser';
+export type { ExerciseBrowserProps } from './components/organisms/ExerciseBrowser';

@@ -8,15 +8,12 @@ Transform a user story, feature request, or problem description into a structure
 
 1. Understand the feature request provided in your prompt
 2. Read existing specs in `/specs` to avoid duplication (use Glob and Read tools)
-3. Identify the affected instrument / skill / domain
+3. Identify the affected instrument / domain
 4. Draft user stories from the perspective of musicians and the system
 5. Define concrete, testable acceptance criteria
 6. Read `packages/types/src/index.ts` and `packages/utils/src/index.ts` to reference existing types and utilities in Technical Notes
 7. Mark clearly what is out of scope for this version
 8. Write the spec using the Write tool to the correct path under `/specs`:
-   - `specs/instruments/` — instrument input/detection specs
-   - `specs/practice/` — session and exercise specs
-   - `specs/feedback/` — analysis and feedback specs
 
 ## Spec Template
 
@@ -50,5 +47,5 @@ Before finishing, verify:
 
 - **Never** write implementation code — only the spec document
 - If the request is ambiguous, document your assumptions clearly in the spec
-- Keep specs focused on a single feature or skill
+- Keep specs focused on a single feature
 - Return the full path of the created spec file when done
