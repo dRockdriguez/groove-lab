@@ -243,11 +243,11 @@ describe('ExerciseBrowser — responsive rendering', () => {
  * Dark mode support — specs/theme.md → Component Theme Support → ExerciseBrowser
  */
 describe('ExerciseBrowser — dark mode support', () => {
-  it('background container includes dark:bg-gray-900 class', () => {
+  it('tablist background includes dark:bg-gray-900 class', () => {
     const { container } = render(
       <ExerciseBrowser exercisesByInstrument={testData} />
     );
-    const outerDiv = container.firstElementChild;
-    expect(outerDiv).toHaveClass('dark:bg-gray-900');
+    const tablist = container.querySelector('[role="tablist"]');
+    expect(tablist).toHaveClass('dark:bg-gray-900');
   });
 });

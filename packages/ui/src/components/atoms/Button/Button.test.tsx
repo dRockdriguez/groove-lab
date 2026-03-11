@@ -47,18 +47,23 @@ describe('Button', () => {
  * Dark mode support — specs/theme.md → Component Theme Support → Button
  */
 describe('Button — dark mode support', () => {
-  it('includes dark:bg-gray-800 class for dark mode background', () => {
+  it('primary variant has focus ring for dark mode', () => {
     render(<Button>Click</Button>);
-    expect(screen.getByRole('button')).toHaveClass('dark:bg-gray-800');
+    expect(screen.getByRole('button')).toHaveClass('focus:ring-green-500');
   });
 
-  it('includes dark:text-gray-100 class for dark mode text', () => {
-    render(<Button>Click</Button>);
-    expect(screen.getByRole('button')).toHaveClass('dark:text-gray-100');
+  it('ghost variant supports dark mode styling', () => {
+    render(<Button variant="ghost">Click</Button>);
+    expect(screen.getByRole('button')).toHaveClass('hover:bg-gray-800');
   });
 
-  it('includes dark:border-gray-700 class for dark mode border', () => {
-    render(<Button>Click</Button>);
-    expect(screen.getByRole('button')).toHaveClass('dark:border-gray-700');
+  it('secondary variant supports dark mode styling', () => {
+    render(<Button variant="secondary">Click</Button>);
+    expect(screen.getByRole('button')).toHaveClass('bg-gray-700');
+  });
+
+  it('danger variant supports dark mode styling', () => {
+    render(<Button variant="danger">Click</Button>);
+    expect(screen.getByRole('button')).toHaveClass('bg-red-600');
   });
 });

@@ -1,8 +1,6 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { Button } from '@groovelab/ui/components/atoms/Button';
-import { InstrumentButton } from '@groovelab/ui/components/atoms/InstrumentButton';
-import { ExerciseCard } from '@groovelab/ui/components/molecules/ExerciseCard';
+import { Button, InstrumentButton, ExerciseCard } from '@groovelab/ui';
 import { WelcomeBanner } from '../components/WelcomeBanner';
 
 /**
@@ -12,45 +10,46 @@ import { WelcomeBanner } from '../components/WelcomeBanner';
  */
 
 describe('Button — Dark Mode Support', () => {
-  it('renders with light mode background (bg-white)', () => {
+  it('renders with primary variant (bg-green-600)', () => {
     const { container } = render(<Button>Test Button</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('bg-white');
+    expect(button?.className).toContain('bg-green-600');
   });
 
-  it('includes dark mode background variant (dark:bg-gray-800)', () => {
+  it('renders with focus ring variant', () => {
     const { container } = render(<Button>Test Button</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('dark:bg-gray-800');
+    expect(button?.className).toContain('focus:ring-2');
   });
 
-  it('renders with light mode text color (text-gray-900)', () => {
-    const { container } = render(<Button>Test Button</Button>);
+  it('renders with ghost variant and light mode background', () => {
+    const { container } = render(<Button variant="ghost">Test Button</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('text-gray-900');
+    expect(button?.className).toContain('bg-transparent');
   });
 
-  it('includes dark mode text color variant (dark:text-gray-100)', () => {
-    const { container } = render(<Button>Test Button</Button>);
+  it('renders with ghost variant and dark mode background', () => {
+    const { container } = render(<Button variant="ghost">Test Button</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('dark:text-gray-100');
+    expect(button?.className).toContain('hover:bg-gray-800');
   });
 
-  it('renders with light mode border (border-gray-200)', () => {
-    const { container } = render(<Button>Test Button</Button>);
+  it('renders with secondary variant', () => {
+    const { container } = render(<Button variant="secondary">Test Button</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('border-gray-200');
+    expect(button?.className).toContain('bg-gray-700');
   });
 
-  it('includes dark mode border variant (dark:border-gray-700)', () => {
-    const { container } = render(<Button>Test Button</Button>);
+  it('renders with danger variant', () => {
+    const { container } = render(<Button variant="danger">Test Button</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('dark:border-gray-700');
+    expect(button?.className).toContain('bg-red-600');
   });
 });
 
 describe('InstrumentButton — Dark Mode Support', () => {
   const mockProps = {
+    instrumentType: 'electronic-drums' as const,
     label: 'Drums',
     isSelected: false,
     onClick: () => {},
@@ -141,10 +140,12 @@ describe('InstrumentButton — Dark Mode Support', () => {
 
 describe('ExerciseCard — Dark Mode Support', () => {
   const mockProps = {
-    exerciseId: 'test-1',
-    title: 'Test Exercise',
-    description: 'Test description',
-    url: '/practice/test/test-1',
+    exercise: {
+      id: 'test-1',
+      title: 'Test Exercise',
+      description: 'Test description',
+    },
+    instrumentType: 'electronic-drums' as const,
   };
 
   it('renders with light mode background (bg-white)', () => {

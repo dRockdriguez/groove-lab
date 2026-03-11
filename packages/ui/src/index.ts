@@ -19,6 +19,8 @@ export { ThemeToggle } from './components/atoms/ThemeToggle';
 export type { ThemeToggleProps } from './components/atoms/ThemeToggle';
 
 // Molecules
+export { Header } from './components/molecules/Header';
+export type { HeaderProps } from './components/molecules/Header';
 export { Card } from './components/molecules/Card';
 export type { CardProps } from './components/molecules/Card';
 export { Modal } from './components/molecules/Modal';

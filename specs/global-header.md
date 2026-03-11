@@ -1,6 +1,6 @@
 # Spec: Global Header with Theme Selector
 
-**Status:** In Progress
+**Status:** Implemented
 **Version:** 0.2.0
 **Last updated:** 2026-03-11
 
@@ -34,42 +34,42 @@ This creates friction for musicians who want to switch themes while on different
 
 ### Header Component Creation
 
-- [ ] A **Header** molecule component exists at `packages/ui/src/components/molecules/Header/Header.tsx`.
-- [ ] Header component is exported from `packages/ui/src/components/molecules/Header/index.ts`.
-- [ ] Header is added to `packages/ui/src/index.ts` alongside other molecule exports.
-- [ ] Header component is a React functional component with `client:load` hydration directive support.
-- [ ] Header has the TypeScript interface exported as `HeaderProps` (or no props if stateless).
+- [x] A **Header** molecule component exists at `packages/ui/src/components/molecules/Header/Header.tsx`.
+- [x] Header component is exported from `packages/ui/src/components/molecules/Header/index.ts`.
+- [x] Header is added to `packages/ui/src/index.ts` alongside other molecule exports.
+- [x] Header component is a React functional component with `client:load` hydration directive support.
+- [x] Header has the TypeScript interface exported as `HeaderProps` (or no props if stateless).
 
 ### Header Functionality
 
-- [ ] The Header renders a `<header>` semantic HTML element.
-- [ ] The Header contains the `ThemeToggle` atom from `@groovelab/ui`.
-- [ ] The Header manages theme state using `useState` and `useEffect` hooks.
-- [ ] The Header implements the same `getInitialTheme()` logic as the current `Homepage` component:
+- [x] The Header renders a `<header>` semantic HTML element.
+- [x] The Header contains the `ThemeToggle` atom from `@groovelab/ui`.
+- [x] The Header manages theme state using `useState` and `useEffect` hooks.
+- [x] The Header implements the same `getInitialTheme()` logic as the current `Homepage` component:
   1. Check `sessionStorage.getItem('theme')` first.
   2. If no stored preference, check system preference with `window.matchMedia('(prefers-color-scheme: dark)')`.
   3. Default to `'light'` if no preference is detected.
-- [ ] On theme toggle, the Header:
+- [x] On theme toggle, the Header:
   1. Updates the component state.
   2. Adds or removes the `'dark'` class from `document.documentElement`.
   3. Writes the selected theme to `sessionStorage.setItem('theme', theme)`.
 
 ### Integration with BaseLayout
 
-- [ ] The Header is mounted in `apps/web/src/layouts/BaseLayout.astro` before the `<slot />`.
-- [ ] The Header is mounted as a React island with the `client:load` directive.
-- [ ] The Header is positioned at the top of the visual layout (above all page content).
-- [ ] The Header renders on **all pages** (`/`, `/import`, and any future pages).
+- [x] The Header is mounted in `apps/web/src/layouts/BaseLayout.astro` before the `<slot />`.
+- [x] The Header is mounted as a React island with the `client:load` directive.
+- [x] The Header is positioned at the top of the visual layout (above all page content).
+- [x] The Header renders on **all pages** (`/`, `/import`, and any future pages).
 - [ ] The Header does not cause hydration mismatches or console errors.
 
 ### Removal of Homepage Theme Management
 
-- [ ] The theme toggle is removed from `apps/web/src/components/Homepage.tsx`.
-- [ ] The `getInitialTheme()` function is removed from `Homepage.tsx` (theme detection is now in Header).
-- [ ] The theme state management (`useState`, `useEffect` for theme) is removed from `Homepage.tsx`.
-- [ ] The `handleToggle` function is removed from `Homepage.tsx`.
-- [ ] The `Homepage` component no longer manages the `dark` class on `<html>`.
-- [ ] The Homepage component still renders without errors after theme logic removal.
+- [x] The theme toggle is removed from `apps/web/src/components/Homepage.tsx`.
+- [x] The `getInitialTheme()` function is removed from `Homepage.tsx` (theme detection is now in Header).
+- [x] The theme state management (`useState`, `useEffect` for theme) is removed from `Homepage.tsx`.
+- [x] The `handleToggle` function is removed from `Homepage.tsx`.
+- [x] The `Homepage` component no longer manages the `dark` class on `<html>`.
+- [x] The Homepage component still renders without errors after theme logic removal.
 
 ### Theme Persistence and Synchronization
 
