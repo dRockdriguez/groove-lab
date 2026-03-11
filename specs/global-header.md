@@ -1,111 +1,196 @@
 # Spec: Global Header with Theme Selector
 
-**Status:** Draft
-**Version:** 0.1.0
+**Status:** In Progress
+**Version:** 0.2.0
 **Last updated:** 2026-03-11
 
 ---
 
 ## Problem
 
-Currently, the theme toggle (light/dark mode selector) is only available on the homepage (`/`). Users must navigate to the homepage to change the theme, and the toggle is not accessible from other pages like `/import` or other future pages.
+Currently, the theme toggle (light/dark mode selector) is only available on the homepage (`/`). The toggle is embedded in the `Homepage` component, which means:
 
-This creates a poor user experience where theme switching is limited to a single page and users cannot customize their experience while practicing or using other features.
+1. Users cannot access theme switching from other pages (e.g., `/import`).
+2. Theme switching is coupled to the homepage, limiting design flexibility.
+3. Each page that needs theme switching requires duplicate theme state management.
+
+This creates friction for musicians who want to switch themes while on different pages, forcing them to navigate back to the homepage to adjust their viewing preference.
 
 ---
 
 ## User Stories
 
-1. **As a musician**, I want to access the theme toggle from any page so that I can change between light and dark mode at any time without returning to the homepage.
+1. **As a musician using GrooveLab**, I want to access the theme toggle from every page so that I can switch between light and dark mode at any time without returning to the homepage.
 
-2. **As a musician**, I want the theme toggle to be part of the main application layout so that it is consistently available across all pages.
+2. **As a musician**, I want the theme toggle to be consistently positioned in a visible location (e.g., top-right) so that I can find it quickly across all pages.
 
-3. **As a developer**, I want to reuse the existing `ThemeToggle` component so that we maintain a single source of truth for theme switching logic.
+3. **As a musician**, I want the theme selection to persist as I navigate between pages so that I don't lose my preference when moving from `/` to `/import` or other future pages.
+
+4. **As a developer**, I want to reuse the existing `ThemeToggle` component in a centralized Header so that theme switching logic lives in one place, not scattered across multiple pages.
 
 ---
 
 ## Acceptance Criteria
 
-### Global Header Component
+### Header Component Creation
 
-- [ ] A **Header component** exists as a reusable React component in `packages/ui/src/components/molecules/Header/`.
-- [ ] The Header component includes the theme toggle from `ThemeToggle` (atoms).
-- [ ] The Header renders at the top of the page with consistent styling across all pages.
-- [ ] The Header uses appropriate ARIA labels and semantic HTML for accessibility.
+- [ ] A **Header** molecule component exists at `packages/ui/src/components/molecules/Header/Header.tsx`.
+- [ ] Header component is exported from `packages/ui/src/components/molecules/Header/index.ts`.
+- [ ] Header is added to `packages/ui/src/index.ts` alongside other molecule exports.
+- [ ] Header component is a React functional component with `client:load` hydration directive support.
+- [ ] Header has the TypeScript interface exported as `HeaderProps` (or no props if stateless).
 
-### Integration with Layout
+### Header Functionality
 
-- [ ] The Header is integrated into `apps/web/src/layouts/BaseLayout.astro` so it renders on every page.
-- [ ] The Header appears above the main content slot (`<slot />`).
-- [ ] The theme toggle in the Header manages the same theme state as the existing implementation.
-- [ ] Changing the theme via the Header toggle updates the theme globally across all pages.
+- [ ] The Header renders a `<header>` semantic HTML element.
+- [ ] The Header contains the `ThemeToggle` atom from `@groovelab/ui`.
+- [ ] The Header manages theme state using `useState` and `useEffect` hooks.
+- [ ] The Header implements the same `getInitialTheme()` logic as the current `Homepage` component:
+  1. Check `sessionStorage.getItem('theme')` first.
+  2. If no stored preference, check system preference with `window.matchMedia('(prefers-color-scheme: dark)')`.
+  3. Default to `'light'` if no preference is detected.
+- [ ] On theme toggle, the Header:
+  1. Updates the component state.
+  2. Adds or removes the `'dark'` class from `document.documentElement`.
+  3. Writes the selected theme to `sessionStorage.setItem('theme', theme)`.
 
-### Removal of Inline Toggle
+### Integration with BaseLayout
 
-- [ ] The theme toggle is removed from the `Homepage` component (currently in `apps/web/src/components/Homepage.tsx`).
-- [ ] All theme management logic for the global toggle is moved from `Homepage` to the Header.
-- [ ] The `Homepage` component is simplified by removing redundant theme state management.
+- [ ] The Header is mounted in `apps/web/src/layouts/BaseLayout.astro` before the `<slot />`.
+- [ ] The Header is mounted as a React island with the `client:load` directive.
+- [ ] The Header is positioned at the top of the visual layout (above all page content).
+- [ ] The Header renders on **all pages** (`/`, `/import`, and any future pages).
+- [ ] The Header does not cause hydration mismatches or console errors.
 
-### Theme Persistence & Behavior
+### Removal of Homepage Theme Management
 
-- [ ] The theme preference is persisted using the same mechanism as before (`sessionStorage`).
-- [ ] The initial theme detection (system preference vs. saved preference) works identically to the current implementation.
-- [ ] The `<html>` element correctly receives the `dark` class when in dark mode.
-- [ ] Light mode removes the `dark` class from the `<html>` element.
+- [ ] The theme toggle is removed from `apps/web/src/components/Homepage.tsx`.
+- [ ] The `getInitialTheme()` function is removed from `Homepage.tsx` (theme detection is now in Header).
+- [ ] The theme state management (`useState`, `useEffect` for theme) is removed from `Homepage.tsx`.
+- [ ] The `handleToggle` function is removed from `Homepage.tsx`.
+- [ ] The `Homepage` component no longer manages the `dark` class on `<html>`.
+- [ ] The Homepage component still renders without errors after theme logic removal.
 
-### Visual Design & Consistency
+### Theme Persistence and Synchronization
 
-- [ ] The Header layout is clean and unobtrusive (minimal height, appropriate padding).
-- [ ] The Header uses existing UI components (Button, spacing utilities) from `@groovelab/ui`.
-- [ ] The Header styling matches the overall design language of GrooveLab (light and dark mode support).
-- [ ] The Header is responsive and works correctly on viewport widths from 320 px to 1440 px.
+- [ ] Theme state persists across page navigations within the same browser session (using `sessionStorage`).
+  - **Test scenario**: User selects dark mode on `/`, navigates to `/import`, theme remains dark.
+- [ ] Theme state persists in the Header component as the user navigates between pages.
+  - **Test scenario**: User toggles theme on `/import`, returns to `/`, theme is still in the toggled state.
+- [ ] The `<html>` element receives the `dark` class when in dark mode (set by the Header or BaseLayout script).
+- [ ] The `<html>` element does not have the `dark` class when in light mode.
+
+### Visual Design and Styling
+
+- [ ] The Header has minimal height and appropriate padding (no more than 64px tall).
+- [ ] The Header is positioned at the top of the page with full viewport width.
+- [ ] The ThemeToggle is positioned on the right side of the Header.
+- [ ] The Header uses only existing Tailwind classes — no new CSS is introduced.
+- [ ] The Header background is transparent or matches the page background in light mode.
+- [ ] The Header has appropriate spacing to not interfere with main content.
+- [ ] The Header layout uses flexbox for responsive alignment (`flex justify-end` or similar).
+
+### Responsive Design
+
+- [ ] The Header renders correctly on mobile viewports (320px wide).
+- [ ] The Header renders correctly on tablet viewports (768px wide).
+- [ ] The Header renders correctly on desktop viewports (1024px+ wide).
+- [ ] The theme toggle button remains clickable and accessible on all viewport sizes.
+- [ ] No horizontal scrolling is introduced on narrow viewports.
 
 ### Accessibility
 
-- [ ] The Header is properly announced by screen readers.
-- [ ] The theme toggle button has a descriptive `aria-label` (e.g., "Switch to dark mode" or "Switch to light mode").
-- [ ] Keyboard navigation: users can tab to the toggle and activate it with Enter or Space.
-- [ ] The Header does not create focus traps or accessibility issues.
+- [ ] The `<header>` element uses semantic HTML role and is properly structured.
+- [ ] The ThemeToggle button retains its accessible ARIA labels:
+  - `aria-label="Switch to dark mode"` when in light mode.
+  - `aria-label="Switch to light mode"` when in dark mode.
+- [ ] The theme toggle is keyboard-navigable: users can reach it with Tab and activate with Enter/Space.
+- [ ] The theme toggle does not create a focus trap — focus can move beyond it with Tab.
+- [ ] Screen readers properly announce the Header region (landmark navigation).
+
+### Behavioral Correctness
+
+- [ ] Toggling the theme updates the UI immediately (no page reload).
+- [ ] Toggling the theme applies the `dark` class within ~200ms (smooth transition, not instant).
+- [ ] The component does not flicker or show unstyled content during theme switches.
+- [ ] Multiple rapid toggles are handled correctly (no state race conditions).
+- [ ] SSR/Hydration: The Header does not cause `Hydration mismatch` errors in the console.
 
 ---
 
 ## Technical Notes
 
-### Existing Components
+### Implementation Details
 
-- **ThemeToggle** (`packages/ui/src/components/atoms/ThemeToggle/ThemeToggle.tsx`): A simple button component that displays a moon/sun emoji and calls an `onToggle` callback.
-- **BaseLayout** (`apps/web/src/layouts/BaseLayout.astro`): The main Astro layout that wraps all pages. Contains the theme initialization script.
-- **Homepage** (`apps/web/src/components/Homepage.tsx`): Currently manages theme state with `getInitialTheme()`, `useState`, and `useEffect`.
+#### `Header.tsx` Structure
 
-### Theme State Management
+The Header component should follow this approximate structure:
 
-The Header component should:
-1. Follow the same theme detection logic as `Homepage.getInitialTheme()` (check sessionStorage → check system preference → default to light).
-2. Store the selected theme in `sessionStorage` with key `'theme'`.
-3. Update the `<html>` element's class list by adding/removing the `'dark'` class.
-4. Use React hooks (`useState`, `useEffect`) to manage theme state client-side.
+```tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { ThemeToggle } from '@groovelab/ui';
 
-### Component Location
+export const Header: React.FC = () => {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
-- **Header component**: `packages/ui/src/components/molecules/Header/Header.tsx`
-- **Header index**: `packages/ui/src/components/molecules/Header/index.ts`
-- **Header export**: Add to `packages/ui/src/index.ts` alongside other molecule exports.
+  // getInitialTheme logic here
+  // useEffect to read sessionStorage and system preference
+  // useEffect to apply dark class to <html>
+  // handleToggle callback
 
-### Integration Steps
+  return (
+    <header className="...">
+      <ThemeToggle theme={theme} onToggle={handleToggle} />
+    </header>
+  );
+};
+```
 
-1. Create the Header component in `packages/ui/src/components/molecules/Header/`.
-2. Export it from `packages/ui/src/index.ts` as `Header`.
-3. Mount the Header in `BaseLayout.astro` before the `<slot />`.
-4. Remove the theme toggle from `Homepage.tsx` and simplify theme state management (or remove entirely if no longer needed).
-5. Update `Homepage` tests to reflect the removal of theme logic.
+#### BaseLayout.astro Integration
 
-### Types
+The Header should be mounted before `<slot />`:
 
-Use types from `@groovelab/types` if needed. No new types are required for this iteration — the Header uses the existing `'light' | 'dark'` string type.
+```astro
+<body class="...">
+  <Header client:load />
+  <slot />
+</body>
+```
+
+#### Inline Script in BaseLayout
+
+The existing inline script in `BaseLayout.astro` `<head>` should remain unchanged — it prevents FOIT by setting the `dark` class before React hydrates. The Header component will take over theme management after React mounts.
+
+### File Changes Summary
+
+| File | Change | Reason |
+|------|--------|--------|
+| `packages/ui/src/components/molecules/Header/Header.tsx` | Create | New Header component |
+| `packages/ui/src/components/molecules/Header/index.ts` | Create | Export Header |
+| `packages/ui/src/index.ts` | Edit | Add Header export |
+| `apps/web/src/layouts/BaseLayout.astro` | Edit | Add Header before slot |
+| `apps/web/src/components/Homepage.tsx` | Edit | Remove theme state and toggle |
+| `apps/web/src/pages/index.astro` | Possibly edit | If Homepage component import/usage changes |
+
+### Testing Strategy
+
+For testing the Header component in `Header.test.tsx`:
+
+1. **Initial theme detection**: Mock `sessionStorage` and `window.matchMedia`, verify Header detects theme correctly.
+2. **Theme toggle**: Verify clicking the toggle updates the component state.
+3. **DOM mutation**: Verify the `dark` class is added/removed from `document.documentElement`.
+4. **sessionStorage persistence**: Verify theme is written to `sessionStorage` on toggle.
+5. **Hydration**: Render Header in an Astro page, verify no hydration errors in browser console.
+6. **Accessibility**: Verify `aria-label` updates correctly and button is keyboard-focusable.
 
 ### No New Dependencies
 
-The Header component reuses all existing packages and does not introduce new dependencies.
+The Header component uses only React and existing imports:
+- `@groovelab/ui` (ThemeToggle)
+- React built-ins (`useState`, `useEffect`, `useCallback`)
+
+No new npm packages are introduced.
 
 ---
 
@@ -113,28 +198,33 @@ The Header component reuses all existing packages and does not introduce new dep
 
 This feature explicitly **does not include**:
 
-- Additional header features beyond the theme toggle (navigation links, logo, user menu, etc.) — these can be added in future iterations.
-- Changes to the theme system logic (persistence, detection, CSS class handling) — only structural reorganization.
-- Styling overhauls or design system changes — the Header follows existing patterns.
+- Additional header features beyond the theme toggle (navigation links, logo, branding, user menu, search, etc.) — these are deferred to future iterations.
+- Changes to the theme system logic (localStorage persistence, additional themes, theme transitions) — only structural reorganization.
+- Styling overhauls, design system refactors, or brand changes.
 - Server-side theme preference storage or database integration.
-- Multi-language support or localization strings.
+- Multi-language support, localization, or internationalization (i18n).
+- Mobile-specific header patterns (hamburger menus, navbars) — the Header remains minimal.
 
 ---
 
 ## Definition of Done
 
-- [ ] Spec reviewed and accepted
-- [ ] Header component created in `packages/ui/src/components/molecules/Header/`
-- [ ] Header component properly exports theme state and toggle logic
-- [ ] Header is mounted in `BaseLayout.astro` at the top of the page
-- [ ] Theme toggle removed from `Homepage.tsx`
-- [ ] Theme state management centralized in the Header component
-- [ ] Theme persistence and detection logic works identically to the previous implementation
-- [ ] All pages render the Header without errors
-- [ ] Header is keyboard-accessible (tab, Enter/Space to toggle)
-- [ ] Header is responsive on all viewport sizes (320px–1440px)
-- [ ] Existing tests for Homepage updated or removed as needed
-- [ ] New tests added for Header component functionality
-- [ ] All tests pass (`pnpm test`)
-- [ ] Linting passes (`pnpm lint`)
-- [ ] No regressions in existing tests
+- [ ] Spec reviewed and accepted by the team
+- [ ] `packages/ui/src/components/molecules/Header/Header.tsx` created with full theme management
+- [ ] `packages/ui/src/components/molecules/Header/index.ts` created with proper export
+- [ ] Header added to `packages/ui/src/index.ts` as a molecule export
+- [ ] Header mounted in `apps/web/src/layouts/BaseLayout.astro` with `client:load` directive
+- [ ] Theme state and toggle logic removed from `apps/web/src/components/Homepage.tsx`
+- [ ] Theme persistence and initial detection verified with `sessionStorage` and `window.matchMedia`
+- [ ] Header renders above the main content slot on all pages (verify on `/` and `/import`)
+- [ ] `dark` class is correctly applied to `<html>` when theme is toggled
+- [ ] No hydration mismatches or console errors when pages load
+- [ ] Header is responsive on viewport widths 320px, 768px, and 1024px+
+- [ ] Theme toggle is keyboard-accessible (Tab to focus, Enter/Space to activate)
+- [ ] ARIA labels on ThemeToggle are correct and update when theme changes
+- [ ] Header component tests created: initial theme, toggle behavior, DOM mutations, accessibility
+- [ ] Homepage tests updated to reflect removal of theme state management
+- [ ] All tests pass: `pnpm test` (Vitest for packages/ui and apps/web)
+- [ ] No test regressions in existing test suite
+- [ ] Linting passes: `pnpm lint` (ESLint + Prettier)
+- [ ] Code is formatted correctly: `pnpm format`
