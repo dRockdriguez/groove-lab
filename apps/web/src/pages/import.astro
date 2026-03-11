@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { ImportPage } from '../components/ImportPage';
+---
+
+<BaseLayout title="Import — GrooveLab">
+  <main class="max-w-3xl mx-auto px-6 py-12">
+    <ImportPage client:load />
+  </main>
+</BaseLayout>

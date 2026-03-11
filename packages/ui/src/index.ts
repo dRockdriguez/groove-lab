@@ -37,3 +37,5 @@ export { Table } from './components/organisms/Table';
 export type { TableProps, Column } from './components/organisms/Table';
 export { ExerciseBrowser } from './components/organisms/ExerciseBrowser';
 export type { ExerciseBrowserProps } from './components/organisms/ExerciseBrowser';
+export { FileUploadZone } from './components/organisms/FileUploadZone';
+export type { FileUploadZoneProps } from './components/organisms/FileUploadZone';
