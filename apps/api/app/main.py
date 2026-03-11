@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import health
+from app.routes import health, imports
 
 app = FastAPI(
     title="GrooveLab API",
@@ -20,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/health", tags=["health"])
+app.include_router(imports.router, prefix="/import", tags=["import"])
 
 
 @app.get("/", tags=["root"])

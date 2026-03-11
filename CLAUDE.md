@@ -43,6 +43,7 @@ Each agent lives in `agents/<name>/README.md` and defines:
 |---|---|
 | `agents/spec-writer` | Turning a feature request into a spec document |
 | `agents/test-writer` | Generating test stubs from a spec's acceptance criteria (optional, for TDD) |
+| `agents/test-implementer` | Generating test from a spec's acceptance criteria (optional, for TDD) |
 | `agents/feature-builder` | Implementing a feature to satisfy spec acceptance criteria |
 
 If a new agent directory appears in `/agents`, treat it as an active agent and read its
@@ -58,16 +59,23 @@ If a new agent directory appears in `/agents`, treat it as an active agent and r
 
 ## Skill Discovery
 
-Skills are Claude Code agent definitions that automate specific workflow steps.
-They live in `.claude/agents/` as Markdown files.
+Skills are Claude Code workflow automation tools that automate specific development steps.
+They live in `.agents/skills/<skill-name>/` directories with a `SKILL.md` file.
 
 **Currently available skills:**
 
-| Skill | File | When to use |
+| Skill | Directory | When to use |
 |---|---|---|
-| `spec-writer` | `.claude/agents/spec-writer.md` | Turning a feature request into a spec document |
-| `test-writer` | `.claude/agents/test-writer.md` | Generating test stubs from a spec's acceptance criteria (optional, for TDD) |
-| `feature-builder` | `.claude/agents/feature-builder.md` | Implementing a feature to satisfy spec acceptance criteria |
+| `astro` | `.agents/skills/astro/` | Astro framework development and optimization |
+| `backend-development` | `.agents/skills/backend-development/` | Backend development tasks and API work |
+| `code-refactoring` | `.agents/skills/code-refactoring/` | Refactoring and improving existing code |
+| `create-readme` | `.agents/skills/create-readme/` | Creating and updating README files |
+| `find-skills` | `.agents/skills/find-skills/` | Discovering and listing available skills |
+| `front-end-developer` | `.agents/skills/front-end-developer/` | Frontend development and UI work |
+| `mastering-typescript` | `.agents/skills/mastering-typescript/` | TypeScript patterns, types, and best practices |
+| `python-development` | `.agents/skills/python-development/` | Python development and backend work |
+| `tailwind-best-practices` | `.agents/skills/tailwind-best-practices/` | Tailwind CSS styling and design patterns |
+| `tdd-cycle` | `.agents/skills/tdd-cycle/` | Test-Driven Development workflow |
 
 Skills are **not** business logic — they are workflow automation tools for contributors (human and AI).
 

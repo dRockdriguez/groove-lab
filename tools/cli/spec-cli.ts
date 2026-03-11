@@ -32,6 +32,11 @@ const steps: Record<string, Step> = {
     prompt: 'prompts/generate-tests.md',
     model: 'claude-haiku-4-5-20251001',
   },
+  'implement-tests': {
+    label: 'Impelement tests',
+    prompt: 'prompts/implement-tests.md',
+    model: 'claude-haiku-4-5-20251001',
+  },
   verify: {
     label: 'Verify implementation',
     prompt: 'prompts/verify-spec.md',
@@ -40,9 +45,9 @@ const steps: Record<string, Step> = {
 };
 
 const flows: Record<string, string[]> = {
-  default: ['implement', 'test', 'verify'],
-  plan: ['plan', 'implement', 'test', 'verify'],
-  tdd: ['analyze', 'test', 'implement', 'verify'],
+  default: ['implement', 'test', 'implement-tests', 'verify'],
+  plan: ['plan', 'implement', 'test', 'implement-tests', 'verify'],
+  tdd: ['analyze', 'test', 'implement-tests', 'implement', 'verify'],
   'no-test': ['analyze', 'implement', 'verify'],
 };
 
@@ -61,6 +66,19 @@ function runStep(stepKey: string, specPath: string) {
 
   console.log(`✅ ${step.label} complete`);
 }
+
+program
+  .command('step <step> <spec>')
+  .description('Run spec workflow')
+  .action((step, spec) => {
+    try {
+      runStep(step, spec);
+    } catch (err) {
+      console.error(err);
+      process.exit(1);
+    }
+    console.log('\n🎯 Workflow finished!');
+  });
 
 program
   .command('run <spec>')
