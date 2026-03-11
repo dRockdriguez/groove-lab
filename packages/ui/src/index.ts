@@ -15,6 +15,8 @@ export { Slider } from './components/atoms/Slider';
 export type { SliderProps } from './components/atoms/Slider';
 export { InstrumentButton } from './components/atoms/InstrumentButton';
 export type { InstrumentButtonProps } from './components/atoms/InstrumentButton';
+export { ThemeToggle } from './components/atoms/ThemeToggle';
+export type { ThemeToggleProps } from './components/atoms/ThemeToggle';
 
 // Molecules
 export { Card } from './components/molecules/Card';

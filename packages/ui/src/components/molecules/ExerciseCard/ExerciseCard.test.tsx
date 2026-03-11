@@ -66,3 +66,23 @@ describe('ExerciseCard — keyboard accessibility', () => {
     expect(link.tagName).toBe('A');
   });
 });
+
+/**
+ * Dark mode support — specs/theme.md → Component Theme Support → ExerciseCard
+ */
+describe('ExerciseCard — dark mode support', () => {
+  it('card includes dark:bg-gray-800 class', () => {
+    render(<ExerciseCard {...defaultProps} />);
+    expect(screen.getByRole('link')).toHaveClass('dark:bg-gray-800');
+  });
+
+  it('card includes dark:text-gray-100 class', () => {
+    render(<ExerciseCard {...defaultProps} />);
+    expect(screen.getByRole('link')).toHaveClass('dark:text-gray-100');
+  });
+
+  it('card includes dark:border-gray-700 class', () => {
+    render(<ExerciseCard {...defaultProps} />);
+    expect(screen.getByRole('link')).toHaveClass('dark:border-gray-700');
+  });
+});

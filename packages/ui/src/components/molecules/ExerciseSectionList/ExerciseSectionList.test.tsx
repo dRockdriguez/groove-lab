@@ -78,3 +78,19 @@ describe('ExerciseSectionList — structure', () => {
     ).toBeInTheDocument();
   });
 });
+
+/**
+ * Dark mode support — specs/theme.md → Component Theme Support → ExerciseSectionList
+ */
+describe('ExerciseSectionList — dark mode support', () => {
+  it('section title includes dark:text-gray-100 class', () => {
+    render(
+      <ExerciseSectionList
+        section={sectionData}
+        instrumentType="electronic-drums"
+      />
+    );
+    const heading = screen.getByRole('heading', { name: 'Ritmos básicos' });
+    expect(heading).toHaveClass('dark:text-gray-100');
+  });
+});

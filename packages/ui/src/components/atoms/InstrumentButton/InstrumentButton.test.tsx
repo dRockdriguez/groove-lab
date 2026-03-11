@@ -123,3 +123,82 @@ describe('InstrumentButton — interaction', () => {
     expect(handleClick).toHaveBeenCalledOnce();
   });
 });
+
+/**
+ * Dark mode support — specs/theme.md → Component Theme Support → InstrumentButton
+ */
+describe('InstrumentButton — dark mode support (unselected)', () => {
+  it('includes dark:bg-gray-800 class', () => {
+    render(
+      <InstrumentButton
+        instrumentType="electronic-drums"
+        label="Drums"
+        isSelected={false}
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('tab')).toHaveClass('dark:bg-gray-800');
+  });
+
+  it('includes dark:text-gray-100 class', () => {
+    render(
+      <InstrumentButton
+        instrumentType="electronic-drums"
+        label="Drums"
+        isSelected={false}
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('tab')).toHaveClass('dark:text-gray-100');
+  });
+
+  it('includes dark:border-gray-700 class', () => {
+    render(
+      <InstrumentButton
+        instrumentType="electronic-drums"
+        label="Drums"
+        isSelected={false}
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('tab')).toHaveClass('dark:border-gray-700');
+  });
+
+  it('includes dark:ring-offset-gray-900 class', () => {
+    render(
+      <InstrumentButton
+        instrumentType="electronic-drums"
+        label="Drums"
+        isSelected={false}
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('tab')).toHaveClass('dark:ring-offset-gray-900');
+  });
+});
+
+describe('InstrumentButton — dark mode support (selected)', () => {
+  it('includes dark:bg-indigo-500 class when selected', () => {
+    render(
+      <InstrumentButton
+        instrumentType="electronic-drums"
+        label="Drums"
+        isSelected={true}
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('tab')).toHaveClass('dark:bg-indigo-500');
+  });
+
+  it('includes dark:text-white class when selected', () => {
+    render(
+      <InstrumentButton
+        instrumentType="electronic-drums"
+        label="Drums"
+        isSelected={true}
+        onClick={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('tab')).toHaveClass('dark:text-white');
+  });
+});

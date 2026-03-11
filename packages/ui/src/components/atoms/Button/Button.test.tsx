@@ -42,3 +42,23 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveClass('px-6');
   });
 });
+
+/**
+ * Dark mode support — specs/theme.md → Component Theme Support → Button
+ */
+describe('Button — dark mode support', () => {
+  it('includes dark:bg-gray-800 class for dark mode background', () => {
+    render(<Button>Click</Button>);
+    expect(screen.getByRole('button')).toHaveClass('dark:bg-gray-800');
+  });
+
+  it('includes dark:text-gray-100 class for dark mode text', () => {
+    render(<Button>Click</Button>);
+    expect(screen.getByRole('button')).toHaveClass('dark:text-gray-100');
+  });
+
+  it('includes dark:border-gray-700 class for dark mode border', () => {
+    render(<Button>Click</Button>);
+    expect(screen.getByRole('button')).toHaveClass('dark:border-gray-700');
+  });
+});

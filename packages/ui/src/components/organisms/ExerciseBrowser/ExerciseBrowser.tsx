@@ -50,8 +50,8 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({
   const hasSections = activeData && activeData.sections.length > 0;
 
   return (
-    <div>
-      <div role="tablist" className="flex gap-2 mb-6">
+    <div className="bg-gray-50 dark:bg-gray-900">
+      <div role="tablist" className="flex gap-1 mb-8 p-1 bg-gray-900 rounded-xl w-fit">
         {INSTRUMENT_ORDER.map((type, index) => (
           <InstrumentButton
             key={type}

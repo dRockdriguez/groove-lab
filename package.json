@@ -13,6 +13,7 @@
     "format": "prettier --write . && cd apps/api && black .",
     "storybook": "pnpm --filter @groovelab/ui storybook",
     "spec:analyze": "ts-node tools/cli/spec-cli.ts analyze",
+    "spec:plan": "ts-node tools/cli/spec-cli.ts plan",
     "spec:test": "ts-node tools/cli/spec-cli.ts test",
     "spec:implement": "ts-node tools/cli/spec-cli.ts implement",
     "spec:verify": "ts-node tools/cli/spec-cli.ts verify",

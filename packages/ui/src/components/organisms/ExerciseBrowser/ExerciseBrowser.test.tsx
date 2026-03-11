@@ -238,3 +238,16 @@ describe('ExerciseBrowser — responsive rendering', () => {
     'renders correctly on viewport widths from 320px to 1440px (visual regression test)'
   );
 });
+
+/**
+ * Dark mode support — specs/theme.md → Component Theme Support → ExerciseBrowser
+ */
+describe('ExerciseBrowser — dark mode support', () => {
+  it('background container includes dark:bg-gray-900 class', () => {
+    const { container } = render(
+      <ExerciseBrowser exercisesByInstrument={testData} />
+    );
+    const outerDiv = container.firstElementChild;
+    expect(outerDiv).toHaveClass('dark:bg-gray-900');
+  });
+});

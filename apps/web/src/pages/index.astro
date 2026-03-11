@@ -1,17 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { Homepage } from '../components/Homepage';
+import { mockExercises } from '../data/mockExercises';
 ---
 
 <BaseLayout title="GrooveLab">
-  <main class="flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white px-4">
-    <div class="max-w-2xl text-center">
-      <h1 class="text-6xl font-bold text-groove-500 mb-4 tracking-tight">GrooveLab</h1>
-      <p class="text-xl text-gray-400 mb-8">
-        Your intelligent music practice companion.
-      </p>
-      <p class="text-sm text-gray-600">
-        Electronic drums · Bass · Guitar
-      </p>
-    </div>
+  <main class="max-w-3xl mx-auto px-6 py-12">
+    <Homepage client:load exercisesByInstrument={mockExercises} />
   </main>
 </BaseLayout>
