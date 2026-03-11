@@ -33,7 +33,7 @@ export const ImportPage: React.FC = () => {
   return (
     <div className="dark:bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Import Files</h1>
-      <div role="tablist" className="flex gap-1 mb-8 p-1 bg-gray-900 rounded-xl w-fit">
+      <div role="tablist" className="flex gap-1 mb-8 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl w-fit">
         {INSTRUMENT_ORDER.map((type, index) => (
           <InstrumentButton
             key={type}
