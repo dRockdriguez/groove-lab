@@ -26,15 +26,24 @@ function getInitialTheme(): 'light' | 'dark' {
 }
 
 export const Homepage: React.FC<HomepageProps> = ({ exercisesByInstrument }) => {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => getInitialTheme());
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Sync theme from sessionStorage only after mount
+    const theme = getInitialTheme();
+    setTheme(theme);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [theme]);
+  }, [theme, mounted]);
 
   const handleToggle = useCallback(() => {
     setTheme((prev) => {
