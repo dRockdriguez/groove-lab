@@ -71,7 +71,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesSelected 
         aria-hidden="true"
         tabIndex={-1}
       />
-      <Button variant="secondary" onClick={() => inputRef.current?.click()}>
+      <Button onClick={() => inputRef.current?.click()}>
         Select Files
       </Button>
     </div>
