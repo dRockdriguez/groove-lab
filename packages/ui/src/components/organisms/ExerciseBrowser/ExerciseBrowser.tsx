@@ -13,17 +13,10 @@ const INSTRUMENT_LABELS: Record<InstrumentType, string> = {
   guitar: 'Guitar',
 };
 
-const INSTRUMENT_ORDER: InstrumentType[] = [
-  'electronic-drums',
-  'bass-guitar',
-  'guitar',
-];
+const INSTRUMENT_ORDER: InstrumentType[] = ['electronic-drums', 'bass-guitar', 'guitar'];
 
-export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({
-  exercisesByInstrument,
-}) => {
-  const [selectedInstrument, setSelectedInstrument] =
-    useState<InstrumentType>('electronic-drums');
+export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByInstrument }) => {
+  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentType>('electronic-drums');
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const activeData = exercisesByInstrument.find(
@@ -37,8 +30,7 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({
     if (e.key === 'ArrowRight') {
       nextIndex = (currentIndex + 1) % INSTRUMENT_ORDER.length;
     } else if (e.key === 'ArrowLeft') {
-      nextIndex =
-        (currentIndex - 1 + INSTRUMENT_ORDER.length) % INSTRUMENT_ORDER.length;
+      nextIndex = (currentIndex - 1 + INSTRUMENT_ORDER.length) % INSTRUMENT_ORDER.length;
     }
     if (nextIndex !== null) {
       e.preventDefault();
@@ -50,7 +42,7 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({
   const hasSections = activeData && activeData.sections.length > 0;
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
+    <div>
       <div role="tablist" className="flex gap-1 mb-8 p-1 bg-gray-900 rounded-xl w-fit">
         {INSTRUMENT_ORDER.map((type, index) => (
           <InstrumentButton

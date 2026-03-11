@@ -72,6 +72,8 @@ program
       process.exit(1);
     }
 
+    console.log(`\nStarting with flow: ${flow}`);
+
     for (const step of flow) {
       try {
         runStep(step, spec);

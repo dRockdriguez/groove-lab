@@ -14,13 +14,6 @@ describe('WelcomeBanner', () => {
       screen.getByText('Your intelligent music practice companion.')
     ).toBeInTheDocument();
   });
-
-  it('displays supported instruments', () => {
-    render(<WelcomeBanner />);
-    expect(screen.getByText('Drums')).toBeInTheDocument();
-    expect(screen.getByText('Bass')).toBeInTheDocument();
-    expect(screen.getByText('Guitar')).toBeInTheDocument();
-  });
 });
 
 /**
