@@ -40,10 +40,10 @@ const steps: Record<string, Step> = {
 };
 
 const flows: Record<string, string[]> = {
-  'no-tdd': ['analyze', 'implement', 'verify'],
   default: ['implement', 'test', 'verify'],
   plan: ['plan', 'implement', 'test', 'verify'],
   tdd: ['analyze', 'test', 'implement', 'verify'],
+  'no-test': ['analyze', 'implement', 'verify'],
 };
 
 function runStep(stepKey: string, specPath: string) {
