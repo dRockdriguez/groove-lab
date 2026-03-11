@@ -1,7 +1,6 @@
 # GrooveLab Agent Workflow
 
-All contributors — human or AI agent — follow **Spec Driven Development** combined with
-**Test Driven Development**. No code ships without a spec. No spec ships without tests.
+All contributors — human or AI agent — follow **Spec Driven Development (SDD)**. No code ships without a spec. Test Driven Development (TDD) is optional but recommended.
 
 ---
 
@@ -19,10 +18,9 @@ Find the relevant spec in `/specs`. Read it completely:
 If the spec is unclear or missing, **stop** — update or create the spec first (use the
 `spec-writer` agent).
 
-### 2. Write Tests
+### 2. Write Tests (Optional)
 
-Create tests that directly map to every acceptance criterion. Tests go alongside the code
-they will test.
+If following Test-Driven Development, create tests that directly map to every acceptance criterion. Tests go alongside the code they will test.
 
 **Frontend (TypeScript/React):**
 ```ts
@@ -43,29 +41,30 @@ def test_rejects_invalid_velocity():
     ...
 ```
 
-Use `it.todo()` / `@pytest.mark.skip` for stubs if writing incrementally.
+Use `it.todo()` / `@pytest.mark.skip` for stubs if writing incrementally. You may also choose to implement first and write tests afterward, then ensure all acceptance criteria are verified.
 
 ### 3. Implement the Feature
 
 Write the **minimum code** required to make all tests pass. Do not add functionality
 beyond what the spec requires.
 
-### 4. Ensure Tests Pass
+### 4. Verify Implementation
 
-Run the full test suite. **All** tests — new and existing — must pass before the work
-is considered done.
+If you wrote tests, run the full test suite. **All** tests — new and existing — must pass before the work is considered done.
 
 ```bash
 pnpm test:all
 ```
 
+If you did not write tests, manually verify that your implementation satisfies all acceptance criteria from the spec.
+
 Fix any regressions before proceeding.
 
 ### 5. Update Documentation
 
-- Mark acceptance criteria checkboxes in the spec as `[x]`
-- Update the skill's `README.md` with implementation notes
-- Update the spec **Status** field to `Implemented` or `Partial`
+- Mark acceptance criteria checkboxes in the spec as `[x]` (only after verification)
+- Update the spec **Status** field to `Implemented` if all criteria are met, or `In Progress` if partial
+- Add a commit message referencing the spec name
 
 ---
 
@@ -100,12 +99,12 @@ Implements a feature to make a set of failing tests pass.
 ## Rules
 
 1. **Never implement without a spec.**
-2. **Never implement without tests.**
-3. Keep changes scoped to a single skill or feature per PR/commit.
-4. If a spec is ambiguous, clarify it before writing tests.
+2. **Write tests first (optional but recommended).** If using TDD, ensure tests map directly to acceptance criteria.
+3. Keep changes scoped to a single feature per PR/commit.
+4. If a spec is ambiguous, clarify it before implementing.
 5. Tests are the source of truth — if an implementation detail conflicts with a test,
    fix the implementation (or revisit the spec), not the test.
-6. Do not mark acceptance criteria as complete until the CI test suite passes.
+6. Do not mark acceptance criteria as complete until the implementation is verified and all tests pass.
 
 ---
 

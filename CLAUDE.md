@@ -6,17 +6,16 @@ This file provides guidance to Claude Code when working in this repository.
 
 ## Spec Driven Development — The Prime Directive
 
-**This is a strict SDD+TDD codebase. These rules are non-negotiable:**
+**This is a strict SDD (Spec-Driven Development) codebase. These rules are non-negotiable:**
 
 1. **No feature may be implemented without a spec.** If no spec exists, create one first.
-2. **No implementation may be written before tests.** Tests come from acceptance criteria.
-3. Every feature references a spec in `/specs`.
-4. Mark acceptance criteria `[x]` only after the full test suite passes.
+2. Every feature references a spec in `/specs`.
+3. Mark acceptance criteria `[x]` only after implementation is complete and verified.
 
-Development flow:
+Development flow (TDD is optional):
 
 ```
-1. Read spec  →  2. Write tests  →  3. Implement  →  4. Verify  →  5. Update spec
+1. Read spec  →  2. Write tests (optional)  →  3. Implement  →  4. Verify  →  5. Update spec
 ```
 
 Prefer the CLI workflow when implementing specs (see CLI Commands below).
@@ -43,8 +42,8 @@ Each agent lives in `agents/<name>/README.md` and defines:
 | Agent | When to use |
 |---|---|
 | `agents/spec-writer` | Turning a feature request into a spec document |
-| `agents/test-writer` | Generating test stubs from a spec's acceptance criteria |
-| `agents/feature-builder` | Implementing code to make failing tests pass |
+| `agents/test-writer` | Generating test stubs from a spec's acceptance criteria (optional, for TDD) |
+| `agents/feature-builder` | Implementing a feature to satisfy spec acceptance criteria |
 
 If a new agent directory appears in `/agents`, treat it as an active agent and read its
 `README.md` before deciding whether it applies to the current task.
@@ -67,8 +66,8 @@ They live in `.claude/agents/` as Markdown files.
 | Skill | File | When to use |
 |---|---|---|
 | `spec-writer` | `.claude/agents/spec-writer.md` | Turning a feature request into a spec document |
-| `test-writer` | `.claude/agents/test-writer.md` | Generating test stubs from a spec's acceptance criteria |
-| `feature-builder` | `.claude/agents/feature-builder.md` | Implementing code to make failing tests pass |
+| `test-writer` | `.claude/agents/test-writer.md` | Generating test stubs from a spec's acceptance criteria (optional, for TDD) |
+| `feature-builder` | `.claude/agents/feature-builder.md` | Implementing a feature to satisfy spec acceptance criteria |
 
 Skills are **not** business logic — they are workflow automation tools for contributors (human and AI).
 
@@ -79,14 +78,41 @@ Skills are **not** business logic — they are workflow automation tools for con
 Use these commands when implementing specs. They wrap the spec-driven workflow steps:
 
 ```bash
-pnpm spec:analyze    # Step 1 — analyze a spec file
-pnpm spec:test       # Step 2 — generate test stubs from acceptance criteria
-pnpm spec:implement  # Step 3 — scaffold implementation
-pnpm spec:verify     # Step 4 — verify implementation against spec
+pnpm spec:analyze    # Analyze a spec file and understand requirements
+pnpm spec:plan       # Plan implementation approach and architecture
+pnpm spec:test       # Generate test stubs from acceptance criteria (optional)
+pnpm spec:implement  # Scaffold implementation based on spec
+pnpm spec:verify     # Verify implementation against spec acceptance criteria
 ```
 
 **Always prefer these commands** over manually running individual tools when the workflow
 step matches.
+
+### Spec CLI Workflows
+
+Use `pnpm spec:run <spec-file> --flow <workflow>` to automate multi-step implementation flows:
+
+| Workflow | Command | Best for | Flow |
+|----------|---------|----------|------|
+| **No TDD** | `--flow no-tdd` | Implementing directly against spec without tests | analyze → implement → verify |
+| **Default** | `--flow default` | Implement first, write tests after | implement → test → verify |
+| **Plan First** | `--flow plan` | Complex features needing architecture planning | plan → implement → test → verify |
+| **TDD** | `--flow tdd` | Pure Test-Driven Development | analyze → test → implement → verify |
+
+**Examples:**
+```bash
+# No TDD: analyze spec, implement directly, verify (no tests)
+pnpm spec:run specs/import-page.md --flow no-tdd
+
+# Default: implement, generate tests after, verify
+pnpm spec:run specs/import-page.md --flow default
+
+# TDD: analyze, write tests first, then implement
+pnpm spec:run specs/import-page.md --flow tdd
+
+# Plan: plan architecture, implement, generate tests, verify
+pnpm spec:run specs/import-page.md --flow plan
+```
 
 ---
 
@@ -211,13 +237,15 @@ Base config: `tsconfig.base.json`. All packages extend it. Key settings: `strict
 
 ## Specs Reference
 
-Specs live in `/specs` organized by domain:
+Specs live in `/specs/` as individual Markdown files, not organized into subdirectories:
 
 ```
 specs/
-  instruments/   ← instrument input and detection specs
-  practice/      ← session and exercise specs
-  feedback/      ← analysis and feedback specs
+  browse-exercises.md     ← Exercise browser feature
+  import-page.md          ← File import feature
+  theme.md                ← Theme/styling specification
+  homepage.md             ← Homepage feature
+  ...
 ```
 
 Every spec follows this structure:
