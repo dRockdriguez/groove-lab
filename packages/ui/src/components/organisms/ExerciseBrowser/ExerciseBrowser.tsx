@@ -43,7 +43,7 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByIns
 
   return (
     <div>
-      <div role="tablist" className="flex gap-1 mb-8 p-1 rounded-xl w-fit">
+      <div role="tablist" className="flex gap-1 mb-8 p-1 rounded-xl w-fit bg-gray-100 dark:bg-gray-900">
         {INSTRUMENT_ORDER.map((type, index) => (
           <InstrumentButton
             key={type}
