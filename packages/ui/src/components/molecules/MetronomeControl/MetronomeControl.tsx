@@ -6,6 +6,8 @@ export interface MetronomeControlProps {
   initialBpm?: number;
   /** Whether the exercise is currently playing; metronome clicks only when true. */
   isPlaying?: boolean;
+  /** Current playback time in milliseconds; used to synchronize metronome clicks with audio. */
+  currentTimeMs?: number;
   /** Callback when BPM changes; used to update audio playback speed. */
   onBpmChange?: (bpm: number) => void;
   className?: string;
@@ -18,6 +20,7 @@ const DEFAULT_BPM = 120;
 export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   initialBpm = DEFAULT_BPM,
   isPlaying = false,
+  currentTimeMs = 0,
   onBpmChange,
   className = '',
 }) => {
@@ -34,6 +37,12 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
     }
     prevBpmRef.current = bpm;
   }, [bpm, onBpmChange]);
+
+  // Track the last time a metronome click was scheduled to ensure synchronized beats.
+  const lastClickTimeRef = useRef(0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const audioContextRef = useRef<any>(null); // AudioContext | null
+  const beatCountRef = useRef(0);
 
   const increaseBpm = useCallback(() => {
     if (!isPlaying) {
@@ -86,20 +95,91 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [increaseBpm, decreaseBpm, isPlaying]);
 
-  // Web Audio API metronome: clicks fire only when enabled AND playing.
+  // Initialize AudioContext once when metronome becomes enabled.
+  // Close it when disabled or component unmounts.
   useEffect(() => {
-    if (!isEnabled || !isPlaying) return;
+    if (!isEnabled) {
+      // Clean up AudioContext when metronome is disabled.
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+      return;
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const AudioContextClass: typeof AudioContext =
       window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
 
-    const ctx = new AudioContextClass();
-    const intervalMs = bpmToInterval(bpm);
-    let beatCount = 0;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextClass();
+      lastClickTimeRef.current = 0;
+      beatCountRef.current = 0;
+    }
 
-    const scheduleClick = () => {
+    return () => {
+      // Cleanup on unmount.
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
+  }, [isEnabled]);
+
+  // Cleanup AudioContext on component unmount.
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
+  }, []);
+
+  // Track if we just started playing to schedule initial click.
+  const prevIsPlayingRef = useRef(false);
+
+  // Schedule metronome clicks synchronized with audio playback time.
+  useEffect(() => {
+    if (!isEnabled || !isPlaying || !audioContextRef.current) {
+      prevIsPlayingRef.current = false;
+      return;
+    }
+
+    const ctx = audioContextRef.current;
+    const intervalMs = bpmToInterval(bpm);
+    const justStartedPlaying = !prevIsPlayingRef.current && isPlaying;
+    prevIsPlayingRef.current = true;
+
+    // On first play or significant time jump, reset sync point.
+    if (justStartedPlaying || currentTimeMs === 0) {
+      lastClickTimeRef.current = 0;
+      beatCountRef.current = 0;
+
+      // Schedule initial click immediately when playback starts.
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.frequency.value = 1200; // First beat is downbeat
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.05);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+
+      lastClickTimeRef.current = 0;
+      beatCountRef.current = 1;
+    }
+
+    // Check if it's time to play the next click based on audio time, not wallclock time.
+    const timeSinceLastClick = currentTimeMs - lastClickTimeRef.current;
+    if (!justStartedPlaying && timeSinceLastClick >= intervalMs) {
+      // Schedule a click at the current audio time.
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -107,6 +187,7 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
       gain.connect(ctx.destination);
 
       // First beat of each measure is higher pitched (downbeat).
+      const beatCount = beatCountRef.current;
       osc.frequency.value = beatCount % 4 === 0 ? 1200 : 1000;
       osc.type = 'sine';
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
@@ -115,17 +196,11 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.1);
 
-      beatCount++;
-    };
-
-    scheduleClick();
-    const intervalId = setInterval(scheduleClick, intervalMs);
-
-    return () => {
-      clearInterval(intervalId);
-      void ctx.close();
-    };
-  }, [bpm, isEnabled, isPlaying]);
+      // Update sync state.
+      lastClickTimeRef.current = currentTimeMs;
+      beatCountRef.current += 1;
+    }
+  }, [bpm, isEnabled, isPlaying, currentTimeMs]);
 
   return (
     <div

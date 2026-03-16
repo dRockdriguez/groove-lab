@@ -320,6 +320,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       <MetronomeControl
         initialBpm={exercise.bpm}
         isPlaying={playbackState === 'playing'}
+        currentTimeMs={currentTimeMs}
         onBpmChange={handleBpmChange}
       />
 
