@@ -67,6 +67,44 @@ export interface TimingFeedback {
   suggestions: string[];
 }
 
+// ─── Playback ────────────────────────────────────────────────────────────────
+
+/** Represents the current state of exercise playback */
+export type PlaybackState = 'stopped' | 'playing' | 'paused';
+
+/** Exercise with full playback data */
+export interface ExercisePlaybackData extends Exercise {
+  bpm: number;
+  durationMs: number;
+  audioUrl: string;
+  midiEvents: MidiEvent[];
+  instrumentType: InstrumentType;
+}
+
+/** Feedback type for a single note capture */
+export type FeedbackType = 'hit' | 'miss' | 'wrongNote' | 'early' | 'late' | 'weak' | 'strong';
+
+/** Feedback for a single MIDI event capture */
+export interface NoteFeedback {
+  expectedEvent: MidiEvent;
+  capturedEvent?: MidiEvent;
+  feedbackType: FeedbackType;
+  deviationMs?: number;
+  velocityDifference?: number;
+  /** When feedback was generated */
+  timestamp: number;
+}
+
+/** Summary statistics for a practice session */
+export interface SessionStatistics {
+  /** 0–100 percentage */
+  accuracy: number;
+  hitCount: number;
+  expectedNoteCount: number;
+  averageTimingOffsetMs: number;
+  strikeViolationCount: number;
+}
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {

@@ -17,7 +17,27 @@ const INSTRUMENT_ORDER: InstrumentType[] = ['electronic-drums', 'bass-guitar', '
 
 export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByInstrument }) => {
   const [selectedInstrument, setSelectedInstrument] = useState<InstrumentType>('electronic-drums');
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+    // Initialize with all sections expanded by default
+    const allSectionIds = new Set<string>();
+    exercisesByInstrument.forEach((instrument: InstrumentExercises) => {
+      instrument.sections.forEach((section) => {
+        allSectionIds.add(section.id);
+      });
+    });
+    return allSectionIds;
+  });
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const toggleSection = (sectionId: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedSections(newExpanded);
+  };
 
   const activeData = exercisesByInstrument.find(
     (entry) => entry.instrumentType === selectedInstrument
@@ -72,6 +92,8 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByIns
               key={section.id}
               section={section}
               instrumentType={selectedInstrument}
+              isExpanded={expandedSections.has(section.id)}
+              onToggleExpand={() => toggleSection(section.id)}
             />
           ))
         ) : (

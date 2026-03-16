@@ -1,11 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { Homepage } from '../components/Homepage';
-import { mockExercises } from '../data/mockExercises';
 ---
 
 <BaseLayout title="GrooveLab">
   <main class="max-w-3xl mx-auto px-6 py-12">
-    <Homepage client:load exercisesByInstrument={mockExercises} />
+    <Homepage client:load />
   </main>
 </BaseLayout>
