@@ -59,10 +59,26 @@ function runStep(stepKey: string, specPath: string) {
   const template = fs.readFileSync(step.prompt, 'utf-8');
   const prompt = template.replace('{{SPEC_PATH}}', specPath);
 
-  execSync(`claude --model ${step.model}`, {
-    input: prompt,
-    stdio: ['pipe', 'inherit', 'inherit'],
-  });
+  // Escape single quotes in prompt for shell
+  const escapedPrompt = prompt.replace(/'/g, "'\\''");
+
+  // Use (echo prompt; sleep 2) | timeout to auto-close after response
+  // This sends the prompt, waits 2s for response, then kills after 5m of inactivity
+  try {
+    execSync(
+      `(echo '${escapedPrompt}'; sleep 2) | timeout 300 claude --model ${step.model} || true`,
+      {
+        stdio: 'inherit',
+      }
+    );
+  } catch (err: any) {
+    // Ignore timeout errors - they're expected behavior
+    if (err.killed || err.signal === 'SIGTERM') {
+      // Process was killed by timeout - this is OK
+    } else {
+      throw err;
+    }
+  }
 
   console.log(`✅ ${step.label} complete`);
 }

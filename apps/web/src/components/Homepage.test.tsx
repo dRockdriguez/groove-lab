@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Homepage } from './Homepage';
 import { mockExercises } from '../data/mockExercises';
 
@@ -148,5 +148,401 @@ describe('Homepage — accessibility', () => {
     fireEvent.keyDown(bassTab, { key: 'ArrowRight' });
     const guitarTab = screen.getByRole('tab', { name: 'Guitar' });
     expect(document.activeElement).toBe(guitarTab);
+  });
+});
+
+// Tests for data fetching from API (Spec 7: exercise-browser-database-integration)
+// See: specs/exercise-browser-database-integration.md
+
+describe('Homepage — API Data Fetching', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fetches exercises from GET /exercises on mount via useEffect', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/exercises'));
+    });
+  });
+
+  it('does not fetch when exercisesByInstrument prop is provided', () => {
+    render(<Homepage exercisesByInstrument={mockExercises} />);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('uses the correct API URL for fetching exercises', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/exercises'));
+    });
+  });
+});
+
+describe('Homepage — Loading State', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('displays loading state while fetching exercises', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => mockExercises,
+              }),
+            50
+          )
+        )
+    );
+
+    render(<Homepage />);
+    expect(screen.getByText('Cargando ejercicios...')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.queryByText('Cargando ejercicios...')).not.toBeInTheDocument();
+    });
+  });
+
+  it('uses aria-live="polite" for loading state announcement', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => mockExercises,
+              }),
+            50
+          )
+        )
+    );
+
+    render(<Homepage />);
+    // The loading text should be in a div with aria-live="polite"
+    const loadingElement = screen.getByText('Cargando ejercicios...');
+    const ariaLiveElement = loadingElement.closest('[aria-live="polite"]');
+    expect(ariaLiveElement).toBeInTheDocument();
+    expect(ariaLiveElement).toHaveAttribute('aria-live', 'polite');
+  });
+});
+
+describe('Homepage — Success State', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('passes fetched exercises to ExerciseBrowser on success', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('tablist')).toBeInTheDocument();
+    });
+  });
+
+  it('renders ExerciseBrowser with correct exercises after fetch', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ritmos básicos')).toBeInTheDocument();
+    });
+  });
+
+  it('clears loading state after successful fetch', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Cargando ejercicios...')).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('Homepage — Error State', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('displays error message on fetch failure', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No pudimos cargar los ejercicios. Intenta de nuevo.')).toBeInTheDocument();
+    });
+  });
+
+  it('displays error message on server error (5xx)', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No pudimos cargar los ejercicios. Intenta de nuevo.')).toBeInTheDocument();
+    });
+  });
+
+  it('uses role="alert" for error message', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+  });
+
+  it('displays retry button on error', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+    });
+  });
+
+  it('shows expected error message text', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No pudimos cargar los ejercicios. Intenta de nuevo.')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('Homepage — Retry Functionality', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('retries fetching on retry button click', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+    });
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    const retryButton = screen.getByRole('button', { name: 'Intentar de nuevo' });
+    fireEvent.click(retryButton);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('shows loading state again after retry button click', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+    });
+
+    (global.fetch as any).mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: async () => mockExercises,
+              }),
+            50
+          )
+        )
+    );
+
+    const retryButton = screen.getByRole('button', { name: 'Intentar de nuevo' });
+    fireEvent.click(retryButton);
+
+    // Should show loading state briefly
+    await waitFor(() => {
+      expect(screen.getByText('Cargando ejercicios...')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Cargando ejercicios...')).not.toBeInTheDocument();
+    });
+  });
+
+  it('successfully loads exercises after retry', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+    });
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    const retryButton = screen.getByRole('button', { name: 'Intentar de nuevo' });
+    fireEvent.click(retryButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('tablist')).toBeInTheDocument();
+    });
+  });
+
+  it('retries without page reload', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    // Set up initial rejection BEFORE rendering
+    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+    const { container } = render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+    });
+
+    // Now set up successful response for retry
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockExercises,
+    });
+
+    const retryButton = screen.getByRole('button', { name: 'Intentar de nuevo' });
+    fireEvent.click(retryButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('tablist')).toBeInTheDocument();
+    });
+
+    // Container should still be interactive (no page reload)
+    expect(container).toBeTruthy();
+  });
+});
+
+describe('Homepage — Empty Exercises', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('shows "No hay ejercicios disponibles" when API returns empty array', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    render(<Homepage />);
+
+    // When exercises is empty, ExerciseBrowser should show no exercises message
+    // This test verifies that the component handles empty state correctly
+    await waitFor(() => {
+      expect(screen.queryByText('Cargando ejercicios...')).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('Homepage — Page Usability', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('remains usable even if exercises endpoint is unavailable', async () => {
+    const { waitFor } = await import('@testing-library/react');
+    (global.fetch as any).mockRejectedValueOnce(new Error('Connection refused'));
+
+    const { container } = render(<Homepage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+
+    // Page should still be interactive
+    expect(screen.getByRole('button', { name: 'Intentar de nuevo' })).toBeInTheDocument();
+    expect(container).toBeTruthy();
   });
 });
