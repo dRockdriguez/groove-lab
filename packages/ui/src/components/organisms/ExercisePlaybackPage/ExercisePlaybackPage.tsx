@@ -3,6 +3,7 @@ import type { ExercisePlaybackData, PlaybackState, SessionStatistics } from '@gr
 import { formatDuration } from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
+import { MetronomeControl } from '../../molecules/MetronomeControl';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
 import { MidiStatusIndicator, type MidiConnectionStatus } from '../../atoms/MidiStatusIndicator';
 import { ExercisePlaybackTimeline } from '../ExercisePlaybackTimeline';
@@ -306,6 +307,9 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         onTogglePlay={() => void handleTogglePlay()}
         onSeek={handleSeek}
       />
+
+      {/* Metronome control */}
+      <MetronomeControl isPlaying={playbackState === 'playing'} />
 
       {/* Mini timeline overview */}
       <MiniTimeline

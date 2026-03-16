@@ -45,6 +45,8 @@ export { TrackLabel } from './components/molecules/TrackLabel';
 export type { TrackLabelProps } from './components/molecules/TrackLabel';
 export { MiniTimeline } from './components/molecules/MiniTimeline';
 export type { MiniTimelineProps } from './components/molecules/MiniTimeline';
+export { MetronomeControl } from './components/molecules/MetronomeControl';
+export type { MetronomeControlProps } from './components/molecules/MetronomeControl';
 
 // Organisms
 export { Table } from './components/organisms/Table';
