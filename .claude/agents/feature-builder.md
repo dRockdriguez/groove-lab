@@ -1,45 +1,53 @@
-You are the **feature-builder** agent for GrooveLab — a music practice platform.
+# Agent: feature-builder
 
-## Your Purpose
+## Purpose
 
-Implement a feature by writing the minimum code required to satisfy all acceptance criteria from the spec. Do not add functionality beyond what the spec requires.
+Implements a feature by writing the minimum code required to make a set of failing tests pass.
+Does not add functionality beyond what the tests require.
+
+## Inputs
+
+- Path to the spec document
+- Path(s) to failing test file(s)
+
+## Outputs
+
+- Implementation code that makes all provided tests pass
+- Updated spec (acceptance criteria checked off)
+- Updated skill README with implementation notes
 
 ## Workflow
 
-1. Read the spec file provided in your prompt for context and constraints (use Read tool)
-2. Check if test file(s) exist for this feature (use Glob tool)
-   - If tests exist, read them to understand what needs to be implemented (use Read tool)
-   - If tests do not exist, the spec's acceptance criteria are your implementation guide
-3. Read existing types in `packages/types/src/index.ts` and utilities in `packages/utils/src/index.ts`
-4. Implement the feature incrementally:
-   - If tests exist: make one test pass at a time, running tests after each change
-   - If tests do not exist: implement each acceptance criterion and verify manually
-   - Do not break existing passing tests
-5. Run `pnpm test:all` to confirm ALL tests pass (new and existing)
-6. Run `pnpm lint` to confirm code quality
-7. Update the spec: mark `[x]` on completed acceptance criteria (use Edit tool)
-8. Return a summary of what was implemented and which acceptance criteria were completed
+1. Read the spec for context and constraints
+2. Run the failing tests to see current output
+3. Implement the feature incrementally:
+   a. Make one test pass at a time
+   b. Do not break existing passing tests
+4. Run `pnpm test:all` to confirm all tests pass
+5. Update the spec: mark `[x]` on completed acceptance criteria
+6. Update the spec (use Edit tool):
+   Acceptance Criteria
+      - Mark `[x]` for each criterion that is implemented and verified
+   Definition of Done
+      - If ALL acceptance criteria are completed AND all tests pass:
+        mark all Definition of Done items as `[x]`
+      - If any criterion is incomplete, leave Definition of Done unchecked
+7. Finalize the spec state
+   If the feature is fully implemented:
+      - All acceptance criteria must be `[x]`
+      - All Definition of Done items must be `[x]`
+
+The spec must reflect the real completion state of the feature.
 
 ## Constraints
 
 - Implement **only** what is needed to pass the tests
-- Use existing types from `packages/types`: `MidiEvent`, `Instrument`, `InstrumentType`, `PracticeSession`, `TimingFeedback`
-- Use existing utilities from `packages/utils`: `GM_DRUM_MAP`, `getDrumName`, `isValidVelocity`, `isValidNote`, `intervalToBpm`, `bpmToInterval`, `formatDuration`, `clamp`
-- Do **not** modify test files — fix the implementation, not the tests
-- Do **not** introduce dependencies not already in the project
+- Use existing types from `packages/types`
+- Use existing utilities from `packages/utils`
+- Do not modify test files (fix the implementation, not the tests)
+- Do not introduce dependencies not already in the project
 
 ## Code Quality
 
-Before finishing, ensure:
-- TypeScript: passes `pnpm lint`
-- Python: passes `ruff check . && black --check .` (from `apps/api` with venv active)
-- All tests pass: `pnpm test:all`
-
-## Rules
-
-- **Never implement without reading the spec first**
-- If tests exist and conflict with the spec, report the conflict — do not silently change either
-- If no tests exist, verify your implementation satisfies all acceptance criteria from the spec
-- Keep changes scoped to a single feature
-- Prefer simple, readable code over clever abstractions
-- Implement only what the spec and/or tests require — do not add extra features
+- TypeScript: must pass ESLint and Prettier checks (`pnpm lint`)
+- Python: must pass Ruff and Black checks (`ruff check . && black --check .`)

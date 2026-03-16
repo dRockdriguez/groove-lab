@@ -25,7 +25,19 @@ Does not add functionality beyond what the tests require.
    b. Do not break existing passing tests
 4. Run `pnpm test:all` to confirm all tests pass
 5. Update the spec: mark `[x]` on completed acceptance criteria
-6. Update the skill's `README.md`
+6. Update the spec (use Edit tool):
+   Acceptance Criteria
+      - Mark `[x]` for each criterion that is implemented and verified
+   Definition of Done
+      - If ALL acceptance criteria are completed AND all tests pass:
+        mark all Definition of Done items as `[x]`
+      - If any criterion is incomplete, leave Definition of Done unchecked
+7. Finalize the spec state
+   If the feature is fully implemented:
+      - All acceptance criteria must be `[x]`
+      - All Definition of Done items must be `[x]`
+
+The spec must reflect the real completion state of the feature.
 
 ## Constraints
 
