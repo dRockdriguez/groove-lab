@@ -68,7 +68,9 @@ export const ImportPage: React.FC = () => {
       const formData = new FormData();
       formData.append('instrument', selectedInstrument);
       selectedFiles.forEach((file) => {
-        formData.append('files', file);
+        const relativePath =
+          (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+        formData.append('files', file, relativePath);
       });
 
       const response = await fetch(`${API_BASE_URL}/import`, {
@@ -103,8 +105,7 @@ export const ImportPage: React.FC = () => {
         );
         setSelectedFiles([]);
       }
-    } catch (e){
-      debugger;
+    } catch (e) {
       const message =
         'Network error: Unable to reach the server. Please check your connection and try again.';
       setUploadStatus('error');
