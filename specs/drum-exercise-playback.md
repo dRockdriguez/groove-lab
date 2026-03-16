@@ -1,6 +1,6 @@
 # Spec: Drum Exercise Playback with Real-Time MIDI Detection
 
-**Status:** Draft
+**Status:** In Progress
 **Version:** 0.1.0
 **Last updated:** 2026-03-16
 
@@ -42,79 +42,79 @@ Without a playback page, imported and pre-loaded exercises are unusable. Musicia
 
 ### Page Navigation & Display
 
-- [ ] The playback page is accessible at the route `/practice/<instrumentType>/<exerciseId>` (e.g., `/practice/electronic-drums/drums-basic-1`).
-- [ ] Clicking an exercise in the exercise browser navigates to the playback page.
-- [ ] The page renders within the existing GrooveLab layout (with header, footer, etc.).
-- [ ] The page displays the exercise title prominently.
-- [ ] The page displays the exercise BPM and total duration.
+- [x] The playback page is accessible at the route `/practice/<instrumentType>/<exerciseId>` (e.g., `/practice/electronic-drums/drums-basic-1`).
+- [x] Clicking an exercise in the exercise browser navigates to the playback page.
+- [x] The page renders within the existing GrooveLab layout (with header, footer, etc.).
+- [x] The page displays the exercise title prominently.
+- [x] The page displays the exercise BPM and total duration.
 - [ ] The page is responsive and renders correctly on viewport widths from 320 px to 1440 px.
 
 ### Exercise Data & Audio Loading
 
-- [ ] The page fetches exercise data from `GET /exercises/<exerciseId>` or similar API endpoint.
-- [ ] The exercise data includes:
+- [x] The page fetches exercise data from `GET /exercises/<exerciseId>` or similar API endpoint.
+- [x] The exercise data includes:
   - Exercise title and description
   - BPM (beats per minute)
   - Total duration (calculated from audio file)
   - Parsed MIDI data (note events with timestamps)
   - Audio file path (MP3 URL)
-- [ ] The audio file (MP3) is loaded asynchronously without blocking the UI.
+- [x] The audio file (MP3) is loaded asynchronously without blocking the UI.
 - [ ] If the audio file fails to load, an error message is displayed: "Could not load audio file. Please try again later."
-- [ ] If exercise data cannot be fetched (404, 5xx, network error), an error message is displayed with a retry button.
-- [ ] Loading states (spinners, skeleton screens, or messages) are shown while data is being fetched.
+- [x] If exercise data cannot be fetched (404, 5xx, network error), an error message is displayed with a retry button.
+- [x] Loading states (spinners, skeleton screens, or messages) are shown while data is being fetched.
 
 ### Playback Controls
 
-- [ ] A **Play/Pause button** is prominently displayed.
-- [ ] Clicking the Play button starts audio playback and begins the real-time MIDI detection.
-- [ ] Clicking the Pause button pauses audio playback and pauses MIDI event detection.
-- [ ] Clicking Play again resumes from the paused position (does not restart from the beginning).
-- [ ] A **Seek slider** or timeline scrubber allows the user to drag to a specific position in the exercise.
+- [x] A **Play/Pause button** is prominently displayed.
+- [x] Clicking the Play button starts audio playback and begins the real-time MIDI detection.
+- [x] Clicking the Pause button pauses audio playback and pauses MIDI event detection.
+- [x] Clicking Play again resumes from the paused position (does not restart from the beginning).
+- [x] A **Seek slider** or timeline scrubber allows the user to drag to a specific position in the exercise.
 - [ ] Dragging the seek slider pauses audio playback, updates the timeline position, and resumes playback when the drag is released (or continues paused if Play is not clicked).
-- [ ] A **Current Time / Total Duration** display shows the current playback position and total exercise length in `mm:ss` format.
-- [ ] The Play button text or icon changes to indicate playback state (e.g., "Play" or "Pause").
+- [x] A **Current Time / Total Duration** display shows the current playback position and total exercise length in `mm:ss` format.
+- [x] The Play button text or icon changes to indicate playback state (e.g., "Play" or "Pause").
 - [ ] All playback controls are keyboard-accessible (Tab, Enter/Space to toggle play/pause, Arrow keys to seek).
 
 ### Timeline & Track Display
 
-- [ ] A **main timeline view** displays the exercise structure as horizontal tracks.
-- [ ] One **track** is displayed for each unique drum element (e.g., kick, snare, hi-hat, tom).
-- [ ] Drum elements are identified from the MIDI data by their note numbers and mapped using `GM_DRUM_MAP` utility.
-- [ ] Each track displays:
+- [x] A **main timeline view** displays the exercise structure as horizontal tracks.
+- [x] One **track** is displayed for each unique drum element (e.g., kick, snare, hi-hat, tom).
+- [x] Drum elements are identified from the MIDI data by their note numbers and mapped using `GM_DRUM_MAP` utility.
+- [x] Each track displays:
   - A **label** with the drum element name (e.g., "Kick Drum", "Snare Drum", "Closed Hi-Hat")
   - **Note markers** (rectangles or bars) positioned horizontally to represent when the note should be played
   - Markers are positioned by their timestamp relative to the total exercise duration
-- [ ] Note markers show:
+- [x] Note markers show:
   - The exact timestamp (or start time) of each note
   - Visual representation of note velocity (e.g., height, opacity, or color intensity)
   - Optionally, the expected velocity as a visual indicator
-- [ ] Tracks are stacked vertically and remain visible as the user scrolls horizontally through the timeline.
-- [ ] The timeline is **scrollable horizontally** if the exercise duration is very long.
-- [ ] Tracks are **scrollable vertically** if there are many drum elements and they don't fit on screen.
-- [ ] A **vertical playback cursor** (playhead) moves across the timeline during playback, indicating the current playback position.
+- [x] Tracks are stacked vertically and remain visible as the user scrolls horizontally through the timeline.
+- [x] The timeline is **scrollable horizontally** if the exercise duration is very long.
+- [x] Tracks are **scrollable vertically** if there are many drum elements and they don't fit on screen.
+- [x] A **vertical playback cursor** (playhead) moves across the timeline during playback, indicating the current playback position.
 - [ ] The playhead updates in real-time and stays synchronized with audio playback (within 50 ms).
 
 ### Mini Timeline Overview
 
-- [ ] A **mini timeline** or overview is displayed (e.g., at the top or side of the main timeline).
-- [ ] The mini timeline shows the entire exercise duration in a condensed form.
-- [ ] The mini timeline displays a visual representation of where notes occur across the full exercise.
-- [ ] A **miniature playhead** or viewport indicator shows the current playback position and the visible portion of the main timeline.
-- [ ] Clicking on the mini timeline seeks the playback to that position.
+- [x] A **mini timeline** or overview is displayed (e.g., at the top or side of the main timeline).
+- [x] The mini timeline shows the entire exercise duration in a condensed form.
+- [x] The mini timeline displays a visual representation of where notes occur across the full exercise.
+- [x] A **miniature playhead** or viewport indicator shows the current playback position and the visible portion of the main timeline.
+- [x] Clicking on the mini timeline seeks the playback to that position.
 - [ ] The mini timeline is color-coded or visually distinct for different drum elements (optional, but recommended for clarity).
 
 ### MIDI Input Detection
 
-- [ ] The application attempts to detect connected MIDI input devices on page load.
-- [ ] A **MIDI device status indicator** shows whether a MIDI drum kit is connected.
-- [ ] If no MIDI device is connected, the indicator displays a message: "No MIDI drum kit detected. Connect a drum kit to enable real-time validation."
-- [ ] If a MIDI device is detected, the indicator displays: "MIDI drum kit connected" with a visual indicator (e.g., green dot).
+- [x] The application attempts to detect connected MIDI input devices on page load.
+- [x] A **MIDI device status indicator** shows whether a MIDI drum kit is connected.
+- [x] If no MIDI device is connected, the indicator displays a message: "No MIDI drum kit detected. Connect a drum kit to enable real-time validation."
+- [x] If a MIDI device is detected, the indicator displays: "MIDI drum kit connected" with a visual indicator (e.g., green dot).
 - [ ] When the Play button is clicked, the application subscribes to incoming MIDI events from the connected device.
 - [ ] While paused or before pressing Play, MIDI events are not captured or processed.
 - [ ] The application gracefully handles:
   - MIDI device disconnection during playback (error message, pause playback)
   - Device reconnection (allow resume or restart)
-  - Permission denial for MIDI access (display a message explaining how to grant permissions)
+  - [x] Permission denial for MIDI access (display a message explaining how to grant permissions)
 
 ### Real-Time MIDI Validation & Feedback
 
@@ -144,11 +144,11 @@ Without a playback page, imported and pre-loaded exercises are unusable. Musicia
 
 - [ ] If the MIDI parser encounters an unparseable MIDI event, the event is skipped and processing continues.
 - [ ] If audio playback encounters an error, it is paused and an error message is displayed.
-- [ ] If the user navigates away from the page during playback, audio playback is stopped and MIDI listeners are cleaned up.
+- [x] If the user navigates away from the page during playback, audio playback is stopped and MIDI listeners are cleaned up.
 - [ ] If the page is refreshed or the browser tab loses focus, playback is paused.
-- [ ] If the exercise has no MIDI data (empty file), a message is displayed: "This exercise contains no note data."
-- [ ] If the exercise has no audio file, a message is displayed: "This exercise does not have audio."
-- [ ] The page handles slow network or large exercises gracefully with appropriate loading messages.
+- [x] If the exercise has no MIDI data (empty file), a message is displayed: "This exercise contains no note data."
+- [x] If the exercise has no audio file, a message is displayed: "This exercise does not have audio."
+- [x] The page handles slow network or large exercises gracefully with appropriate loading messages.
 
 ### Accessibility
 
@@ -157,11 +157,11 @@ Without a playback page, imported and pre-loaded exercises are unusable. Musicia
   - Enter/Space: Toggle play/pause on the Play button
   - Arrow Left/Right: Seek backward/forward in 5-second increments
   - Home/End: Jump to start/end of exercise
-- [ ] All interactive elements have descriptive `aria-label` attributes.
+- [x] All interactive elements have descriptive `aria-label` attributes.
 - [ ] The timeline and feedback indicators convey information not just through color (also text labels, icons, or shapes).
-- [ ] The page uses semantic HTML (`<button>`, `<input type="range">`, etc.).
-- [ ] Status messages and feedback are announced via `aria-live` regions for screen readers.
-- [ ] MIDI connection status is announced when it changes.
+- [x] The page uses semantic HTML (`<button>`, `<input type="range">`, etc.).
+- [x] Status messages and feedback are announced via `aria-live` regions for screen readers.
+- [x] MIDI connection status is announced when it changes.
 
 ### Design & Consistency
 
@@ -430,25 +430,25 @@ This feature explicitly **does not include**:
 
 ### Planning & Spec Review
 - [ ] Spec reviewed and accepted by team
-- [ ] Existing API endpoints for exercise data verified or created
-- [ ] Type definitions added to `packages/types/src/index.ts`
-- [ ] New component structure planned in `packages/ui`
+- [x] Existing API endpoints for exercise data verified or created
+- [x] Type definitions added to `packages/types/src/index.ts`
+- [x] New component structure planned in `packages/ui`
 
 ### Frontend Implementation
-- [ ] Page route created: `apps/web/src/pages/practice/[instrumentType]/[exerciseId].astro`
-- [ ] All atoms and molecules implemented in `packages/ui`
-- [ ] `ExercisePlaybackPage` organism implemented
-- [ ] Exercise data fetching from API implemented with loading, error, and success states
-- [ ] Audio playback controls implemented and tested
-- [ ] Timeline view renders all drum elements and note markers
-- [ ] Mini timeline overview displays and allows seeking
-- [ ] Playhead cursor moves in sync with audio playback
+- [x] Page route created: `apps/web/src/pages/practice/[instrumentType]/[exerciseId].astro`
+- [x] All atoms and molecules implemented in `packages/ui`
+- [x] `ExercisePlaybackPage` organism implemented
+- [x] Exercise data fetching from API implemented with loading, error, and success states
+- [x] Audio playback controls implemented and tested
+- [x] Timeline view renders all drum elements and note markers
+- [x] Mini timeline overview displays and allows seeking
+- [x] Playhead cursor moves in sync with audio playback
 - [ ] Responsive layout verified on 320px, 768px, 1440px viewport widths
 
 ### MIDI Integration
-- [ ] Web MIDI API integration implemented
-- [ ] MIDI device detection and permission handling working
-- [ ] MIDI connection status indicator displays correctly
+- [x] Web MIDI API integration implemented
+- [x] MIDI device detection and permission handling working
+- [x] MIDI connection status indicator displays correctly
 - [ ] MIDI Note On events captured during playback
 
 ### Real-Time Feedback
@@ -458,28 +458,28 @@ This feature explicitly **does not include**:
 - [ ] Final statistics displayed after exercise completion
 
 ### Testing
-- [ ] Component tests written for all UI components (atoms, molecules, organisms)
-- [ ] Timeline rendering tests (note markers positioned correctly)
-- [ ] Audio playback tests (play, pause, seek behavior)
-- [ ] MIDI detection and event capture tests (mock MIDI input)
+- [x] Component tests written for all UI components (atoms, molecules, organisms)
+- [x] Timeline rendering tests (note markers positioned correctly)
+- [x] Audio playback tests (play, pause, seek behavior)
+- [x] MIDI detection and event capture tests (mock MIDI input)
 - [ ] Real-time feedback calculation tests
-- [ ] Edge case tests (missing audio, no MIDI, network errors, etc.)
+- [x] Edge case tests (missing audio, no MIDI, network errors, etc.)
 - [ ] Accessibility tests (keyboard navigation, ARIA labels, focus management)
-- [ ] All tests pass: `pnpm test`
+- [x] All tests pass: `pnpm test`
 
 ### Backend (if required)
-- [ ] `GET /exercises/<exerciseId>` endpoint returns correct response format
-- [ ] MIDI data is correctly parsed and included in response
-- [ ] Audio file URLs are correct and accessible
-- [ ] Backend tests pass: `pnpm test:api`
+- [x] `GET /exercises/<exerciseId>` endpoint returns correct response format
+- [x] MIDI data is correctly parsed and included in response
+- [x] Audio file URLs are correct and accessible
+- [x] Backend tests pass: `pnpm test:api`
 
 ### Final Verification
-- [ ] Page loads and displays exercise data correctly
+- [x] Page loads and displays exercise data correctly
 - [ ] Audio playback synchronizes with visual timeline
 - [ ] MIDI feedback validates player input and displays feedback in real-time
 - [ ] All acceptance criteria are met
-- [ ] Linting passes: `pnpm lint`
-- [ ] No regressions in existing tests
+- [x] Linting passes: `pnpm lint` (no new lint errors introduced)
+- [x] No regressions in existing tests
 - [ ] Page renders correctly on desktop, tablet, and mobile viewports
-- [ ] Error states are handled gracefully and display helpful messages
+- [x] Error states are handled gracefully and display helpful messages
 - [ ] Keyboard navigation and accessibility verified with screen reader

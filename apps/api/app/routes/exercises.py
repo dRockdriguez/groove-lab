@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -60,3 +61,57 @@ async def get_exercises() -> list[dict[str, Any]]:
         result.append({"instrumentType": inst, "sections": sections})
 
     return result
+
+
+@router.get("/{exercise_id}")
+async def get_exercise_detail(exercise_id: str) -> dict[str, Any]:
+    """Return full playback data for a single exercise."""
+    try:
+        init_db(STORAGE_ROOT)
+        db_path = get_db_path(STORAGE_ROOT)
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.execute(
+                "SELECT id, instrument_type, exercise_name, audio_path, bpm, "
+                "parsed_midi_data FROM exercises WHERE id = ?",
+                (exercise_id,),
+            )
+            row = cursor.fetchone()
+    except Exception as exc:
+        logger.error("Failed to query exercise %s: %s", exercise_id, exc)
+        raise HTTPException(status_code=500, detail="Database error") from exc
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+
+    # Parse MIDI data
+    midi_events: list[dict[str, Any]] = []
+    duration_ms: float = 0.0
+    try:
+        parsed: dict[str, Any] = json.loads(row["parsed_midi_data"] or "{}")
+        raw_events = parsed.get("pistaEjercicio", [])
+        for ev in raw_events:
+            midi_events.append(
+                {
+                    "timestamp": ev.get("timestamp", 0),
+                    "note": ev.get("note", 0),
+                    "velocity": ev.get("velocity", 0),
+                    "channel": ev.get("channel", 1),
+                    "type": "noteOn",
+                }
+            )
+        if midi_events:
+            duration_ms = max(ev["timestamp"] for ev in midi_events) + 500.0
+    except Exception as exc:
+        logger.warning("Failed to parse MIDI data for %s: %s", exercise_id, exc)
+
+    return {
+        "id": row["id"],
+        "title": _humanize(row["exercise_name"]),
+        "description": "",
+        "bpm": row["bpm"],
+        "durationMs": duration_ms,
+        "audioUrl": f"/{row['audio_path']}",
+        "midiEvents": midi_events,
+        "instrumentType": row["instrument_type"],
+    }

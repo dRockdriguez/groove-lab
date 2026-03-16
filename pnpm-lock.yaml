@@ -98,6 +98,10 @@ importers:
         version: 5.9.3
 
   packages/ui:
+    dependencies:
+      '@groovelab/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@storybook/addon-essentials':
         specifier: ^8.0.5

@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { ExercisePlaybackPage } from '@groovelab/ui';
+
+const { instrumentType, exerciseId } = Astro.params;
+---
+
+<BaseLayout title={`Practice — GrooveLab`} description="Practice your drum exercise with real-time feedback">
+  <main class="min-h-screen">
+    <ExercisePlaybackPage client:load exerciseId={exerciseId} />
+  </main>
+</BaseLayout>

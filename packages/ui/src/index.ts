@@ -17,6 +17,12 @@ export { InstrumentButton } from './components/atoms/InstrumentButton';
 export type { InstrumentButtonProps } from './components/atoms/InstrumentButton';
 export { ThemeToggle } from './components/atoms/ThemeToggle';
 export type { ThemeToggleProps } from './components/atoms/ThemeToggle';
+export { PlaybackButton } from './components/atoms/PlaybackButton';
+export type { PlaybackButtonProps } from './components/atoms/PlaybackButton';
+export { MidiStatusIndicator } from './components/atoms/MidiStatusIndicator';
+export type { MidiStatusIndicatorProps, MidiConnectionStatus } from './components/atoms/MidiStatusIndicator';
+export { FeedbackBadge } from './components/atoms/FeedbackBadge';
+export type { FeedbackBadgeProps } from './components/atoms/FeedbackBadge';
 
 // Molecules
 export { Header } from './components/molecules/Header';
@@ -33,6 +39,12 @@ export { ExerciseCard } from './components/molecules/ExerciseCard';
 export type { ExerciseCardProps } from './components/molecules/ExerciseCard';
 export { ExerciseSectionList } from './components/molecules/ExerciseSectionList';
 export type { ExerciseSectionListProps } from './components/molecules/ExerciseSectionList';
+export { PlaybackControls } from './components/molecules/PlaybackControls';
+export type { PlaybackControlsProps } from './components/molecules/PlaybackControls';
+export { TrackLabel } from './components/molecules/TrackLabel';
+export type { TrackLabelProps } from './components/molecules/TrackLabel';
+export { MiniTimeline } from './components/molecules/MiniTimeline';
+export type { MiniTimelineProps } from './components/molecules/MiniTimeline';
 
 // Organisms
 export { Table } from './components/organisms/Table';
@@ -41,3 +53,9 @@ export { ExerciseBrowser } from './components/organisms/ExerciseBrowser';
 export type { ExerciseBrowserProps } from './components/organisms/ExerciseBrowser';
 export { FileUploadZone } from './components/organisms/FileUploadZone';
 export type { FileUploadZoneProps } from './components/organisms/FileUploadZone';
+export { ExercisePlaybackTimeline } from './components/organisms/ExercisePlaybackTimeline';
+export type { ExercisePlaybackTimelineProps } from './components/organisms/ExercisePlaybackTimeline';
+export { SessionStatisticsPanel } from './components/organisms/SessionStatisticsPanel';
+export type { SessionStatisticsPanelProps } from './components/organisms/SessionStatisticsPanel';
+export { ExercisePlaybackPage } from './components/organisms/ExercisePlaybackPage';
+export type { ExercisePlaybackPageProps } from './components/organisms/ExercisePlaybackPage';
