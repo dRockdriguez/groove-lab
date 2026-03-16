@@ -43,17 +43,17 @@ describe('MetronomeControl — Slider & Numeric Input (Criterion #5)', () => {
 
   // ── BPM Slider ───────────────────────────────────────────────────────────────
 
-  it('includes a BPM slider input with range 20–300', () => {
+  it('includes a BPM slider input with range 40–300', () => {
     render(<MetronomeControl />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toBeInTheDocument();
-    expect(slider).toHaveAttribute('min', '20');
+    expect(slider).toHaveAttribute('min', '40');
     expect(slider).toHaveAttribute('max', '300');
   });
 
   it('slider has a large grab area for easy interaction', () => {
     render(<MetronomeControl />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toHaveAttribute('class');
     // Class should include large dimensions for grab area (e.g., h-8, w-full, etc.)
     const classes = slider.getAttribute('class') || '';
@@ -64,19 +64,19 @@ describe('MetronomeControl — Slider & Numeric Input (Criterion #5)', () => {
 
   it('slider reflects the current BPM value', () => {
     render(<MetronomeControl initialBpm={140} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toHaveValue('140');
   });
 
-  it('slider clamped to minimum 20', () => {
+  it('slider clamped to minimum 40', () => {
     render(<MetronomeControl initialBpm={10} />);
-    const slider = screen.getByRole('slider');
-    expect(slider).toHaveValue('20');
+    const slider = screen.getByLabelText('BPM slider');
+    expect(slider).toHaveValue('40');
   });
 
   it('slider clamped to maximum 300', () => {
     render(<MetronomeControl initialBpm={400} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toHaveValue('300');
   });
 
@@ -84,116 +84,114 @@ describe('MetronomeControl — Slider & Numeric Input (Criterion #5)', () => {
 
   it('includes an editable numeric input (not read-only)', () => {
     render(<MetronomeControl />);
-    const numericInput = screen.queryByDisplayValue('120');
-    if (numericInput) {
-      expect(numericInput).toHaveAttribute('type', 'number');
-      expect(numericInput).not.toHaveAttribute('readonly');
-    }
+    const numericInput = screen.getByLabelText('BPM');
+    expect(numericInput).toHaveAttribute('type', 'number');
+    expect(numericInput).not.toHaveAttribute('readonly');
   });
 
   it('numeric input reflects current BPM value', () => {
     render(<MetronomeControl initialBpm={140} />);
-    const numericInput = screen.getByDisplayValue('140');
-    expect(numericInput).toBeInTheDocument();
+    const numericInput = screen.getByLabelText('BPM');
+    expect(numericInput).toHaveValue(140);
   });
 
-  it('numeric input clamped to minimum 20', () => {
+  it('numeric input clamped to minimum 40', () => {
     render(<MetronomeControl initialBpm={10} />);
-    const numericInput = screen.getByDisplayValue('20');
-    expect(numericInput).toBeInTheDocument();
+    const numericInput = screen.getByLabelText('BPM');
+    expect(numericInput).toHaveValue(40);
   });
 
   it('numeric input clamped to maximum 300', () => {
     render(<MetronomeControl initialBpm={400} />);
-    const numericInput = screen.getByDisplayValue('300');
-    expect(numericInput).toBeInTheDocument();
+    const numericInput = screen.getByLabelText('BPM');
+    expect(numericInput).toHaveValue(300);
   });
 
   // ── Slider ↔ Numeric Input Synchronization ──────────────────────────────────
 
   it('slider and numeric input stay in sync when slider is moved', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     fireEvent.change(slider, { target: { value: '140' } });
 
     await waitFor(() => {
-      const numericInput = screen.getByDisplayValue('140');
-      expect(numericInput).toBeInTheDocument();
+      const numericInput = screen.getByLabelText('BPM');
+      expect(numericInput).toHaveValue(140);
     });
   });
 
   it('slider and numeric input stay in sync when numeric input is changed', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
 
     fireEvent.change(numericInput, { target: { value: '150' } });
 
     await waitFor(() => {
-      const slider = screen.getByRole('slider');
+      const slider = screen.getByLabelText('BPM slider');
       expect(slider).toHaveValue('150');
     });
   });
 
   it('moving slider to 160 updates numeric input to 160', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     fireEvent.change(slider, { target: { value: '160' } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('160')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(160);
     });
   });
 
   it('numeric input set to 180 updates slider to 180', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
 
     fireEvent.change(numericInput, { target: { value: '180' } });
 
     await waitFor(() => {
-      const slider = screen.getByRole('slider');
+      const slider = screen.getByLabelText('BPM slider');
       expect(slider).toHaveValue('180');
     });
   });
 
-  it('numeric input rejects values below minimum (20)', async () => {
+  it('numeric input rejects values below minimum (40)', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
 
     fireEvent.change(numericInput, { target: { value: '10' } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('20')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(40);
     });
   });
 
   it('numeric input rejects values above maximum (300)', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
 
     fireEvent.change(numericInput, { target: { value: '400' } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('300')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(300);
     });
   });
 
-  it('slider rejects values below minimum (20)', async () => {
+  it('slider rejects values below minimum (40)', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     fireEvent.change(slider, { target: { value: '10' } });
 
     await waitFor(() => {
-      expect(slider).toHaveValue('20');
+      expect(slider).toHaveValue('40');
     });
   });
 
   it('slider rejects values above maximum (300)', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     fireEvent.change(slider, { target: { value: '400' } });
 
@@ -205,7 +203,7 @@ describe('MetronomeControl — Slider & Numeric Input (Criterion #5)', () => {
   it('onBpmChange callback is called when slider is adjusted', async () => {
     const onBpmChange = vi.fn();
     render(<MetronomeControl initialBpm={120} onBpmChange={onBpmChange} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     fireEvent.change(slider, { target: { value: '140' } });
 
@@ -217,7 +215,7 @@ describe('MetronomeControl — Slider & Numeric Input (Criterion #5)', () => {
   it('onBpmChange callback is called when numeric input is adjusted', async () => {
     const onBpmChange = vi.fn();
     render(<MetronomeControl initialBpm={120} onBpmChange={onBpmChange} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
 
     fireEvent.change(numericInput, { target: { value: '140' } });
 
@@ -228,49 +226,49 @@ describe('MetronomeControl — Slider & Numeric Input (Criterion #5)', () => {
 
   it('can pick a tempo quickly using the slider', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     // Sweep from 100 to 200 quickly
     fireEvent.change(slider, { target: { value: '200' } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('200')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(200);
     });
   });
 
   it('can fine-tune tempo precisely using the numeric input', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
 
     // Type exact BPM value
     fireEvent.change(numericInput, { target: { value: '127' } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('127')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(127);
     });
   });
 
-  it('slider aria-valuemin is 20', () => {
+  it('slider aria-valuemin is 40', () => {
     render(<MetronomeControl />);
-    const slider = screen.getByRole('slider');
-    expect(slider).toHaveAttribute('aria-valuemin', '20');
+    const slider = screen.getByLabelText('BPM slider');
+    expect(slider).toHaveAttribute('aria-valuemin', '40');
   });
 
   it('slider aria-valuemax is 300', () => {
     render(<MetronomeControl />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toHaveAttribute('aria-valuemax', '300');
   });
 
   it('slider aria-valuenow reflects current BPM', () => {
     render(<MetronomeControl initialBpm={140} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toHaveAttribute('aria-valuenow', '140');
   });
 
   it('slider aria-valuenow updates when BPM changes', async () => {
     render(<MetronomeControl initialBpm={120} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     fireEvent.change(slider, { target: { value: '160' } });
 

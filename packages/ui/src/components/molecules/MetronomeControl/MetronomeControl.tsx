@@ -11,7 +11,7 @@ export interface MetronomeControlProps {
   className?: string;
 }
 
-const MIN_BPM = 20;
+const MIN_BPM = 40;
 const MAX_BPM = 300;
 const DEFAULT_BPM = 120;
 
@@ -36,23 +36,43 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   }, [bpm, onBpmChange]);
 
   const increaseBpm = useCallback(() => {
-    setBpm(prev => Math.min(prev + 1, MAX_BPM));
-  }, []);
+    if (!isPlaying) {
+      setBpm(prev => Math.min(prev + 1, MAX_BPM));
+    }
+  }, [isPlaying]);
 
   const decreaseBpm = useCallback(() => {
-    setBpm(prev => Math.max(prev - 1, MIN_BPM));
-  }, []);
+    if (!isPlaying) {
+      setBpm(prev => Math.max(prev - 1, MIN_BPM));
+    }
+  }, [isPlaying]);
+
+  const handleBpmInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isPlaying) {
+      const newValue = parseInt(e.target.value, 10);
+      if (!isNaN(newValue)) {
+        setBpm(Math.max(MIN_BPM, Math.min(MAX_BPM, newValue)));
+      }
+    }
+  }, [isPlaying]);
+
+  const handleBpmSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isPlaying) {
+      setBpm(parseInt(e.target.value, 10));
+    }
+  }, [isPlaying]);
 
   const toggleMetronome = useCallback(() => {
     setIsEnabled(prev => !prev);
   }, []);
 
-  // Keyboard shortcuts: = to increment, - to decrement.
+  // Keyboard shortcuts: = to increment, - to decrement (disabled during playback).
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Do not intercept when typing in an input / textarea.
+      // Do not intercept when typing in an input / textarea or when playing.
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      if (isPlaying) return;
 
       if (e.key === '=') {
         e.preventDefault();
@@ -64,7 +84,7 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [increaseBpm, decreaseBpm]);
+  }, [increaseBpm, decreaseBpm, isPlaying]);
 
   // Web Audio API metronome: clicks fire only when enabled AND playing.
   useEffect(() => {
@@ -109,57 +129,78 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
 
   return (
     <div
-      className={['flex items-center gap-2', className].join(' ')}
+      className={['flex flex-col gap-3', className].join(' ')}
       data-testid="metronome-control"
     >
-      {/* BPM numeric display — labeled via aria-label to avoid duplicate
-          visible "BPM" text nodes that would break getByText(/bpm/i) queries
-          in other components on the page. */}
-      <input
-        id="bpm-input"
-        type="number"
-        readOnly
-        value={bpm}
-        min={MIN_BPM}
-        max={MAX_BPM}
-        aria-label="BPM"
-        className="w-14 text-center font-mono text-sm border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-      />
+      {/* BPM Slider */}
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          role="slider"
+          aria-label="BPM slider"
+          aria-valuemin={MIN_BPM}
+          aria-valuemax={MAX_BPM}
+          aria-valuenow={bpm}
+          min={MIN_BPM}
+          max={MAX_BPM}
+          value={bpm}
+          onChange={handleBpmSliderChange}
+          disabled={isPlaying}
+          className="flex-1 h-8 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        />
+      </div>
 
-      <button
-        type="button"
-        aria-label="Decrease BPM"
-        onClick={decreaseBpm}
-        disabled={bpm <= MIN_BPM}
-        className="w-7 h-7 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-base font-bold hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        −
-      </button>
+      <div className="flex items-center gap-2">
+        {/* BPM numeric input — editable and labeled via aria-label to avoid duplicate
+            visible "BPM" text nodes that would break getByText(/bpm/i) queries
+            in other components on the page. */}
+        <input
+          id="bpm-input"
+          type="number"
+          value={bpm}
+          onChange={handleBpmInputChange}
+          min={MIN_BPM}
+          max={MAX_BPM}
+          disabled={isPlaying}
+          aria-label="BPM"
+          className="w-16 text-center font-mono text-sm border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+        />
 
-      <button
-        type="button"
-        aria-label="Increase BPM"
-        onClick={increaseBpm}
-        disabled={bpm >= MAX_BPM}
-        className="w-7 h-7 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-base font-bold hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        +
-      </button>
+        <button
+          type="button"
+          aria-label="Decrease BPM"
+          onClick={decreaseBpm}
+          disabled={bpm <= MIN_BPM || isPlaying}
+          className="w-7 h-7 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-base font-bold hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          −
+        </button>
 
-      <button
-        type="button"
-        aria-label="Toggle metronome"
-        aria-pressed={isEnabled}
-        onClick={toggleMetronome}
-        className={[
-          'px-2 py-0.5 rounded text-xs font-medium border transition-colors',
-          isEnabled
-            ? 'bg-green-600 text-white border-green-600 hover:bg-green-700'
-            : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700',
-        ].join(' ')}
-      >
-        {isEnabled ? 'On' : 'Off'}
-      </button>
+        <button
+          type="button"
+          aria-label="Increase BPM"
+          onClick={increaseBpm}
+          disabled={bpm >= MAX_BPM || isPlaying}
+          className="w-7 h-7 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-base font-bold hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          +
+        </button>
+
+        <button
+          type="button"
+          aria-label="Toggle metronome"
+          aria-pressed={isEnabled}
+          onClick={toggleMetronome}
+          className={[
+            'px-2 py-0.5 rounded text-xs font-medium border transition-colors',
+            isEnabled
+              ? 'bg-green-600 text-white border-green-600 hover:bg-green-700'
+              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700',
+          ].join(' ')}
+        >
+          {isEnabled ? 'On' : 'Off'}
+        </button>
+      </div>
 
       {/* Screen-reader live region for BPM change announcements. */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">

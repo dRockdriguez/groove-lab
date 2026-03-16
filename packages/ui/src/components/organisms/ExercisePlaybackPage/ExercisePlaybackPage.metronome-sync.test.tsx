@@ -185,9 +185,9 @@ describe('ExercisePlaybackPage — Metronome-Audio Sync (Criterion #10)', () => 
     expect(oscillatorMock.start.mock.calls.length).toBe(afterPauseStartCount);
   });
 
-  // ── Metronome Clicks Stop on Stop ────────────────────────────────────────
+  // ── Metronome Clicks Stop on Pause (UI stop behavior) ──────────────────────
 
-  it('metronome stops scheduling clicks when playback is stopped', async () => {
+  it('metronome stops scheduling clicks when playback is paused (UI stop)', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
     const toggleBtn = screen.getByRole('button', { name: 'Toggle metronome' });
@@ -198,17 +198,18 @@ describe('ExercisePlaybackPage — Metronome-Audio Sync (Criterion #10)', () => 
       fireEvent.click(playBtn);
     });
 
-    const stopBtn = screen.getByRole('button', { name: /stop/i });
+    // Pause (since there's no separate stop button in the UI)
+    const pauseBtn = screen.getByRole('button', { name: /pause/i });
     await act(async () => {
-      fireEvent.click(stopBtn);
+      fireEvent.click(pauseBtn);
     });
 
-    // After stop, no further oscillator starts should occur
-    const afterStopStartCount = oscillatorMock.start.mock.calls.length;
+    // After pause, no further oscillator starts should occur
+    const afterPauseStartCount = oscillatorMock.start.mock.calls.length;
 
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    expect(oscillatorMock.start.mock.calls.length).toBe(afterStopStartCount);
+    expect(oscillatorMock.start.mock.calls.length).toBe(afterPauseStartCount);
   });
 
   // ── No Drift After Pause and Resume ──────────────────────────────────────

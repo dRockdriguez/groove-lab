@@ -97,19 +97,19 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
   it('slider is enabled when playback is stopped', () => {
     render(<MetronomeControl initialBpm={120} isPlaying={false} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).not.toBeDisabled();
   });
 
   it('slider is disabled when playback is active', () => {
     render(<MetronomeControl initialBpm={120} isPlaying={true} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toBeDisabled();
   });
 
   it('slider re-enables when playback is paused', async () => {
     const { rerender } = render(<MetronomeControl initialBpm={120} isPlaying={true} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
     expect(slider).toBeDisabled();
 
     rerender(<MetronomeControl initialBpm={120} isPlaying={false} />);
@@ -123,19 +123,19 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
   it('numeric input is enabled when playback is stopped', () => {
     render(<MetronomeControl initialBpm={120} isPlaying={false} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
     expect(numericInput).not.toBeDisabled();
   });
 
   it('numeric input is disabled when playback is active', () => {
     render(<MetronomeControl initialBpm={120} isPlaying={true} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
     expect(numericInput).toBeDisabled();
   });
 
   it('numeric input re-enables when playback is paused', async () => {
     const { rerender } = render(<MetronomeControl initialBpm={120} isPlaying={true} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
     expect(numericInput).toBeDisabled();
 
     rerender(<MetronomeControl initialBpm={120} isPlaying={false} />);
@@ -152,8 +152,8 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
     const incrementBtn = screen.getByRole('button', { name: 'Increase BPM' });
     const decrementBtn = screen.getByRole('button', { name: 'Decrease BPM' });
-    const slider = screen.getByRole('slider');
-    const numericInput = screen.getByDisplayValue('120');
+    const slider = screen.getByLabelText('BPM slider');
+    const numericInput = screen.getByLabelText('BPM');
 
     expect(incrementBtn).toBeDisabled();
     expect(decrementBtn).toBeDisabled();
@@ -166,8 +166,8 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
     const incrementBtn = screen.getByRole('button', { name: 'Increase BPM' });
     const decrementBtn = screen.getByRole('button', { name: 'Decrease BPM' });
-    const slider = screen.getByRole('slider');
-    const numericInput = screen.getByDisplayValue('120');
+    const slider = screen.getByLabelText('BPM slider');
+    const numericInput = screen.getByLabelText('BPM');
 
     expect(incrementBtn).not.toBeDisabled();
     expect(decrementBtn).not.toBeDisabled();
@@ -184,7 +184,7 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
     fireEvent.click(incrementBtn);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(120);
     });
   });
 
@@ -195,29 +195,29 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
     fireEvent.click(decrementBtn);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(120);
     });
   });
 
   it('BPM does not change when slider is moved during playback', async () => {
     render(<MetronomeControl initialBpm={120} isPlaying={true} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('BPM slider');
 
     fireEvent.change(slider, { target: { value: '140' } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(120);
     });
   });
 
   it('BPM does not change when numeric input is changed during playback', async () => {
     render(<MetronomeControl initialBpm={120} isPlaying={true} />);
-    const numericInput = screen.getByDisplayValue('120');
+    const numericInput = screen.getByLabelText('BPM');
 
     fireEvent.change(numericInput, { target: { value: '150' } });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(120);
     });
   });
 
@@ -226,13 +226,13 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
   it('= keyboard shortcut does not increase BPM during playback', () => {
     render(<MetronomeControl initialBpm={120} isPlaying={true} />);
     fireEvent.keyDown(window, { key: '=' });
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
   });
 
   it('- keyboard shortcut does not decrease BPM during playback', () => {
     render(<MetronomeControl initialBpm={120} isPlaying={true} />);
     fireEvent.keyDown(window, { key: '-' });
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
   });
 
   it('= keyboard shortcut works after playback is paused', async () => {
@@ -243,7 +243,7 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
     fireEvent.keyDown(window, { key: '=' });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('121')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(121);
     });
   });
 
@@ -255,7 +255,7 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
     fireEvent.keyDown(window, { key: '-' });
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('119')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(119);
     });
   });
 
@@ -263,16 +263,16 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
   it('tempo remains stable during active playback (no jitter)', () => {
     render(<MetronomeControl initialBpm={120} isPlaying={true} />);
-    const initialDisplay = screen.getByDisplayValue('120');
-    expect(initialDisplay).toBeInTheDocument();
+    const initialDisplay = screen.getByLabelText('BPM');
+    expect(initialDisplay).toHaveValue(120);
 
     // Try multiple interactions
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
     fireEvent.keyDown(window, { key: '=' });
-    fireEvent.change(screen.getByRole('slider'), { target: { value: '150' } });
+    fireEvent.change(screen.getByLabelText('BPM slider'), { target: { value: '150' } });
 
     // BPM should still be 120
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
   });
 
   it('new BPM can only be selected when audio is stopped', async () => {
@@ -280,7 +280,7 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
     // Try to change while playing
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
 
     // Stop playback
     rerender(<MetronomeControl initialBpm={120} isPlaying={false} />);
@@ -288,7 +288,7 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
     // Now change should work
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
     await waitFor(() => {
-      expect(screen.getByDisplayValue('121')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(121);
     });
   });
 
@@ -297,7 +297,7 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
     // Try to change while playing
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
 
     // Pause playback
     rerender(<MetronomeControl initialBpm={120} isPlaying={false} />);
@@ -305,7 +305,7 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
     // Now change should work
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
     await waitFor(() => {
-      expect(screen.getByDisplayValue('121')).toBeInTheDocument();
+      expect(screen.getByLabelText('BPM')).toHaveValue(121);
     });
   });
 
@@ -346,10 +346,10 @@ describe('MetronomeControl — Disabled During Playback (Criterion #6)', () => {
 
     // Try to change BPM through all control methods
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
-    fireEvent.change(screen.getByRole('slider'), { target: { value: '150' } });
-    fireEvent.change(screen.getByDisplayValue('120'), { target: { value: '200' } });
+    fireEvent.change(screen.getByLabelText('BPM slider'), { target: { value: '150' } });
+    fireEvent.change(screen.getByLabelText('BPM'), { target: { value: '200' } });
 
     // All should fail, BPM should remain 120
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
   });
 });

@@ -45,22 +45,22 @@ describe('MetronomeControl', () => {
 
   it('displays current BPM value', () => {
     render(<MetronomeControl />);
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
   });
 
   it('accepts initial BPM via prop', () => {
     render(<MetronomeControl initialBpm={140} />);
-    expect(screen.getByDisplayValue('140')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(140);
   });
 
-  it('clamps initialBpm below minimum to 20', () => {
+  it('clamps initialBpm below minimum to 40', () => {
     render(<MetronomeControl initialBpm={10} />);
-    expect(screen.getByDisplayValue('20')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(40);
   });
 
   it('clamps initialBpm above maximum to 300', () => {
     render(<MetronomeControl initialBpm={400} />);
-    expect(screen.getByDisplayValue('300')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(300);
   });
 
   // ── BPM adjustment ──────────────────────────────────────────────────────────
@@ -68,25 +68,25 @@ describe('MetronomeControl', () => {
   it('increases BPM by 1 when increment button is clicked', () => {
     render(<MetronomeControl initialBpm={120} />);
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
-    expect(screen.getByDisplayValue('121')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(121);
   });
 
   it('decreases BPM by 1 when decrement button is clicked', () => {
     render(<MetronomeControl initialBpm={120} />);
     fireEvent.click(screen.getByRole('button', { name: 'Decrease BPM' }));
-    expect(screen.getByDisplayValue('119')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(119);
   });
 
   it('does not increase BPM above 300', () => {
     render(<MetronomeControl initialBpm={300} />);
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
-    expect(screen.getByDisplayValue('300')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(300);
   });
 
-  it('does not decrease BPM below 20', () => {
-    render(<MetronomeControl initialBpm={20} />);
+  it('does not decrease BPM below 40', () => {
+    render(<MetronomeControl initialBpm={40} />);
     fireEvent.click(screen.getByRole('button', { name: 'Decrease BPM' }));
-    expect(screen.getByDisplayValue('20')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(40);
   });
 
   it('increment button is disabled when BPM is at maximum (300)', () => {
@@ -94,8 +94,8 @@ describe('MetronomeControl', () => {
     expect(screen.getByRole('button', { name: 'Increase BPM' })).toBeDisabled();
   });
 
-  it('decrement button is disabled when BPM is at minimum (20)', () => {
-    render(<MetronomeControl initialBpm={20} />);
+  it('decrement button is disabled when BPM is at minimum (40)', () => {
+    render(<MetronomeControl initialBpm={40} />);
     expect(screen.getByRole('button', { name: 'Decrease BPM' })).toBeDisabled();
   });
 
@@ -177,13 +177,13 @@ describe('MetronomeControl', () => {
   it('increases BPM when = key is pressed', () => {
     render(<MetronomeControl initialBpm={120} />);
     fireEvent.keyDown(window, { key: '=' });
-    expect(screen.getByDisplayValue('121')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(121);
   });
 
   it('decreases BPM when - key is pressed', () => {
     render(<MetronomeControl initialBpm={120} />);
     fireEvent.keyDown(window, { key: '-' });
-    expect(screen.getByDisplayValue('119')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(119);
   });
 
   it('does not trigger keyboard shortcut when input is focused', () => {
@@ -191,7 +191,7 @@ describe('MetronomeControl', () => {
     const input = screen.getByLabelText('BPM');
     fireEvent.keyDown(input, { key: '-' });
     // BPM should not change since the event target is an input
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(input).toHaveValue(120);
   });
 
   // ── Component presence ───────────────────────────────────────────────────────

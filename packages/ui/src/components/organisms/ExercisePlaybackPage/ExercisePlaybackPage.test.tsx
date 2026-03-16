@@ -120,7 +120,7 @@ describe('ExercisePlaybackPage', () => {
 
   it('renders the seek slider', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    expect(screen.getByRole('slider')).toBeInTheDocument();
+    expect(screen.getByLabelText('Seek playback position')).toBeInTheDocument();
   });
 
   it('displays duration in mm:ss format', () => {
