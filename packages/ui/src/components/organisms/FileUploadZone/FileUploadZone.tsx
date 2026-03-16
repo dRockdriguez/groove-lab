@@ -71,7 +71,7 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesSelected 
       );
 
       for (const childEntry of entries) {
-        const childPath = parentPath ? `${parentPath}/${entry.name}` : entry.name;
+        const childPath = parentPath ? `${parentPath}/${childEntry.name}` : childEntry.name;
         const childFiles = await extractFromEntry(childEntry, childPath);
         files.push(...childFiles);
       }
