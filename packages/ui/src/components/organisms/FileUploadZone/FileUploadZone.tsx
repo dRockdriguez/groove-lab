@@ -45,13 +45,21 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesSelected 
   };
 
   const extractFromEntry = async (
-    entry: FileSystemEntry
+    entry: FileSystemEntry,
+    parentPath: string = ''
   ): Promise<File[]> => {
     const files: File[] = [];
 
     if (entry.isFile) {
       const file = await new Promise<File>((resolve, reject) => {
         (entry as FileSystemFileEntry).file(resolve, reject);
+      });
+      // Set webkitRelativePath so the file carries its relative path
+      const relativePath = parentPath ? `${parentPath}/${file.name}` : file.name;
+      Object.defineProperty(file, 'webkitRelativePath', {
+        value: relativePath,
+        writable: false,
+        configurable: true,
       });
       files.push(file);
     } else if (entry.isDirectory) {
@@ -63,7 +71,8 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesSelected 
       );
 
       for (const childEntry of entries) {
-        const childFiles = await extractFromEntry(childEntry);
+        const childPath = parentPath ? `${parentPath}/${entry.name}` : entry.name;
+        const childFiles = await extractFromEntry(childEntry, childPath);
         files.push(...childFiles);
       }
     }

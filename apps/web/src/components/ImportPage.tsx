@@ -67,7 +67,7 @@ export const ImportPage: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('instrument', selectedInstrument);
-      selectedFiles.forEach((file) => {
+      selectedFiles.forEach((file: File) => {
         const relativePath =
           (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
         formData.append('files', file, relativePath);
