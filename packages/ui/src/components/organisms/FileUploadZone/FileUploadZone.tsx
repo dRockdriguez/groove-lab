@@ -70,16 +70,11 @@ export const FileUploadZone: React.FC<FileUploadZoneProps> = ({ onFilesSelected 
         }
       );
 
+      // Include the current directory's name in the path when processing its contents
+      const currentDirPath = parentPath ? `${parentPath}/${entry.name}` : entry.name;
+
       for (const childEntry of entries) {
-        // Only include the name in the path if it's a directory
-        // For files, the path stays the same (the file name is added in the file handling section)
-        let childPath: string;
-        if (childEntry.isDirectory) {
-          childPath = parentPath ? `${parentPath}/${childEntry.name}` : childEntry.name;
-        } else {
-          childPath = parentPath;
-        }
-        const childFiles = await extractFromEntry(childEntry, childPath);
+        const childFiles = await extractFromEntry(childEntry, currentDirPath);
         files.push(...childFiles);
       }
     }
