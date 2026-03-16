@@ -159,15 +159,27 @@ function ensurePullRequest(branchName: string) {
 
   console.log(`📬 Checking for existing PR for ${branchName}`);
   try {
-    execSync(`gh pr view --head ${branchName}`, { stdio: 'ignore' });
-    console.log('PR already exists — keeping it up to date');
-  } catch (err: any) {
-    const shouldCreate = [1, 3].includes(err.status ?? -1);
-    if (shouldCreate) {
+    const prUrl = execSync(`gh pr view ${branchName} --json url --jq .url`, {
+      encoding: 'utf8',
+    }).trim();
+    if (prUrl) {
+      console.log(`✅ PR already exists: ${prUrl}`);
+    } else {
       console.log('No PR found — creating a new one');
       execSync(`gh pr create --fill --head ${branchName}`, { stdio: 'inherit' });
-    } else {
-      throw err;
+    }
+  } catch (err: any) {
+    // If gh pr view fails, try to create a new PR
+    console.log('No PR found — creating a new one');
+    try {
+      execSync(`gh pr create --fill --head ${branchName}`, { stdio: 'inherit' });
+    } catch (createErr: any) {
+      // If creation fails because PR already exists, that's OK
+      if (createErr.message && createErr.message.includes('already exists')) {
+        console.log('✅ PR already exists');
+      } else {
+        throw createErr;
+      }
     }
   }
 }
