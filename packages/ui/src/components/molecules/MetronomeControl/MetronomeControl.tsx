@@ -6,6 +6,8 @@ export interface MetronomeControlProps {
   initialBpm?: number;
   /** Whether the exercise is currently playing; metronome clicks only when true. */
   isPlaying?: boolean;
+  /** Callback when BPM changes; used to update audio playback speed. */
+  onBpmChange?: (bpm: number) => void;
   className?: string;
 }
 
@@ -16,6 +18,7 @@ const DEFAULT_BPM = 120;
 export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   initialBpm = DEFAULT_BPM,
   isPlaying = false,
+  onBpmChange,
   className = '',
 }) => {
   const [bpm, setBpm] = useState(Math.max(MIN_BPM, Math.min(MAX_BPM, initialBpm)));
@@ -27,9 +30,10 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   useEffect(() => {
     if (prevBpmRef.current !== null && prevBpmRef.current !== bpm) {
       setAnnouncement(`BPM: ${bpm}`);
+      onBpmChange?.(bpm);
     }
     prevBpmRef.current = bpm;
-  }, [bpm]);
+  }, [bpm, onBpmChange]);
 
   const increaseBpm = useCallback(() => {
     setBpm(prev => Math.min(prev + 1, MAX_BPM));

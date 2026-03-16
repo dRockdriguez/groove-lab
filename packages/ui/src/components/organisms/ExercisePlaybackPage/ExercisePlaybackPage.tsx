@@ -193,6 +193,14 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, []);
 
+  const handleBpmChange = useCallback((newBpm: number) => {
+    if (audioRef.current) {
+      // Convert BPM to playback rate: 120 BPM = 1.0x speed
+      const playbackRate = newBpm / 120;
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, []);
+
   // Pause playback when the browser window loses focus (tab switch or reload).
   useEffect(() => {
     const handleBlur = () => {
@@ -309,7 +317,11 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       />
 
       {/* Metronome control */}
-      <MetronomeControl isPlaying={playbackState === 'playing'} />
+      <MetronomeControl
+        initialBpm={exercise.bpm}
+        isPlaying={playbackState === 'playing'}
+        onBpmChange={handleBpmChange}
+      />
 
       {/* Mini timeline overview */}
       <MiniTimeline
