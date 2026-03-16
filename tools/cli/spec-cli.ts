@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import fs from 'fs';
 import { execSync } from 'child_process';
+import os from 'os';
 
 const program = new Command();
 
@@ -64,13 +65,23 @@ function runStep(stepKey: string, specPath: string) {
 
   // Use (echo prompt; sleep 2) | timeout to auto-close after response
   // This sends the prompt, waits 2s for response, then kills after 5m of inactivity
+  // On macOS, timeout doesn't exist - try gtimeout first, fall back to no timeout
+  const timeoutCmd = os.platform() === 'darwin' ? 'gtimeout' : 'timeout';
+  let command = `(echo '${escapedPrompt}'; sleep 2) | ${timeoutCmd} 300 claude --model ${step.model} || true`;
+
+  // If on macOS and gtimeout not available, run without timeout
+  if (os.platform() === 'darwin') {
+    try {
+      execSync('which gtimeout', { stdio: 'ignore' });
+    } catch {
+      command = `(echo '${escapedPrompt}'; sleep 2) | claude --model ${step.model}`;
+    }
+  }
+
   try {
-    execSync(
-      `(echo '${escapedPrompt}'; sleep 2) | timeout 300 claude --model ${step.model} || true`,
-      {
-        stdio: 'inherit',
-      }
-    );
+    execSync(command, {
+      stdio: 'inherit',
+    });
   } catch (err: any) {
     // Ignore timeout errors - they're expected behavior
     if (err.killed || err.signal === 'SIGTERM') {
