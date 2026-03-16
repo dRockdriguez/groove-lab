@@ -38,29 +38,36 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
 
   return (
     <div
-      className={['relative overflow-x-auto', className].join(' ')}
+      className={['overflow-x-auto', className].join(' ')}
       role="region"
       aria-label="Exercise timeline"
     >
-      <div className="relative">
-        {/* Playhead */}
-        <div
-          data-testid="playhead"
-          className="absolute top-0 bottom-0 w-0.5 bg-green-500 z-10 pointer-events-none"
-          style={{ left: `${playheadPercent}%`, position: 'absolute', pointerEvents: 'none' }}
-          aria-hidden="true"
-        />
-
-        {/* Tracks */}
-        {uniqueNotes.map((note) => (
-          <div key={note} className="flex items-center border-b border-gray-200 dark:border-gray-700">
-            {/* Track label */}
-            <div className="w-32 shrink-0 px-3 py-2 border-r border-gray-200 dark:border-gray-700">
-              <TrackLabel noteNumber={note} />
+      <div className="flex">
+        {/* Labels column (fixed width, no relative positioning) */}
+        <div className="w-32 shrink-0">
+          {uniqueNotes.map((note) => (
+            <div key={`label-${note}`} className="flex items-center border-b border-gray-200 dark:border-gray-700 h-10">
+              <div className="px-3 py-2">
+                <TrackLabel noteNumber={note} />
+              </div>
             </div>
+          ))}
+        </div>
 
-            {/* Track lane */}
-            <div className="relative flex-1 h-10">
+        {/* Tracks with playhead (relative positioned) */}
+        <div className="relative flex-1">
+          {/* Playhead */}
+          <div
+            data-testid="playhead"
+            className="absolute top-0 bottom-0 w-0.5 bg-green-500 z-10 pointer-events-none"
+            style={{ left: `${playheadPercent}%` }}
+            aria-hidden="true"
+          />
+
+          {/* Tracks */}
+          {uniqueNotes.map((note) => (
+            <div key={note} className="border-b border-gray-200 dark:border-gray-700 h-10 relative">
+              {/* Track lane */}
               {eventsByNote[note].map((event, index) => {
                 const leftPercent =
                   durationMs > 0 ? (event.timestamp / durationMs) * 100 : 0;
@@ -80,8 +87,8 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                 );
               })}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     setIsLoading(true);
     setFetchError(null);
     try {
-      const res = await fetch(`/api/exercises/${exerciseId}`);
+      const res = await fetch(`http://localhost:8000/exercises/${exerciseId}`);
       if (!res.ok) {
         setFetchError('Could not load exercise data. Please try again.');
         return;
@@ -64,6 +64,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastAudioTimeRef = useRef(0);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Keep a ref that always reflects the latest playbackState so that event
   // handlers (blur, MIDI statechange) that close over the ref don't become stale.
@@ -128,6 +130,28 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }, 0);
     return () => clearTimeout(id);
   }, [initMidi]);
+
+  // Smooth playhead animation using requestAnimationFrame
+  useEffect(() => {
+    const updatePlayhead = () => {
+      if (audioRef.current && playbackState === 'playing') {
+        const currentTime = audioRef.current.currentTime * 1000;
+        lastAudioTimeRef.current = currentTime;
+        setCurrentTimeMs(Math.round(currentTime));
+        animationFrameRef.current = requestAnimationFrame(updatePlayhead);
+      }
+    };
+
+    if (playbackState === 'playing' && audioRef.current) {
+      animationFrameRef.current = requestAnimationFrame(updatePlayhead);
+    }
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [playbackState]);
 
   // ─── Play / Pause ──────────────────────────────────────────────────────────
   const handleTogglePlay = useCallback(async () => {
@@ -256,17 +280,11 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       {/* MIDI connection status */}
       <MidiStatusIndicator status={midiStatus} deviceName={midiDeviceName} />
 
-      {/* Hidden audio element — uses onTimeUpdate for playhead sync instead of
-          requestAnimationFrame to avoid infinite loops in tests with fake timers. */}
+      {/* Audio element — requestAnimationFrame handles smooth playhead updates */}
       {exercise.audioUrl ? (
         <audio
           ref={audioRef}
           src={exercise.audioUrl}
-          onTimeUpdate={() => {
-            if (audioRef.current) {
-              setCurrentTimeMs(Math.round(audioRef.current.currentTime * 1000));
-            }
-          }}
           onEnded={() => setPlaybackStateSynced('stopped')}
           onError={() => {
             setAudioError('Could not load audio file. Please try again later.');

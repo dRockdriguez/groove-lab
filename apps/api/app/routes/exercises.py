@@ -105,13 +105,18 @@ async def get_exercise_detail(exercise_id: str) -> dict[str, Any]:
     except Exception as exc:
         logger.warning("Failed to parse MIDI data for %s: %s", exercise_id, exc)
 
+    # Remove 'storage/' prefix from audio_path if present (it's already in the DB for file tracking)
+    audio_path = row['audio_path']
+    if audio_path.startswith('storage/'):
+        audio_path = audio_path[8:]  # Remove 'storage/' prefix
+
     return {
         "id": row["id"],
         "title": _humanize(row["exercise_name"]),
         "description": "",
         "bpm": row["bpm"],
         "durationMs": duration_ms,
-        "audioUrl": f"/{row['audio_path']}",
+        "audioUrl": f"http://localhost:8000/storage/{audio_path}",
         "midiEvents": midi_events,
         "instrumentType": row["instrument_type"],
     }
