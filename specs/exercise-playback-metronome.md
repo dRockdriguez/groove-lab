@@ -26,7 +26,7 @@ I should generate metronome sounds at precise intervals so that the timing is ac
 - [x] Metronome sound plays when playback is active and exercise is not paused
 - [x] Metronome sound stops when exercise is paused or stopped
 - [x] Metronome clicks occur at precisely the correct interval based on current BPM (using Web Audio API or high-precision timer)
-- [x] Changing BPM during playback immediately adjusts the metronome tempo
+- [x] Changing BPM during playback immediately adjusts the metronome tempo and audio playback speed
 - [x] Metronome volume is controlled independently (toggle on/off, or separate volume slider)
 - [x] First beat of each measure is acoustically distinct (louder, different pitch, or marked "1") from other beats
 - [x] Metronome state persists for the session (BPM and on/off state remembered for current session)
@@ -71,6 +71,9 @@ Integration: Place in ExercisePlaybackPage alongside PlaybackControls
 - Store BPM in component state (can be lifted to parent if needed)
 - Metronome should respect playback state (`isPlaying`, `isPaused`)
 - BPM updates should not reset playback position
+- MetronomeControl initializes with exercise's original BPM (passed via `initialBpm` prop)
+- BPM changes trigger `onBpmChange` callback to update audio playback speed
+- Audio playback rate = BPM / 120 (120 is the reference BPM for 1.0x speed)
 
 ### Accessibility
 - BPM input labeled with `<label htmlFor="bpm-input">`
@@ -91,6 +94,21 @@ Integration: Place in ExercisePlaybackPage alongside PlaybackControls
 - Metronome muting via mute button (independent on/off toggle is in scope)
 - Recording practice sessions with metronome data
 - Analytics on metronome usage
+
+## Implementation Details
+
+### Metronome-Audio Sync
+- **MetronomeControl** receives `initialBpm` (from exercise) and `onBpmChange` callback
+- When user adjusts BPM buttons or keyboard shortcuts, the callback is fired
+- **ExercisePlaybackPage** implements `handleBpmChange` to update `audioRef.current.playbackRate`
+- Formula: `playbackRate = newBpm / 120` where 120 BPM = 1.0x (original speed)
+- Both metronome clicks and audio playback speed change instantly on BPM adjustment
+
+### Example Behavior
+- Exercise has BPM 100 → metronome starts at 100 BPM, audio plays at 100/120 = 0.833x speed
+- User clicks + to increase BPM to 120 → metronome plays at 120 BPM, audio plays at 1.0x speed
+- User clicks + again to 140 BPM → metronome plays at 140 BPM, audio plays at 1.167x speed
+- Pausing or stopping playback stops metronome clicks (respects `isPlaying` prop)
 
 ## Definition of Done
 
