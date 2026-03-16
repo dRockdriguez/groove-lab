@@ -80,13 +80,13 @@ describe('ExercisePlaybackPage — Metronome Integration', () => {
 
   it('MetronomeControl default BPM is 120', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    expect(screen.getByDisplayValue('120')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(120);
   });
 
   it('MetronomeControl BPM increases when increment button is clicked', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
     fireEvent.click(screen.getByRole('button', { name: 'Increase BPM' }));
-    expect(screen.getByDisplayValue('121')).toBeInTheDocument();
+    expect(screen.getByLabelText('BPM')).toHaveValue(121);
   });
 
   it('MetronomeControl toggle button starts with aria-pressed="false"', () => {

@@ -72,7 +72,7 @@ describe('ExercisePlaybackPage — Responsive Layout', () => {
 
     expect(screen.getByText('Basic Drum Pattern')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
-    expect(screen.getByRole('slider')).toBeInTheDocument();
+    expect(screen.getByLabelText('Seek playback position')).toBeInTheDocument();
   });
 
   it('renders correctly on 768px tablet viewport', () => {
@@ -81,7 +81,7 @@ describe('ExercisePlaybackPage — Responsive Layout', () => {
 
     expect(screen.getByText('Basic Drum Pattern')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
-    expect(screen.getByRole('slider')).toBeInTheDocument();
+    expect(screen.getByLabelText('Seek playback position')).toBeInTheDocument();
   });
 
   it('renders correctly on 1440px desktop viewport', () => {
@@ -90,7 +90,7 @@ describe('ExercisePlaybackPage — Responsive Layout', () => {
 
     expect(screen.getByText('Basic Drum Pattern')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
-    expect(screen.getByRole('slider')).toBeInTheDocument();
+    expect(screen.getByLabelText('Seek playback position')).toBeInTheDocument();
   });
 
   it('maintains playback controls visibility at 320px', () => {
