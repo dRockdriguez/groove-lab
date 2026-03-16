@@ -70,7 +70,9 @@ export const ImportPage: React.FC = () => {
       selectedFiles.forEach((file: File) => {
         const relativePath =
           (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
-        formData.append('files', file, relativePath);
+        // Convert File to Blob so FormData respects the custom filename parameter
+        const blob = new Blob([file], { type: file.type });
+        formData.append('files', blob, relativePath);
       });
 
       const response = await fetch(`${API_BASE_URL}/import`, {
