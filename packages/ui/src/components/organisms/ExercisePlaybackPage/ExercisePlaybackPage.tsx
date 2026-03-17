@@ -234,10 +234,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, [exercise]);
 
-  // ─── Loop state (minimal — LoopControls will wire these up in a future spec) ─
-  const [isLoopActive] = useState(false);
-  const [currentLoopRepetition] = useState(0);
-  const [loopRepetitions] = useState<number | 'infinite'>(1);
+  // ─── Loop state ──────────────────────────────────────────────────────────────
+  const [isLoopActive, setIsLoopActive] = useState(false);
+  const [loopStartMs, setLoopStartMs] = useState(0);
+  const [loopEndMs, setLoopEndMs] = useState(0);
+  const [currentLoopRepetition, setCurrentLoopRepetition] = useState(0);
+  const [loopRepetitions, setLoopRepetitions] = useState<number | 'infinite'>(1);
 
   // ─── Tools sidebar state ───────────────────────────────────────────────────
   const [toolsSidebarOpen, setToolsSidebarOpen] = useState(false);
@@ -332,6 +334,17 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
           onBpmChange: handleBpmChange,
           onToggle: setMetronomeEnabled,
         }}
+        loopProps={{
+          loopStartMs,
+          onLoopStartChange: setLoopStartMs,
+          loopEndMs,
+          onLoopEndChange: setLoopEndMs,
+          loopRepetitions,
+          onLoopRepetitionsChange: setLoopRepetitions,
+          isLoopActive,
+          onLoopToggle: setIsLoopActive,
+          durationMs: exercise.durationMs,
+        }}
       />
 
       {/* ── Main content area ────────────────────────────────────────────────
@@ -386,7 +399,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         )}
 
         {/* Playback controls */}
-        <div className="px-4 sm:px-6">
+        <div className="px-4 sm:px-6 py-2">
           <PlaybackControls
             state={playbackState}
             currentTimeMs={currentTimeMs}
@@ -398,7 +411,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
         {/* Loop repetition counter — visible only when loop is active */}
         {isLoopActive && (
-          <div className="px-4 sm:px-6">
+          <div className="px-4 sm:px-6 py-1">
             <LoopRepetitionCounter
               currentRepetition={currentLoopRepetition}
               totalRepetitions={loopRepetitions}
@@ -406,8 +419,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
           </div>
         )}
 
-        {/* Timeline area — scrollable, fills remaining vertical space */}
-        <div className="flex-1 overflow-auto px-4 sm:px-6 pb-4 sm:pb-6 flex flex-col gap-6">
+        {/* Timeline area — scrollable */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 flex flex-col gap-4">
           {/* Mini timeline overview */}
           <MiniTimeline
             midiEvents={exercise.midiEvents}
@@ -428,8 +441,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
           />
         </div>
 
-        {/* Session statistics */}
-        <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+        {/* Session statistics — directly after timeline, no padding */}
+        <div className="px-4 sm:px-6 py-3">
           <SessionStatisticsPanel statistics={statistics} />
         </div>
       </div>
