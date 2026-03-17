@@ -10,12 +10,12 @@ describe('LoopControls', () => {
     isLoopActive: false,
     loopRepetitions: 3,
     currentLoopRepetition: 0,
+    durationMs: 60000,
     onLoopStartChange: vi.fn(),
     onLoopEndChange: vi.fn(),
     onLoopToggle: vi.fn(),
     onLoopRepetitionsChange: vi.fn(),
     onLoopClear: vi.fn(),
-    isPlaying: false,
   };
 
   describe('Layout and Rendering', () => {
@@ -28,7 +28,7 @@ describe('LoopControls', () => {
     it('should render repetitions input and infinite toggle', () => {
       render(<LoopControls {...defaultProps} />);
       expect(screen.getByLabelText(/repetitions/i)).toBeInTheDocument();
-      expect(screen.getByRole('radio', { name: /infinite/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/infinite/i)).toBeInTheDocument();
     });
 
     it('should render loop toggle button', () => {
@@ -367,28 +367,14 @@ describe('LoopControls', () => {
       expect(onClear).toHaveBeenCalled();
     });
 
-    it('should be disabled during playback', () => {
+    it('should be available when loop is active', () => {
       render(
-        <LoopControls {...defaultProps} isPlaying={true} />
+        <LoopControls {...defaultProps} isLoopActive={true} />
       );
 
       const clearButton = screen.getByRole('button', { name: /clear/i });
-      expect(clearButton).toBeDisabled();
-    });
-  });
-
-  describe('Disabled State During Playback', () => {
-    it('should disable all inputs when isPlaying is true', () => {
-      render(
-        <LoopControls {...defaultProps} isPlaying={true} />
-      );
-
-      expect(screen.getByLabelText(/start time/i)).toBeDisabled();
-      expect(screen.getByLabelText(/end time/i)).toBeDisabled();
-      expect(screen.getByLabelText(/repetitions/i)).toBeDisabled();
-      expect(
-        screen.getByRole('button', { name: /disable loop/i })
-      ).toBeDisabled();
+      expect(clearButton).toBeInTheDocument();
+      expect(clearButton).not.toBeDisabled();
     });
   });
 

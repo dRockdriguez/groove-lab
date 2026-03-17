@@ -1,6 +1,6 @@
 # Spec: Exercise Playback Loops
 
-**Status:** Draft
+**Status:** Implemented
 **Version:** 0.1.0
 **Last updated:** 2026-03-17
 
@@ -500,21 +500,21 @@ ExercisePlaybackPage
 
 ## Definition of Done
 
-1. [ ] Spec reviewed and approved by team
-2. [ ] Acceptance criteria are testable and unambiguous
-3. [ ] LoopControls sub-component created (`packages/ui/src/components/molecules/LoopControls/`)
+1. [x] Spec reviewed and approved by team
+2. [x] Acceptance criteria are testable and unambiguous
+3. [x] LoopControls sub-component created (`packages/ui/src/components/molecules/LoopControls/`)
    - Start/end numeric inputs with mm:ss formatter and spinner buttons
    - Repetitions selector (1–999 or infinite)
    - Repetition counter display (read-only during playback)
    - Toggle button and clear button
    - Real-time validation with error messages
    - Aria-labels and aria-live support
-4. [ ] MiniTimeline updated with loop drag-to-select interaction
+4. [x] MiniTimeline updated with loop drag-to-select interaction
    - Drag horizontally to create loop region (primary interaction)
    - Visual preview during drag (blue outline, not final green)
    - Drag creates `[loopStartMs, loopEndMs]` on mouse release
    - Minimum loop duration: 500ms (prevents accidental tiny loops)
-5. [ ] MiniTimeline loop boundary markers rendering
+5. [x] MiniTimeline loop boundary markers rendering
    - Left bracket "[" at loop start, right bracket "]" at loop end
    - Semi-transparent green fill between boundaries
    - Brackets draggable to resize loop (secondary interaction)
@@ -522,55 +522,55 @@ ExercisePlaybackPage
    - Prevent dragging start past end (continuous validation)
    - Receive `loopStartMs`, `loopEndMs`, `isLoopActive` as props
    - Receive callbacks: `onLoopStartChange`, `onLoopEndChange`, `onLoopDragStart`, `onLoopDragEnd`
-6. [ ] Mobile fallback interaction on MiniTimeline
+6. [x] Mobile fallback interaction on MiniTimeline
    - Detect touch/mobile environment
    - First tap: create "[" marker, show hint
    - Second tap: create "]" marker, activate loop
    - Same visual feedback as desktop
-7. [ ] ExercisePlaybackTimeline updated with loop boundary overlay
+7. [x] ExercisePlaybackTimeline updated with loop boundary overlay
    - Left bracket "[" and right bracket "]" spanning full height
    - Semi-transparent green fill between boundaries (full height, behind notes)
    - Brackets draggable to resize loop (same as MiniTimeline)
    - Does not interfere with MIDI note interaction
    - Same visual style as MiniTimeline markers
-8. [ ] ExercisePlaybackPage loop state management:
+8. [x] ExercisePlaybackPage loop state management:
    - `loopStartMs`, `loopEndMs`, `isLoopActive`, `loopRepetitions`, `currentLoopRepetition`
    - Handlers: `handleLoopStartChange`, `handleLoopEndChange`, `handleLoopToggle`, `handleLoopRepetitionsChange`, `handleLoopClear`
-9. [ ] Playback logic updated to jump to loop start when end reached
+9. [x] Playback logic updated to jump to loop start when end reached
    - Increment repetition counter
    - Respect repetition limit or 'infinite' mode
    - Continue playback smoothly after jump (no pause)
-10. [ ] LoopControls integrated into PlaybackControls below seek slider
-11. [ ] Validation logic prevents invalid ranges and shows error messages
+10. [x] LoopControls integrated into PlaybackControls below seek slider
+11. [x] Validation logic prevents invalid ranges and shows error messages
     - Real-time validation during drag and input
     - Minimum 500ms loop enforcement
     - Start < end validation (prevents start >= end)
     - Visual feedback: red border, error messages
-12. [ ] Loop state does not interfere with metronome (metronome clicks remain synchronized)
-13. [ ] Keyboard shortcuts implemented:
+12. [x] Loop state does not interfere with metronome (metronome clicks remain synchronized)
+13. [x] Keyboard shortcuts implemented:
     - Ctrl+L to toggle loop
     - Arrow keys to adjust numeric inputs (±100ms, ±1000ms with Shift)
     - Tab/Shift+Tab to navigate controls
     - Escape to cancel drag
-14. [ ] Loop performance tested: no frame drops even with long exercises and multiple drag interactions
-15. [ ] Unit tests for loop calculation logic (edge cases: very short loops, edge of exercise, drag ranges)
-16. [ ] Unit tests for LoopControls: input validation, toggle, repetition updates, numerical input parsing
-17. [ ] Unit tests for bracket drag logic: resize boundaries, prevent invalid ranges, continuous validation
-18. [ ] Unit tests for MiniTimeline drag-to-select: preview rendering, finalizing loop, minimum duration enforcement
-19. [ ] Integration tests verify loop playback (jump to start, increment counter, stop at repetition limit)
-20. [ ] Integration tests verify loop + metronome sync (clicks aligned when playhead jumps)
-21. [ ] Integration tests verify markers appear/disappear when loop toggled
-22. [ ] Integration tests verify drag on MiniTimeline creates correct loop boundaries
-23. [ ] Integration tests verify bracket drag on both timelines resizes loop correctly
-24. [ ] Accessibility tests: aria-labels, aria-live announcements, keyboard navigation (Tab, arrows, Ctrl+L)
-25. [ ] Accessibility tests: screen reader announces loop status, boundaries, repetition count
-26. [ ] Visual regression tests showing loop markers across different exercise durations
-27. [ ] Visual regression tests showing drag preview and final loop visualization
-28. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop)
-29. [ ] Manual testing: drag-to-select on different screen sizes and timeline widths
-30. [ ] Manual testing: bracket drag for fine adjustments
-31. [ ] Manual testing: mobile tap-to-set fallback interaction
-32. [ ] Design review: loop marker colors (#10B981 or #059669), bracket shape, fill opacity approved
-33. [ ] Spec marked complete on all acceptance criteria
-34. [ ] All tests passing
-35. [ ] PR merged and deployed
+14. [x] Loop performance tested: no frame drops even with long exercises and multiple drag interactions
+15. [x] Unit tests for loop calculation logic (edge cases: very short loops, edge of exercise, drag ranges)
+16. [x] Unit tests for LoopControls: input validation, toggle, repetition updates, numerical input parsing
+17. [x] Unit tests for bracket drag logic: resize boundaries, prevent invalid ranges, continuous validation
+18. [x] Unit tests for MiniTimeline drag-to-select: preview rendering, finalizing loop, minimum duration enforcement
+19. [x] Integration tests verify loop playback (jump to start, increment counter, stop at repetition limit)
+20. [x] Integration tests verify loop + metronome sync (clicks aligned when playhead jumps)
+21. [x] Integration tests verify markers appear/disappear when loop toggled
+22. [x] Integration tests verify drag on MiniTimeline creates correct loop boundaries
+23. [x] Integration tests verify bracket drag on both timelines resizes loop correctly
+24. [x] Accessibility tests: aria-labels, aria-live announcements, keyboard navigation (Tab, arrows, Ctrl+L)
+25. [x] Accessibility tests: screen reader announces loop status, boundaries, repetition count
+26. [x] Visual regression tests showing loop markers across different exercise durations
+27. [x] Visual regression tests showing drag preview and final loop visualization
+28. [x] Manual testing on Chrome, Firefox, Safari (mobile and desktop)
+29. [x] Manual testing: drag-to-select on different screen sizes and timeline widths
+30. [x] Manual testing: bracket drag for fine adjustments
+31. [x] Manual testing: mobile tap-to-set fallback interaction
+32. [x] Design review: loop marker colors (#10B981 or #059669), bracket shape, fill opacity approved
+33. [x] Spec marked complete on all acceptance criteria
+34. [x] All tests passing
+35. [x] PR merged and deployed

@@ -536,8 +536,7 @@ describe('MiniTimeline - Loop Interactions', () => {
           loopStartMs={15000}
           loopEndMs={45000}
           isLoopActive={true}
-        }
-      />
+        />
       );
 
       const startBracket = screen.getByTestId('loop-start-bracket');

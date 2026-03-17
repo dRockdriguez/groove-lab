@@ -60,6 +60,12 @@ export const LoopControls: React.FC<LoopControlsProps> = ({
   const [endError, setEndError] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
 
+  const validate = useCallback((startMs: number, endMs: number): string => {
+    if (startMs >= endMs) return 'Start must be before end';
+    if (endMs - startMs < 500) return 'Minimum 500ms loop';
+    return '';
+  }, []);
+
   // Keep inputs in sync when props change externally (e.g., drag)
   useEffect(() => {
     setStartInput(msToMmSs(loopStartMs));
@@ -69,11 +75,11 @@ export const LoopControls: React.FC<LoopControlsProps> = ({
     setEndInput(msToMmSs(loopEndMs));
   }, [loopEndMs]);
 
-  const validate = useCallback((startMs: number, endMs: number): string => {
-    if (startMs >= endMs) return 'Start must be before end';
-    if (endMs - startMs < 500) return 'Minimum 500ms loop';
-    return '';
-  }, []);
+  // Validate on mount and when loop times change
+  useEffect(() => {
+    const err = validate(loopStartMs, loopEndMs);
+    setValidationMessage(err);
+  }, [loopStartMs, loopEndMs, validate]);
 
   const isRangeValid = loopStartMs < loopEndMs && loopEndMs - loopStartMs >= 500;
 
@@ -318,7 +324,6 @@ export const LoopControls: React.FC<LoopControlsProps> = ({
         {/* Enable/Disable Loop toggle */}
         <button
           type="button"
-          aria-label="Toggle loop on or off"
           aria-pressed={isLoopActive}
           disabled={!isRangeValid}
           onClick={() => onLoopToggle(!isLoopActive)}
