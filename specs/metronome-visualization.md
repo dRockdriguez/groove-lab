@@ -25,16 +25,18 @@ I should display metronome beat markers at precise intervals based on the curren
 
 - [x] Metronome beat markers appear on the PlaybackControls seek bar at positions where metronome clicks occur
 - [x] Metronome beat markers appear on the MiniTimeline showing the metronome pulse across the entire exercise
+- [x] Metronome beat markers appear on the ExercisePlaybackTimeline (main timeline with MIDI note tracks) above all track lanes
 - [x] Markers are colored red (or a distinct visual style) and visually distinct from other timeline elements
 - [x] Markers are rendered at the correct timeline position calculated from exercise duration and BPM
 - [x] First beat of each measure (every 4th click in 4/4 time) is visually distinct from regular beats (e.g., larger, brighter red, or different shape)
 - [x] Markers update dynamically when BPM is changed during playback
 - [x] Markers recalculate when exercise is seeked or paused
-- [x] Markers do not interfere with existing seek functionality (user can still click/drag to seek)
+- [x] Markers do not interfere with existing seek or note-click functionality (user can still click/drag to seek or interact with MIDI notes)
 - [x] Markers are responsive and scale appropriately with timeline width on different screen sizes
 - [x] Screen readers announce the presence of metronome markers (e.g., "Metronome beats at 40% and 60%")
 - [x] Marker rendering performance is optimized for exercises up to 10 minutes long with BPM range 40–300
 - [x] Markers appear only when metronome is enabled (toggle state respected)
+- [x] Markers on ExercisePlaybackTimeline span across all MIDI note tracks (full height)
 
 ## Technical Notes
 
@@ -50,9 +52,15 @@ I should display metronome beat markers at precise intervals based on the curren
   - Markers should fit proportionally across the exercise duration
   - Receive same `bpm` and `totalDuration` props
 
+- **ExercisePlaybackTimeline Component** (`packages/ui/src/components/organisms/ExercisePlaybackTimeline/`)
+  - Add metronome marker layer spanning full height above all MIDI note tracks
+  - Markers should be positioned on the relative-positioned parent container
+  - Receive `bpm` and `totalDuration` (derived from `durationMs`) as props
+  - Use `z-index` to ensure markers do not block note interaction (notes should be clickable)
+
 - **ExercisePlaybackPage** (`packages/ui/src/components/organisms/ExercisePlaybackPage/`)
-  - Pass `metronomeEnabled` and `bpm` state to both PlaybackControls and MiniTimeline
-  - Both child components render markers based on these props
+  - Pass `metronomeEnabled` and `bpm` state to PlaybackControls, MiniTimeline, and ExercisePlaybackTimeline
+  - All child components render markers based on these props
 
 ### Marker Calculation
 
@@ -93,6 +101,11 @@ MiniTimeline (updated)
   └─ MetronomeMarkerTrack
        ├─ Regular beat markers
        └─ Downbeat markers
+
+ExercisePlaybackTimeline (updated)
+  └─ MetronomeMarkerOverlay (spans all tracks)
+       ├─ Regular beat markers (full height)
+       └─ Downbeat markers (full height, taller)
 ```
 
 ### State Management
@@ -134,15 +147,17 @@ MiniTimeline (updated)
 2. [x] Acceptance criteria are testable and unambiguous
 3. [x] PlaybackControls updated with MetronomeMarkerLayer rendering logic
 4. [x] MiniTimeline updated with MetronomeMarkerTrack rendering logic
-5. [x] ExercisePlaybackPage passes `bpm` and `metronomeEnabled` to both components
-6. [x] Marker position calculation verified against manual BPM/duration examples
-7. [x] Unit tests for marker calculation logic (edge cases: 40 BPM, 300 BPM, short/long exercises)
-8. [x] Integration tests verify markers appear/disappear when metronome toggled
-9. [x] Integration tests confirm markers update when BPM changed
-10. [ ] Visual regression tests (screenshot comparisons) for marker rendering
-11. [x] Performance testing: rendering 1000+ markers does not cause frame drops
-12. [x] Accessibility audit: aria-labels and screen reader testing
-13. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop)
-14. [ ] Marker colors reviewed and approved by design team
-15. [x] Spec marked `[x]` on all acceptance criteria
-16. [ ] PR merged and deployed
+5. [x] ExercisePlaybackTimeline updated with MetronomeMarkerOverlay rendering logic (spans all MIDI tracks)
+6. [x] ExercisePlaybackPage passes `bpm` and `metronomeEnabled` to all three timeline components
+7. [x] Marker position calculation verified against manual BPM/duration examples
+8. [x] Unit tests for marker calculation logic (edge cases: 40 BPM, 300 BPM, short/long exercises)
+9. [x] Integration tests verify markers appear/disappear when metronome toggled (all three timelines)
+10. [x] Integration tests confirm markers update when BPM changed (all three timelines)
+11. [ ] Visual regression tests (screenshot comparisons) for marker rendering on all timelines
+12. [x] Performance testing: rendering 1000+ markers does not cause frame drops
+13. [x] Accessibility audit: aria-labels and screen reader testing
+14. [x] ExercisePlaybackTimeline marker overlay does not interfere with note interaction (z-index, pointer-events)
+15. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop) with focus on ExercisePlaybackTimeline
+16. [ ] Marker colors reviewed and approved by design team
+17. [x] Spec marked `[x]` on all acceptance criteria
+18. [ ] PR merged and deployed
