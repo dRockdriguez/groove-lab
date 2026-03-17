@@ -10,6 +10,8 @@ export interface MetronomeControlProps {
   currentTimeMs?: number;
   /** Callback when BPM changes; used to update audio playback speed. */
   onBpmChange?: (bpm: number) => void;
+  /** Callback when metronome is toggled on or off. */
+  onToggle?: (enabled: boolean) => void;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   isPlaying = false,
   currentTimeMs = 0,
   onBpmChange,
+  onToggle,
   className = '',
 }) => {
   const [bpm, setBpm] = useState(Math.max(MIN_BPM, Math.min(MAX_BPM, initialBpm)));
@@ -72,8 +75,10 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   }, [isPlaying]);
 
   const toggleMetronome = useCallback(() => {
-    setIsEnabled(prev => !prev);
-  }, []);
+    const next = !isEnabled;
+    setIsEnabled(next);
+    onToggle?.(next);
+  }, [isEnabled, onToggle]);
 
   // Keyboard shortcuts: = to increment, - to decrement (disabled during playback).
   useEffect(() => {
