@@ -1,6 +1,6 @@
 # Spec: Exercise Playback Loops
 
-**Status:** Implemented
+**Status:** Draft
 **Version:** 0.1.0
 **Last updated:** 2026-03-17
 
@@ -35,17 +35,17 @@ I should detect and prevent invalid loop ranges (start >= end) and provide clear
 
 ### Loop Selection Interaction
 
-- [x] On desktop/tablet: user can drag horizontally on MiniTimeline to create a loop region (left to right)
+- [ ] On desktop/tablet: user can drag horizontally on MiniTimeline to create a loop region (left to right)
   - Dragging creates a visual green region showing [start...end]
   - Region appears in real-time as user drags
   - On mouse release, loop is created with start/end at drag boundaries
-- [x] On mobile/touchpad: user can tap to set loop start, then tap to set loop end (fallback for drag gesture)
+- [ ] On mobile/touchpad: user can tap to set loop start, then tap to set loop end (fallback for drag gesture)
   - First tap shows "[" marker and "Set Loop End" hint
   - Second tap completes the loop with "]" marker
   - Tap target must be at least 48x48px for accessibility
-- [x] After drag or tap selection, loop appears on both MiniTimeline and ExercisePlaybackTimeline
-- [x] Users can adjust loop start/end by dragging the "[" and "]" bracket markers on either timeline
-- [x] Users can adjust loop start/end via numeric input fields in LoopControls (mm:ss or ms format)
+- [ ] After drag or tap selection, loop appears on both MiniTimeline and ExercisePlaybackTimeline
+- [ ] Users can adjust loop start/end by dragging the "[" and "]" bracket markers on either timeline
+- [ ] Users can adjust loop start/end via numeric input fields in LoopControls (mm:ss or ms format)
   - Start input shows current loop start time
   - End input shows current loop end time
   - Inputs support spinner buttons (↑↓) for ±100ms micro-adjustments
@@ -53,29 +53,36 @@ I should detect and prevent invalid loop ranges (start >= end) and provide clear
 
 ### Loop Visualization & Behavior
 
-- [x] Loop boundary markers appear on the MiniTimeline with distinct visual styling (green brackets [ and ], semi-transparent fill)
-- [x] Loop boundary markers appear on the ExercisePlaybackTimeline spanning the full height of instrument tracks
-- [x] Loop start marker is visually distinct from loop end marker (left bracket "[" vs right bracket "]")
-- [x] When a loop is active and playback reaches the end point, playback automatically jumps back to the loop start point
-- [x] Users can set the number of repetitions (1–999 or infinite via radio/dropdown)
-- [x] A counter or indicator shows how many repetitions remain when loop count is finite (updates in real-time during playback)
+- [ ] Loop boundary markers appear on the MiniTimeline with distinct visual styling (green brackets [ and ], semi-transparent fill)
+- [ ] Loop boundary markers appear on the ExercisePlaybackTimeline spanning the full height of instrument tracks
+- [ ] Loop start marker is visually distinct from loop end marker (left bracket "[" vs right bracket "]")
+- [ ] When a loop is active and playback reaches the end point, playback automatically jumps back to the loop start point
+- [ ] Users can set the number of repetitions (1–999 or infinite via radio/dropdown)
+- [ ] A counter or indicator shows how many repetitions remain when loop count is finite (updates in real-time during playback)
   - Format: "Repeat 3 of 5" or "Repeat 3 / ∞"
-- [x] Loop toggle button enables/disables the loop without clearing the start/end points
-- [x] When a loop is disabled, playback continues normally past the end point without jumping
-- [x] Loop parameters are not lost when toggling loop on/off
-- [x] Loop parameters do not interfere with metronome functionality (metronome clicks remain synchronized)
-- [x] Loop is cleared when exercise playback ends or user manually clears via "Clear Loop" button
-- [x] Loop visual markers respect the current playback zoom level (scale with timeline width)
-- [x] Loop parameters are not persisted across sessions (cleared on page reload)
-- [x] Invalid loop ranges (start >= end) show a validation error and prevent activation
-- [x] Loop does not interfere with MIDI note interaction (user can still click notes to inspect details)
-- [x] Loop boundary markers are rendered efficiently (no frame drops) even with 100+ repetitions
+  - Counter is prominently displayed and visible during playback (e.g., large font in LoopControls)
+  - Counter updates immediately when playhead jumps to loop start (shows next repetition)
+  - Counter is hidden/disabled when loop is inactive or repetitions set to infinite
+- [ ] Loop toggle button enables/disables the loop without clearing the start/end points
+- [ ] When a loop is disabled, playback continues normally past the end point without jumping
+- [ ] Loop parameters are not lost when toggling loop on/off
+- [ ] Loop parameters do not interfere with metronome functionality (metronome clicks remain synchronized)
+- [ ] Loop is cleared when exercise playback ends or user manually clears via "Clear Loop" button
+- [ ] Loop visual markers respect the current playback zoom level (scale with timeline width)
+- [ ] Loop parameters are not persisted across sessions (cleared on page reload)
+- [ ] Invalid loop ranges (start >= end) show a validation error and prevent activation
+- [ ] Loop does not interfere with MIDI note interaction (user can still click notes to inspect details)
+- [ ] Loop boundary markers are rendered efficiently (no frame drops) even with 100+ repetitions
+- [ ] Loop correctly jumps to start even when loop end point is at or near the exercise end time
+  - When `loopEndMs` is at or very close to `exerciseDuration`, playback must jump to `loopStartMs` before audio ends
+  - Edge case: if loop ends at exactly the exercise end, jump occurs before the exercise naturally ends
+  - No gap or silence between loop jump and resumed playback
 
 ### Accessibility & Responsiveness
 
-- [x] Screen readers announce loop status (active, paused, repeat count) and boundary positions
-- [x] Loop is responsive and performs smoothly for exercises up to 10 minutes with any BPM range (40–300)
-- [x] Keyboard shortcuts available: Ctrl+L to toggle loop, keyboard navigation through LoopControls inputs
+- [ ] Screen readers announce loop status (active, paused, repeat count) and boundary positions
+- [ ] Loop is responsive and performs smoothly for exercises up to 10 minutes with any BPM range (40–300)
+- [ ] Keyboard shortcuts available: Ctrl+L to toggle loop, keyboard navigation through LoopControls inputs
 
 ## Technical Notes
 
@@ -131,8 +138,14 @@ I should detect and prevent invalid loop ranges (start >= end) and provide clear
   - **Repetitions selector:**
     - Number input: 1–999
     - Radio button or toggle: "∞ Infinite"
-    - Display current repetition during playback (read-only, updated via prop)
-    - Receive `currentLoopRepetition` prop to show "Repeat 3 of 5"
+  - **Repetition counter (prominently displayed):**
+    - Only visible when loop is active AND repetitions is NOT infinite
+    - Display format: "Repeat X of Y" (e.g., "Repeat 3 of 5")
+    - Font size: Larger than other controls (e.g., text-lg or larger)
+    - Aria-live region for real-time announcements
+    - Receive `currentLoopRepetition` and `loopRepetitions` props
+    - Updates immediately when playhead jumps to loop start (shows next repetition count)
+    - Color highlight: Optional visual emphasis (e.g., highlight background) when approaching final repetition (e.g., last repetition gets yellow/orange tint)
   - **Toggle button:**
     - Text: "Enable Loop" or "Disable Loop" (changes based on `isLoopActive`)
     - Disabled if invalid range
@@ -267,20 +280,36 @@ const handleBracketMouseDown = (e: React.MouseEvent, bracketType: 'start' | 'end
 
 ### Loop Playback Logic
 
+**Critical: Loop logic must execute in requestAnimationFrame callback (updatePlayhead), NOT in audio onEnded event.**
+
+This ensures the jump happens before the audio naturally ends, especially when `loopEndMs` is at or near `exerciseDuration`.
+
 **Pseudocode in ExercisePlaybackPage.updatePlayhead():**
 ```typescript
+// This runs via requestAnimationFrame, ~60 FPS, before onEnded fires
 if (isLoopActive && currentTimeMs >= loopEndMs && loopStartMs < loopEndMs) {
   if (loopRepetitions === 'infinite' || currentLoopRepetition < loopRepetitions) {
     // Jump to loop start and increment counter
     audioRef.current.currentTime = loopStartMs / 1000;
     setCurrentTimeMs(loopStartMs);
     setCurrentLoopRepetition(prev => prev + 1);
+    // Note: audio continues playing from loopStartMs without pause
   } else {
-    // Repetitions exhausted: continue past loop normally
+    // Repetitions exhausted: allow playback to continue/end naturally
     setIsLoopActive(false);
   }
 }
+
+// IMPORTANT: Do NOT rely on audio.onEnded to trigger loop jump
+// Edge case: if loopEndMs === durationMs, audio.onEnded fires at the same time
+// The requestAnimationFrame check must execute FIRST and reset audioRef.current.currentTime
 ```
+
+**Edge Case Handling:**
+- When `loopEndMs >= (durationMs - 16)` (16ms accounts for 60 FPS frame time):
+  - Loop jump check executes before `onEnded` event fires
+  - Jump resets `currentTime` to `loopStartMs`, preventing the `onEnded` handler from stopping playback
+  - Audio continues seamlessly from loop start without pause or gap
 
 ### Marker Calculation
 
@@ -373,6 +402,12 @@ ExercisePlaybackPage
   - Drag range < 500ms (too short) → ignore, show hint "Minimum 500ms loop"
   - `loopRepetitions < 1` and not 'infinite' → reset to 1 or 'infinite'
 
+- **Edge case: Loop ending at exercise end:**
+  - When `loopEndMs >= (exerciseDuration - 50)` (50ms buffer for safety):
+    - This is VALID and should work correctly
+    - Loop jump must execute in requestAnimationFrame BEFORE audio.onEnded fires
+    - Set `audioRef.current.currentTime = loopStartMs / 1000` synchronously to prevent onEnded handler from stopping playback
+
 - **User feedback during interaction:**
   - **Drag preview:** Show blue outline (not final green) while dragging on timeline
   - **Invalid range during drag:** Visual feedback (e.g., red tint on preview) if user tries to create start >= end
@@ -419,8 +454,12 @@ ExercisePlaybackPage
 
 - **Marker rendering:** Use CSS classes and transforms (GPU-accelerated) for positioning
 - **Memoize loop calculations:** Cache loop boundary positions and validation results
-- **Efficient loop logic:** Check loop condition only during playback (no polling)
+- **Efficient loop logic:** Check loop condition only during playback (via requestAnimationFrame)
+  - Loop jump check runs ~60 FPS in updatePlayhead, before audio.onEnded handler
+  - This ensures jump happens even if loopEndMs is at exerciseDuration
 - **Avoid re-renders:** Loop state changes should not trigger full page re-renders (use useCallback)
+- **Counter updates:** Use useMemo to prevent counter re-renders on every playhead update
+  - Only re-render counter when `currentLoopRepetition` actually changes
 
 ### Visual Design & UI Layout
 
