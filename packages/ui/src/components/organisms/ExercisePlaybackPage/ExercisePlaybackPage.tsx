@@ -194,12 +194,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   }, []);
 
   const handleBpmChange = useCallback((newBpm: number) => {
-    if (audioRef.current) {
-      // Convert BPM to playback rate: 120 BPM = 1.0x speed
-      const playbackRate = newBpm / 120;
+    setCurrentBpm(newBpm);
+    if (audioRef.current && exercise) {
+      // Convert BPM to playback rate relative to exercise's original BPM
+      const playbackRate = newBpm / exercise.bpm;
       audioRef.current.playbackRate = playbackRate;
     }
-  }, []);
+  }, [exercise]);
 
   // Pause playback when the browser window loses focus (tab switch or reload).
   useEffect(() => {
@@ -220,6 +221,17 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       if (audio) audio.pause();
     };
   }, []);
+
+  // ─── Metronome visualization state ─────────────────────────────────────────
+  const [metronomeEnabled, setMetronomeEnabled] = useState(false);
+  const [currentBpm, setCurrentBpm] = useState(exerciseProp?.bpm ?? 120);
+
+  // Keep currentBpm in sync when exercise data loads (e.g., via fetch).
+  useEffect(() => {
+    if (exercise) {
+      setCurrentBpm(exercise.bpm);
+    }
+  }, [exercise]);
 
   // ─── Statistics ────────────────────────────────────────────────────────────
   const [statistics] = useState<SessionStatistics>(DEFAULT_STATS);
@@ -319,8 +331,11 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       {/* Metronome control */}
       <MetronomeControl
         initialBpm={exercise.bpm}
+        originalBpm={exercise.bpm}
         isPlaying={playbackState === 'playing'}
+        currentTimeMs={currentTimeMs}
         onBpmChange={handleBpmChange}
+        onToggle={setMetronomeEnabled}
       />
 
       {/* Mini timeline overview */}
@@ -329,6 +344,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         durationMs={exercise.durationMs}
         currentTimeMs={currentTimeMs}
         onSeek={handleSeek}
+        bpm={exercise.bpm}
+        metronomeEnabled={metronomeEnabled}
       />
 
       {/* Main timeline */}
@@ -336,6 +353,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         midiEvents={exercise.midiEvents}
         durationMs={exercise.durationMs}
         currentTimeMs={currentTimeMs}
+        bpm={exercise.bpm}
+        metronomeEnabled={metronomeEnabled}
       />
 
       {/* Session statistics */}

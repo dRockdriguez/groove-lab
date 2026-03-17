@@ -20,6 +20,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   onSeek,
   className = '',
 }) => {
+
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSeek(Number(e.target.value));
   };
@@ -48,20 +49,22 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           {formatDuration(currentTimeMs)}
         </span>
 
-        <input
-          type="range"
-          role="slider"
-          aria-label="Seek playback position"
-          aria-valuemin={0}
-          aria-valuemax={durationMs}
-          aria-valuenow={currentTimeMs}
-          min={0}
-          max={durationMs}
-          value={currentTimeMs}
-          onChange={handleSeekChange}
-          onKeyDown={handleSliderKeyDown}
-          className="flex-1 h-2 accent-green-600 cursor-pointer"
-        />
+        <div className="relative flex-1">
+          <input
+            type="range"
+            role="slider"
+            aria-label="Seek playback position"
+            aria-valuemin={0}
+            aria-valuemax={durationMs}
+            aria-valuenow={currentTimeMs}
+            min={0}
+            max={durationMs}
+            value={currentTimeMs}
+            onChange={handleSeekChange}
+            onKeyDown={handleSliderKeyDown}
+            className="w-full h-2 accent-green-600 cursor-pointer"
+          />
+        </div>
 
         <span className="text-sm font-mono text-gray-600 dark:text-gray-400 shrink-0">
           {formatDuration(durationMs)}

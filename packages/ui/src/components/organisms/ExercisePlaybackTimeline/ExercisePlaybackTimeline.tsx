@@ -7,6 +7,8 @@ export interface ExercisePlaybackTimelineProps {
   midiEvents: MidiEvent[];
   durationMs: number;
   currentTimeMs: number;
+  bpm?: number;
+  metronomeEnabled?: boolean;
   className?: string;
 }
 
@@ -14,6 +16,8 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   midiEvents,
   durationMs,
   currentTimeMs,
+  bpm = 120,
+  metronomeEnabled = false,
   className = '',
 }) => {
   if (midiEvents.length === 0) {
@@ -36,6 +40,25 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   const rawPlayheadPercent = durationMs > 0 ? (currentTimeMs / durationMs) * 100 : 0;
   const playheadPercent = clamp(rawPlayheadPercent, 0, 100);
 
+  // Calculate metronome marker positions
+  const metronomeMarkers = React.useMemo(() => {
+    if (!metronomeEnabled || !bpm || durationMs <= 0) return [];
+
+    const beatIntervalMs = 60000 / bpm;
+    const numBeats = Math.floor(durationMs / beatIntervalMs);
+    const markers = [];
+
+    for (let i = 0; i <= numBeats; i++) {
+      const positionMs = i * beatIntervalMs;
+      if (positionMs <= durationMs) {
+        const positionPercent = (positionMs / durationMs) * 100;
+        const isDownbeat = i % 4 === 0; // Every 4th beat is a downbeat
+        markers.push({ positionPercent, isDownbeat, beatIndex: i });
+      }
+    }
+    return markers;
+  }, [bpm, durationMs, metronomeEnabled]);
+
   return (
     <div
       className={['overflow-x-auto', className].join(' ')}
@@ -56,6 +79,31 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
 
         {/* Tracks with playhead (relative positioned) */}
         <div className="relative flex-1">
+          {/* Metronome markers overlay */}
+          {metronomeMarkers.length > 0 && (
+            <div
+              role="img"
+              aria-label={`Metronome beats at ${metronomeMarkers.length} intervals across the timeline`}
+              className="absolute top-0 bottom-0 w-full pointer-events-none"
+            >
+              {metronomeMarkers.map((marker) => (
+                <div
+                  key={`metronome-${marker.beatIndex}`}
+                  data-testid={marker.isDownbeat ? 'metronome-downbeat-marker' : 'metronome-beat-marker'}
+                  className={`absolute top-0 bottom-0 ${
+                    marker.isDownbeat
+                      ? 'w-1 bg-red-600'
+                      : 'w-px bg-red-400'
+                  }`}
+                  style={{
+                    left: `${marker.positionPercent}%`,
+                    opacity: marker.isDownbeat ? 1 : 0.6,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Playhead */}
           <div
             data-testid="playhead"
