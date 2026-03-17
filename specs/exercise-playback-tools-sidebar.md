@@ -48,6 +48,13 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
 - [ ] Sidebar state persists within session (sessionStorage, NOT localStorage)
 - [ ] On very small screens (< 320px), sidebar becomes a modal instead of drawer
 - [ ] Sidebar is responsive and smooth even with 100+ metronome markers on timeline
+- [ ] **Loop repetition counter appears on main playback screen** (NOT in sidebar)
+- [ ] Counter displays "Repeat N / M" format for finite repetitions (e.g., "Repeat 1 / 5")
+- [ ] Counter displays "Repeat N / ∞" format for infinite repetitions
+- [ ] Counter is positioned between PlaybackControls and Timeline area
+- [ ] Counter is visible only when loop is active, hidden when loop is disabled
+- [ ] Counter updates in real-time as loop repeats progress
+- [ ] Counter is styled with high contrast for visibility during playback
 
 ## Technical Notes
 
@@ -109,6 +116,14 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
       {/* Playback controls (compact) */}
       <PlaybackControls /* ... */ />
 
+      {/* Loop repetition counter (visible always, on main timeline) */}
+      {isLoopActive && (
+        <LoopRepetitionCounter
+          currentRepetition={currentLoopRepetition}
+          totalRepetitions={loopRepetitions}
+        />
+      )}
+
       {/* Timeline area (expands to fill space) */}
       <div className="flex-1 overflow-auto">
         <MiniTimeline /* ... */ />
@@ -120,6 +135,22 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
     </div>
   </div>
   ```
+
+#### LoopRepetitionCounter Component
+- **Purpose**: Display current loop repetition progress on main playback screen
+- **Location**: Main content area, between PlaybackControls and Timeline (visible only when loop is active)
+- **Props**:
+  - `currentRepetition: number` — current repetition count (0-based, displayed as 1-based)
+  - `totalRepetitions: number | 'infinite'` — total repetitions or 'infinite'
+- **Styling**:
+  - Prominent, easy to read while playing (e.g., "Repeat 1 / 5" or "Repeat 2 / ∞")
+  - Position: compact bar below PlaybackControls
+  - Color: blue highlight (similar to current LoopControls styling)
+  - Visibility: only shown when `isLoopActive === true`
+- **Behavior**:
+  - Updates in real-time as loops progress
+  - Disappears when loop is disabled
+  - High contrast for accessibility
 
 ### Sidebar Layout (Desktop)
 
@@ -243,26 +274,31 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
 ## Definition of Done
 
 1. [ ] Spec reviewed and approved by team
-2. [ ] ToolsSidebar component created with MetronomeControl and LoopControls
-3. [ ] Toggle button with hamburger/chevron icon and aria-label
-4. [ ] Sidebar animates smoothly (slide-in/slide-out 300ms ease-in-out)
-5. [ ] sessionStorage persistence: sidebar state saved and restored
-6. [ ] Desktop layout: fixed left sidebar 320px wide
-7. [ ] Mobile layout: bottom drawer on screens < 640px
-8. [ ] Very small screens: modal overlay on screens < 320px
-9. [ ] Backdrop on mobile: semi-transparent, closes on click
-10. [ ] Keyboard shortcut: Ctrl+T or Alt+T to toggle
-11. [ ] Main content expands when sidebar is closed (flex-1)
-12. [ ] Z-index managed: sidebar above timeline, but not blocking interaction
-13. [ ] All controls remain fully functional in sidebar (no feature loss)
-14. [ ] Accessibility: aria-labels, keyboard navigation, screen reader support
-15. [ ] Dark/light mode support: sidebar respects theme
-16. [ ] Performance: no frame drops during sidebar animation
-17. [ ] Responsive testing: verified on desktop, tablet, mobile, very small screens
-18. [ ] Unit tests: toggle state, persistence, animation triggers
-19. [ ] Integration tests: sidebar + metronome sync, sidebar + loop interaction
-20. [ ] Accessibility audit: keyboard nav, screen reader, contrast
-21. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
-22. [ ] Visual regression tests: sidebar in open/closed states
-23. [ ] All tests passing
-24. [ ] PR merged and deployed
+2. [ ] ToolsSidebar component created with MetronomeControl and LoopControls (sidebar version)
+3. [ ] LoopRepetitionCounter component created (separate, main screen component)
+4. [ ] Toggle button with hamburger/chevron icon and aria-label
+5. [ ] Sidebar animates smoothly (slide-in/slide-out 300ms ease-in-out)
+6. [ ] sessionStorage persistence: sidebar state saved and restored
+7. [ ] Desktop layout: fixed left sidebar 320px wide
+8. [ ] Mobile layout: bottom drawer on screens < 640px
+9. [ ] Very small screens: modal overlay on screens < 320px
+10. [ ] Backdrop on mobile: semi-transparent, closes on click
+11. [ ] Keyboard shortcut: Ctrl+T or Alt+T to toggle
+12. [ ] Main content expands when sidebar is closed (flex-1)
+13. [ ] Z-index managed: sidebar above timeline, but not blocking interaction
+14. [ ] **Loop repetition counter displayed on main screen** (NOT in sidebar)
+15. [ ] Counter shows "Repeat N / M" or "Repeat N / ∞" format
+16. [ ] Counter visible only when loop is active, hides when loop disabled
+17. [ ] Counter positioned between PlaybackControls and Timeline area
+18. [ ] All controls remain fully functional (no feature loss in sidebar move)
+19. [ ] Accessibility: aria-labels, keyboard navigation, screen reader support
+20. [ ] Dark/light mode support: sidebar and counter respect theme
+21. [ ] Performance: no frame drops during sidebar animation
+22. [ ] Responsive testing: verified on desktop, tablet, mobile, very small screens
+23. [ ] Unit tests: toggle state, persistence, animation triggers, counter updates
+24. [ ] Integration tests: sidebar + metronome sync, sidebar + loop interaction, counter visibility
+25. [ ] Accessibility audit: keyboard nav, screen reader, contrast
+26. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
+27. [ ] Visual regression tests: sidebar in open/closed states, counter in active/inactive states
+28. [ ] All tests passing
+29. [ ] PR merged and deployed
