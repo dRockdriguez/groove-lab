@@ -143,16 +143,13 @@ describe('PlaybackControls - Loop Integration', () => {
         />
       );
 
-      const seekSlider = container.querySelector('[role="slider"]');
-      const rect = seekSlider!.getBoundingClientRect();
+      const seekSlider = container.querySelector('[role="slider"]') as HTMLInputElement;
 
-      // Seek to 50% (outside loop)
-      fireEvent.mouseDown(seekSlider!);
-      fireEvent.mouseMove(document, { clientX: rect.left + rect.width * 0.5 });
-      fireEvent.mouseUp();
+      // Seek to 50% via onChange (30000ms out of 60000ms)
+      fireEvent.change(seekSlider, { target: { value: '30000' } });
 
       await waitFor(() => {
-        expect(onSeek).toHaveBeenCalled();
+        expect(onSeek).toHaveBeenCalledWith(30000);
       });
     });
 
@@ -170,15 +167,12 @@ describe('PlaybackControls - Loop Integration', () => {
         />
       );
 
-      const seekSlider = container.querySelector('[role="slider"]');
-      const rect = seekSlider!.getBoundingClientRect();
+      const seekSlider = container.querySelector('[role="slider"]') as HTMLInputElement;
 
-      // Seek to 10% (before loop start at 25%)
-      fireEvent.mouseDown(seekSlider!);
-      fireEvent.mouseMove(document, { clientX: rect.left + rect.width * 0.1 });
-      fireEvent.mouseUp();
+      // Seek to 10% (before loop start at 25%) = 6000ms out of 60000ms
+      fireEvent.change(seekSlider, { target: { value: '6000' } });
 
-      expect(onSeek).toHaveBeenCalled();
+      expect(onSeek).toHaveBeenCalledWith(6000);
     });
 
     it('should allow seeking past loop end', async () => {
@@ -195,15 +189,12 @@ describe('PlaybackControls - Loop Integration', () => {
         />
       );
 
-      const seekSlider = container.querySelector('[role="slider"]');
-      const rect = seekSlider!.getBoundingClientRect();
+      const seekSlider = container.querySelector('[role="slider"]') as HTMLInputElement;
 
-      // Seek to 90% (after loop end at 75%)
-      fireEvent.mouseDown(seekSlider!);
-      fireEvent.mouseMove(document, { clientX: rect.left + rect.width * 0.9 });
-      fireEvent.mouseUp();
+      // Seek to 90% (after loop end at 75%) = 54000ms out of 60000ms
+      fireEvent.change(seekSlider, { target: { value: '54000' } });
 
-      expect(onSeek).toHaveBeenCalled();
+      expect(onSeek).toHaveBeenCalledWith(54000);
     });
   });
 
