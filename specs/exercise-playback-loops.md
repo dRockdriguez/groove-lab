@@ -1,6 +1,6 @@
 # Spec: Exercise Playback Loops
 
-**Status:** Implemented
+**Status:** In Progress
 **Version:** 0.1.0
 **Last updated:** 2026-03-17
 
@@ -87,6 +87,76 @@ I should detect and prevent invalid loop ranges (start >= end) and provide clear
 - [x] Screen readers announce loop status (active, paused, repeat count) and boundary positions
 - [x] Loop is responsive and performs smoothly for exercises up to 10 minutes with any BPM range (40–300)
 - [x] Keyboard shortcuts available: Ctrl+L to toggle loop, keyboard navigation through LoopControls inputs
+
+## Bug Fixes Implemented
+
+### Bug 1: Loop Jump Not Working (2026-03-17)
+**Problem**: When playhead reached loopEndMs, the audio would end naturally without jumping back to loopStartMs.
+
+**Root Cause**: The `audio.onEnded` event handler was firing and calling `setPlaybackStateSynced('stopped')` immediately after (or before) the loop jump in `updatePlayhead()`, preventing loop repetition.
+
+**Solution**: Modified `audio.onEnded` to check `isLoopActiveRef.current` before stopping playback:
+```typescript
+onEnded={() => {
+  if (!isLoopActiveRef.current) {
+    setPlaybackStateSynced('stopped');
+  }
+}}
+```
+
+This ensures that the `updatePlayhead()` rAF callback (which runs at ~60 FPS) detects the loop condition and jumps to `loopStartMs` BEFORE `onEnded` can stop playback.
+
+**Impact**: Loop now seamlessly repeats without pause or gap.
+
+---
+
+### Bug 2: Metronome Clicks Stop After First Loop (2026-03-17)
+**Problem**: Metronome clicks sound on the first loop, but silence on subsequent loops when using finite repetitions.
+
+**Root Cause**: The metronome click timing is based on `timeSinceLastClick = currentTimeMs - lastClickTimeRef.current`. When the playhead jumps backward during a loop jump (e.g., from 2000ms to 500ms), `timeSinceLastClick` becomes negative, failing the condition `timeSinceLastClick >= intervalMs`, so no click fires.
+
+**Solution**: Detect backward time jumps (loop jumps) and reset the click tracking:
+```typescript
+const prevTimeRef = useRef(0);
+const isLoopJump = currentTimeMs < prevTimeRef.current && (prevTimeRef.current - currentTimeMs) > 500;
+prevTimeRef.current = currentTimeMs;
+
+if (justStartedPlaying || currentTimeMs === 0 || isLoopJump) {
+  lastClickTimeRef.current = 0;
+  beatCountRef.current = 0;
+}
+```
+
+This allows the metronome to immediately fire a click after detecting a loop jump.
+
+**Impact**: Metronome clicks now sound on every loop repetition without gaps.
+
+---
+
+### Bug 3: Repetition Counter Not Visible (2026-03-17)
+**Problem**: The repetition counter was too small and hard to see during playback (e.g., "Repeat 3 of 5").
+
+**Root Cause**: Counter was styled with `text-xs` (12px) in gray, making it difficult for users to track their progress during practice sessions.
+
+**Solution**: Updated LoopControls counter styling:
+```typescript
+// Before:
+className="text-xs text-gray-500 dark:text-gray-400"
+
+// After:
+className="text-lg font-bold px-3 py-2 rounded bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 w-full text-center"
+```
+
+This makes the counter:
+- Larger (text-lg = 18px)
+- Bold for emphasis
+- Full width with centered text
+- Highlighted with blue background box
+- High contrast for visibility
+
+**Impact**: Users can now easily track loop repetitions during practice.
+
+---
 
 ## Technical Notes
 
@@ -581,7 +651,7 @@ ExercisePlaybackPage
 
 1. [x] Spec reviewed and approved by team
 2. [x] Acceptance criteria are testable and unambiguous
-3. [x] LoopControls sub-component created (`packages/ui/src/components/molecules/LoopControls/`)
+3. [x] LoopControls sub-component created (with prominent repetition counter) (`packages/ui/src/components/molecules/LoopControls/`)
    - Start/end numeric inputs with mm:ss formatter and spinner buttons
    - Repetitions selector (1–999 or infinite)
    - Repetition counter display (read-only during playback)
@@ -619,13 +689,17 @@ ExercisePlaybackPage
    - Increment repetition counter
    - Respect repetition limit or 'infinite' mode
    - Continue playback smoothly after jump (no pause)
+   - ✓ BUG FIX: Modified audio.onEnded to check isLoopActive before stopping playback
 10. [x] LoopControls integrated into PlaybackControls below seek slider
+    - ✓ Repetition counter now prominently displayed (text-lg, bold, blue highlight box)
 11. [x] Validation logic prevents invalid ranges and shows error messages
     - Real-time validation during drag and input
     - Minimum 500ms loop enforcement
     - Start < end validation (prevents start >= end)
     - Visual feedback: red border, error messages
 12. [x] Loop state does not interfere with metronome (metronome clicks remain synchronized)
+    - ✓ BUG FIX: Implemented loop jump detection in MetronomeControl (backward jump > 500ms)
+    - ✓ Resets lastClickTimeRef and beatCountRef on loop jump to resync clicks
 13. [x] Keyboard shortcuts implemented:
     - Ctrl+L to toggle loop
     - Arrow keys to adjust numeric inputs (±100ms, ±1000ms with Shift)
