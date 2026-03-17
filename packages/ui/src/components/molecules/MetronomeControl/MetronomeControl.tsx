@@ -150,6 +150,8 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
 
   // Track if we just started playing to schedule initial click.
   const prevIsPlayingRef = useRef(false);
+  // Track previous time to detect loop jumps (backward time jumps)
+  const prevTimeRef = useRef(0);
 
   // Schedule metronome clicks synchronized with audio playback time.
   useEffect(() => {
@@ -164,8 +166,12 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
     const justStartedPlaying = !prevIsPlayingRef.current && isPlaying;
     prevIsPlayingRef.current = true;
 
-    // On first play or significant time jump, reset sync point.
-    if (justStartedPlaying || currentTimeMs === 0) {
+    // Detect loop jump: backward time jump > 500ms indicates loop has occurred
+    const isLoopJump = currentTimeMs < prevTimeRef.current && (prevTimeRef.current - currentTimeMs) > 500;
+    prevTimeRef.current = currentTimeMs;
+
+    // On first play, significant time jump, or loop jump, reset sync point.
+    if (justStartedPlaying || currentTimeMs === 0 || isLoopJump) {
       lastClickTimeRef.current = 0;
       beatCountRef.current = 0;
 

@@ -9,6 +9,20 @@ export interface ExercisePlaybackTimelineProps {
   currentTimeMs: number;
   bpm?: number;
   metronomeEnabled?: boolean;
+  /** Loop region start in ms */
+  loopStartMs?: number;
+  /** Loop region end in ms */
+  loopEndMs?: number;
+  /** Whether the loop is currently active */
+  isLoopActive?: boolean;
+  /** Called when user drags to set a new loop start */
+  onLoopStartChange?: (ms: number) => void;
+  /** Called when user drags to set a new loop end */
+  onLoopEndChange?: (ms: number) => void;
+  /** Called when user starts a loop drag interaction */
+  onLoopDragStart?: () => void;
+  /** Called when user finishes a loop drag interaction */
+  onLoopDragEnd?: () => void;
   className?: string;
 }
 
@@ -18,8 +32,17 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   currentTimeMs,
   bpm = 120,
   metronomeEnabled = false,
+  loopStartMs,
+  loopEndMs,
+  isLoopActive = false,
+  onLoopStartChange,
+  onLoopEndChange,
+  onLoopDragStart,
+  onLoopDragEnd,
   className = '',
 }) => {
+  const tracksRef = React.useRef<HTMLDivElement>(null);
+
   if (midiEvents.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
@@ -41,6 +64,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   const playheadPercent = clamp(rawPlayheadPercent, 0, 100);
 
   // Calculate metronome marker positions
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const metronomeMarkers = React.useMemo(() => {
     if (!metronomeEnabled || !bpm || durationMs <= 0) return [];
 
@@ -58,6 +82,50 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
     }
     return markers;
   }, [bpm, durationMs, metronomeEnabled]);
+
+  // ─── Loop marker positions ─────────────────────────────────────────────────
+  const hasLoop = loopStartMs !== undefined && loopEndMs !== undefined && loopStartMs < loopEndMs;
+  const loopStartPercent = hasLoop ? (loopStartMs! / durationMs) * 100 : 0;
+  const loopEndPercent = hasLoop ? (loopEndMs! / durationMs) * 100 : 0;
+  const loopFillWidth = loopEndPercent - loopStartPercent;
+
+  // ─── Bracket drag handlers ─────────────────────────────────────────────────
+  const handleBracketMouseDown = (
+    e: React.MouseEvent<HTMLDivElement>,
+    bracketType: 'start' | 'end'
+  ) => {
+    e.stopPropagation();
+    if (!tracksRef.current || durationMs <= 0) return;
+
+    const rect = tracksRef.current.getBoundingClientRect();
+    const initialX = e.clientX;
+    const initialMs = bracketType === 'start' ? (loopStartMs ?? 0) : (loopEndMs ?? 0);
+    const capturedLoopEndMs = loopEndMs ?? 0;
+    const capturedLoopStartMs = loopStartMs ?? 0;
+
+    const handleDrag = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - initialX;
+      const deltaPercent = deltaX / rect.width;
+      const deltaMs = deltaPercent * durationMs;
+      const newMs = Math.max(0, Math.min(durationMs, initialMs + deltaMs));
+
+      if (bracketType === 'start') {
+        if (newMs < capturedLoopEndMs) onLoopStartChange?.(newMs);
+      } else {
+        if (newMs > capturedLoopStartMs) onLoopEndChange?.(newMs);
+      }
+    };
+
+    const handleDragEnd = () => {
+      document.removeEventListener('mousemove', handleDrag);
+      document.removeEventListener('mouseup', handleDragEnd);
+      onLoopDragEnd?.();
+    };
+
+    onLoopDragStart?.();
+    document.addEventListener('mousemove', handleDrag);
+    document.addEventListener('mouseup', handleDragEnd);
+  };
 
   return (
     <div
@@ -78,7 +146,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
         </div>
 
         {/* Tracks with playhead (relative positioned) */}
-        <div className="relative flex-1">
+        <div ref={tracksRef} className="relative flex-1">
           {/* Metronome markers overlay */}
           {metronomeMarkers.length > 0 && (
             <div
@@ -102,6 +170,80 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                 />
               ))}
             </div>
+          )}
+
+          {/* Loop overlay (full height, behind notes) */}
+          {hasLoop && (
+            <>
+              {/* Semi-transparent fill */}
+              <div
+                data-testid="loop-region-fill"
+                aria-hidden="true"
+                className="absolute top-0 bottom-0"
+                style={{
+                  left: `${loopStartPercent}%`,
+                  width: `${loopFillWidth}%`,
+                  backgroundColor: isLoopActive ? '#10B981' : '#059669',
+                  opacity: 0.15,
+                  pointerEvents: 'none',
+                  zIndex: 5,
+                }}
+              />
+
+              {/* Start bracket "[" — draggable, full height */}
+              <div
+                data-testid="loop-start-marker"
+                aria-hidden="true"
+                className="absolute top-0 bottom-0 flex items-center"
+                style={{
+                  left: `${loopStartPercent}%`,
+                  transform: 'translateX(-50%)',
+                  cursor: 'col-resize',
+                  zIndex: 15,
+                  pointerEvents: 'auto',
+                }}
+                onMouseDown={(e) => handleBracketMouseDown(e, 'start')}
+              >
+                <span
+                  style={{
+                    color: '#10B981',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  [
+                </span>
+              </div>
+
+              {/* End bracket "]" — draggable, full height */}
+              <div
+                data-testid="loop-end-marker"
+                aria-hidden="true"
+                className="absolute top-0 bottom-0 flex items-center"
+                style={{
+                  left: `${loopEndPercent}%`,
+                  transform: 'translateX(-50%)',
+                  cursor: 'col-resize',
+                  zIndex: 15,
+                  pointerEvents: 'auto',
+                }}
+                onMouseDown={(e) => handleBracketMouseDown(e, 'end')}
+              >
+                <span
+                  style={{
+                    color: '#10B981',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  ]
+                </span>
+              </div>
+            </>
           )}
 
           {/* Playhead */}

@@ -133,13 +133,103 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => clearTimeout(id);
   }, [initMidi]);
 
+  // ─── Loop state ────────────────────────────────────────────────────────────
+  const [loopStartMs, setLoopStartMs] = useState(0);
+  const [loopEndMs, setLoopEndMs] = useState(0);
+  const [isLoopActive, setIsLoopActive] = useState(false);
+  const [loopRepetitions, setLoopRepetitions] = useState<number | 'infinite'>(1);
+  const [currentLoopRepetition, setCurrentLoopRepetition] = useState(0);
+
+  // Refs for loop state (needed in rAF callback to avoid stale closures)
+  const isLoopActiveRef = useRef(false);
+  const loopStartMsRef = useRef(0);
+  const loopEndMsRef = useRef(0);
+  const loopRepetitionsRef = useRef<number | 'infinite'>(1);
+  const currentLoopRepetitionRef = useRef(0);
+
+  // Keep refs in sync with state
+  useEffect(() => { isLoopActiveRef.current = isLoopActive; }, [isLoopActive]);
+  useEffect(() => { loopStartMsRef.current = loopStartMs; }, [loopStartMs]);
+  useEffect(() => { loopEndMsRef.current = loopEndMs; }, [loopEndMs]);
+  useEffect(() => { loopRepetitionsRef.current = loopRepetitions; }, [loopRepetitions]);
+  useEffect(() => { currentLoopRepetitionRef.current = currentLoopRepetition; }, [currentLoopRepetition]);
+
+  const handleLoopStartChange = useCallback((ms: number) => {
+    setLoopStartMs(ms);
+  }, []);
+
+  const handleLoopEndChange = useCallback((ms: number) => {
+    setLoopEndMs(ms);
+  }, []);
+
+  const handleLoopToggle = useCallback((enabled: boolean) => {
+    setIsLoopActive(enabled);
+    if (enabled) {
+      setCurrentLoopRepetition(0);
+    }
+  }, []);
+
+  const handleLoopRepetitionsChange = useCallback((count: number | 'infinite') => {
+    setLoopRepetitions(count);
+  }, []);
+
+  const handleLoopClear = useCallback(() => {
+    setLoopStartMs(0);
+    setLoopEndMs(0);
+    setIsLoopActive(false);
+    setLoopRepetitions(1);
+    setCurrentLoopRepetition(0);
+  }, []);
+
+  // ─── Ctrl+L keyboard shortcut to toggle loop ──────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        const currentIsActive = isLoopActiveRef.current;
+        const currentStart = loopStartMsRef.current;
+        const currentEnd = loopEndMsRef.current;
+        const isValid = currentStart < currentEnd && currentEnd - currentStart >= 500;
+        if (!currentIsActive && !isValid) return;
+        setIsLoopActive((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Smooth playhead animation using requestAnimationFrame
   useEffect(() => {
     const updatePlayhead = () => {
       if (audioRef.current && playbackState === 'playing') {
         const currentTime = audioRef.current.currentTime * 1000;
         lastAudioTimeRef.current = currentTime;
-        setCurrentTimeMs(Math.round(currentTime));
+
+        // Loop logic
+        if (
+          isLoopActiveRef.current &&
+          loopStartMsRef.current < loopEndMsRef.current &&
+          currentTime >= loopEndMsRef.current
+        ) {
+          const reps = loopRepetitionsRef.current;
+          const currRep = currentLoopRepetitionRef.current;
+          if (reps === 'infinite' || currRep < (reps as number)) {
+            // Jump to loop start and increment counter
+            audioRef.current.currentTime = loopStartMsRef.current / 1000;
+            const newRep = currRep + 1;
+            currentLoopRepetitionRef.current = newRep;
+            setCurrentLoopRepetition(newRep);
+            setCurrentTimeMs(Math.round(loopStartMsRef.current));
+          } else {
+            // Repetitions exhausted — disable loop and let playback continue
+            isLoopActiveRef.current = false;
+            setIsLoopActive(false);
+            setCurrentTimeMs(Math.round(currentTime));
+          }
+        } else {
+          setCurrentTimeMs(Math.round(currentTime));
+        }
+
         animationFrameRef.current = requestAnimationFrame(updatePlayhead);
       }
     };
@@ -278,6 +368,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
   // ─── Statistics ────────────────────────────────────────────────────────────
   const [statistics] = useState<SessionStatistics>(DEFAULT_STATS);
+
+  // ─── Loop validity ─────────────────────────────────────────────────────────
+  const hasValidLoop = loopStartMs < loopEndMs && loopEndMs - loopStartMs >= 500;
+  // Only pass loop markers to timelines if there's a valid loop set
+  const loopMarkerProps = hasValidLoop
+    ? { loopStartMs, loopEndMs, isLoopActive }
+    : {};
 
   // ─── Render ────────────────────────────────────────────────────────────────
   if (isLoading) {
