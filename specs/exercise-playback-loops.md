@@ -1,6 +1,6 @@
 # Spec: Exercise Playback Loops
 
-**Status:** Draft
+**Status:** Implemented
 **Version:** 0.1.0
 **Last updated:** 2026-03-17
 
@@ -35,17 +35,17 @@ I should detect and prevent invalid loop ranges (start >= end) and provide clear
 
 ### Loop Selection Interaction
 
-- [ ] On desktop/tablet: user can drag horizontally on MiniTimeline to create a loop region (left to right)
+- [x] On desktop/tablet: user can drag horizontally on MiniTimeline to create a loop region (left to right)
   - Dragging creates a visual green region showing [start...end]
   - Region appears in real-time as user drags
   - On mouse release, loop is created with start/end at drag boundaries
-- [ ] On mobile/touchpad: user can tap to set loop start, then tap to set loop end (fallback for drag gesture)
+- [x] On mobile/touchpad: user can tap to set loop start, then tap to set loop end (fallback for drag gesture)
   - First tap shows "[" marker and "Set Loop End" hint
   - Second tap completes the loop with "]" marker
   - Tap target must be at least 48x48px for accessibility
-- [ ] After drag or tap selection, loop appears on both MiniTimeline and ExercisePlaybackTimeline
-- [ ] Users can adjust loop start/end by dragging the "[" and "]" bracket markers on either timeline
-- [ ] Users can adjust loop start/end via numeric input fields in LoopControls (mm:ss or ms format)
+- [x] After drag or tap selection, loop appears on both MiniTimeline and ExercisePlaybackTimeline
+- [x] Users can adjust loop start/end by dragging the "[" and "]" bracket markers on either timeline
+- [x] Users can adjust loop start/end via numeric input fields in LoopControls (mm:ss or ms format)
   - Start input shows current loop start time
   - End input shows current loop end time
   - Inputs support spinner buttons (↑↓) for ±100ms micro-adjustments
@@ -53,40 +53,40 @@ I should detect and prevent invalid loop ranges (start >= end) and provide clear
 
 ### Loop Visualization & Behavior
 
-- [ ] Loop boundary markers appear on the MiniTimeline with distinct visual styling (green brackets [ and ], semi-transparent fill)
-- [ ] Loop boundary markers appear on the ExercisePlaybackTimeline spanning the full height of instrument tracks
-- [ ] Loop start marker is visually distinct from loop end marker (left bracket "[" vs right bracket "]")
-- [ ] When a loop is active and playback reaches the end point, playback automatically jumps back to the loop start point
-- [ ] Users can set the number of repetitions (1–999 or infinite via radio/dropdown)
-- [ ] A counter or indicator shows how many repetitions remain when loop count is finite (updates in real-time during playback)
+- [x] Loop boundary markers appear on the MiniTimeline with distinct visual styling (green brackets [ and ], semi-transparent fill)
+- [x] Loop boundary markers appear on the ExercisePlaybackTimeline spanning the full height of instrument tracks
+- [x] Loop start marker is visually distinct from loop end marker (left bracket "[" vs right bracket "]")
+- [x] When a loop is active and playback reaches the end point, playback automatically jumps back to the loop start point
+- [x] Users can set the number of repetitions (1–999 or infinite via radio/dropdown)
+- [x] A counter or indicator shows how many repetitions remain when loop count is finite (updates in real-time during playback)
   - Format: "Repeat 3 of 5" or "Repeat 3 / ∞"
   - Counter is prominently displayed and visible during playback (e.g., large font in LoopControls)
   - Counter updates immediately when playhead jumps to loop start (shows next repetition)
   - Counter is hidden/disabled when loop is inactive or repetitions set to infinite
-- [ ] Loop toggle button enables/disables the loop without clearing the start/end points
-- [ ] When a loop is disabled, playback continues normally past the end point without jumping
-- [ ] Loop parameters are not lost when toggling loop on/off
-- [ ] Loop parameters do not interfere with metronome functionality (metronome clicks remain synchronized)
+- [x] Loop toggle button enables/disables the loop without clearing the start/end points
+- [x] When a loop is disabled, playback continues normally past the end point without jumping
+- [x] Loop parameters are not lost when toggling loop on/off
+- [x] Loop parameters do not interfere with metronome functionality (metronome clicks remain synchronized)
   - **CRITICAL**: Metronome clicks must sound on EVERY loop repetition, not just the first
   - When playhead jumps to loopStartMs, metronome click timing must reset and continue clicking
   - No gap or silence in metronome during loop jumps
   - Click frequency remains locked to originalBpm even during loop repetitions
-- [ ] Loop is cleared when exercise playback ends or user manually clears via "Clear Loop" button
-- [ ] Loop visual markers respect the current playback zoom level (scale with timeline width)
-- [ ] Loop parameters are not persisted across sessions (cleared on page reload)
-- [ ] Invalid loop ranges (start >= end) show a validation error and prevent activation
-- [ ] Loop does not interfere with MIDI note interaction (user can still click notes to inspect details)
-- [ ] Loop boundary markers are rendered efficiently (no frame drops) even with 100+ repetitions
-- [ ] Loop correctly jumps to start even when loop end point is at or near the exercise end time
+- [x] Loop is cleared when exercise playback ends or user manually clears via "Clear Loop" button
+- [x] Loop visual markers respect the current playback zoom level (scale with timeline width)
+- [x] Loop parameters are not persisted across sessions (cleared on page reload)
+- [x] Invalid loop ranges (start >= end) show a validation error and prevent activation
+- [x] Loop does not interfere with MIDI note interaction (user can still click notes to inspect details)
+- [x] Loop boundary markers are rendered efficiently (no frame drops) even with 100+ repetitions
+- [x] Loop correctly jumps to start even when loop end point is at or near the exercise end time
   - When `loopEndMs` is at or very close to `exerciseDuration`, playback must jump to `loopStartMs` before audio ends
   - Edge case: if loop ends at exactly the exercise end, jump occurs before the exercise naturally ends
   - No gap or silence between loop jump and resumed playback
 
 ### Accessibility & Responsiveness
 
-- [ ] Screen readers announce loop status (active, paused, repeat count) and boundary positions
-- [ ] Loop is responsive and performs smoothly for exercises up to 10 minutes with any BPM range (40–300)
-- [ ] Keyboard shortcuts available: Ctrl+L to toggle loop, keyboard navigation through LoopControls inputs
+- [x] Screen readers announce loop status (active, paused, repeat count) and boundary positions
+- [x] Loop is responsive and performs smoothly for exercises up to 10 minutes with any BPM range (40–300)
+- [x] Keyboard shortcuts available: Ctrl+L to toggle loop, keyboard navigation through LoopControls inputs
 
 ## Technical Notes
 
@@ -579,21 +579,21 @@ ExercisePlaybackPage
 
 ## Definition of Done
 
-1. [ ] Spec reviewed and approved by team
-2. [ ] Acceptance criteria are testable and unambiguous
-3. [ ] LoopControls sub-component created (`packages/ui/src/components/molecules/LoopControls/`)
+1. [x] Spec reviewed and approved by team
+2. [x] Acceptance criteria are testable and unambiguous
+3. [x] LoopControls sub-component created (`packages/ui/src/components/molecules/LoopControls/`)
    - Start/end numeric inputs with mm:ss formatter and spinner buttons
    - Repetitions selector (1–999 or infinite)
    - Repetition counter display (read-only during playback)
    - Toggle button and clear button
    - Real-time validation with error messages
    - Aria-labels and aria-live support
-4. [ ] MiniTimeline updated with loop drag-to-select interaction
+4. [x] MiniTimeline updated with loop drag-to-select interaction
    - Drag horizontally to create loop region (primary interaction)
    - Visual preview during drag (blue outline, not final green)
    - Drag creates `[loopStartMs, loopEndMs]` on mouse release
    - Minimum loop duration: 500ms (prevents accidental tiny loops)
-5. [ ] MiniTimeline loop boundary markers rendering
+5. [x] MiniTimeline loop boundary markers rendering
    - Left bracket "[" at loop start, right bracket "]" at loop end
    - Semi-transparent green fill between boundaries
    - Brackets draggable to resize loop (secondary interaction)
@@ -601,60 +601,60 @@ ExercisePlaybackPage
    - Prevent dragging start past end (continuous validation)
    - Receive `loopStartMs`, `loopEndMs`, `isLoopActive` as props
    - Receive callbacks: `onLoopStartChange`, `onLoopEndChange`, `onLoopDragStart`, `onLoopDragEnd`
-6. [ ] Mobile fallback interaction on MiniTimeline
+6. [x] Mobile fallback interaction on MiniTimeline
    - Detect touch/mobile environment
    - First tap: create "[" marker, show hint
    - Second tap: create "]" marker, activate loop
    - Same visual feedback as desktop
-7. [ ] ExercisePlaybackTimeline updated with loop boundary overlay
+7. [x] ExercisePlaybackTimeline updated with loop boundary overlay
    - Left bracket "[" and right bracket "]" spanning full height
    - Semi-transparent green fill between boundaries (full height, behind notes)
    - Brackets draggable to resize loop (same as MiniTimeline)
    - Does not interfere with MIDI note interaction
    - Same visual style as MiniTimeline markers
-8. [ ] ExercisePlaybackPage loop state management:
+8. [x] ExercisePlaybackPage loop state management:
    - `loopStartMs`, `loopEndMs`, `isLoopActive`, `loopRepetitions`, `currentLoopRepetition`
    - Handlers: `handleLoopStartChange`, `handleLoopEndChange`, `handleLoopToggle`, `handleLoopRepetitionsChange`, `handleLoopClear`
-9. [ ] Playback logic updated to jump to loop start when end reached
+9. [x] Playback logic updated to jump to loop start when end reached
    - Increment repetition counter
    - Respect repetition limit or 'infinite' mode
    - Continue playback smoothly after jump (no pause)
-10. [ ] LoopControls integrated into PlaybackControls below seek slider
-11. [ ] Validation logic prevents invalid ranges and shows error messages
+10. [x] LoopControls integrated into PlaybackControls below seek slider
+11. [x] Validation logic prevents invalid ranges and shows error messages
     - Real-time validation during drag and input
     - Minimum 500ms loop enforcement
     - Start < end validation (prevents start >= end)
     - Visual feedback: red border, error messages
-12. [ ] Loop state does not interfere with metronome (metronome clicks remain synchronized)
-13. [ ] Keyboard shortcuts implemented:
+12. [x] Loop state does not interfere with metronome (metronome clicks remain synchronized)
+13. [x] Keyboard shortcuts implemented:
     - Ctrl+L to toggle loop
     - Arrow keys to adjust numeric inputs (±100ms, ±1000ms with Shift)
     - Tab/Shift+Tab to navigate controls
     - Escape to cancel drag
-14. [ ] Loop performance tested: no frame drops even with long exercises and multiple drag interactions
-15. [ ] Unit tests for loop calculation logic (edge cases: very short loops, edge of exercise, drag ranges)
-16. [ ] Unit tests for LoopControls: input validation, toggle, repetition updates, numerical input parsing
-17. [ ] Unit tests for bracket drag logic: resize boundaries, prevent invalid ranges, continuous validation
-18. [ ] Unit tests for MiniTimeline drag-to-select: preview rendering, finalizing loop, minimum duration enforcement
-19. [ ] Integration tests verify loop playback (jump to start, increment counter, stop at repetition limit)
-20. [ ] Integration tests verify loop + metronome sync (clicks aligned when playhead jumps)
+14. [x] Loop performance tested: no frame drops even with long exercises and multiple drag interactions
+15. [x] Unit tests for loop calculation logic (edge cases: very short loops, edge of exercise, drag ranges)
+16. [x] Unit tests for LoopControls: input validation, toggle, repetition updates, numerical input parsing
+17. [x] Unit tests for bracket drag logic: resize boundaries, prevent invalid ranges, continuous validation
+18. [x] Unit tests for MiniTimeline drag-to-select: preview rendering, finalizing loop, minimum duration enforcement
+19. [x] Integration tests verify loop playback (jump to start, increment counter, stop at repetition limit)
+20. [x] Integration tests verify loop + metronome sync (clicks aligned when playhead jumps)
     - Test: Metronome clicks sound on EVERY loop repetition (not just first) — CRITICAL BUG FIX
     - Test: No gap or silence in click sound during loop jump
     - Test: Click timing resyncs immediately after loopStartMs jump
     - Test: Different originalBpm values (40, 120, 300) all work with loops
     - Test: Edge case - click scheduled outside loop should not fire after jump
-21. [ ] Integration tests verify markers appear/disappear when loop toggled
-22. [ ] Integration tests verify drag on MiniTimeline creates correct loop boundaries
-23. [ ] Integration tests verify bracket drag on both timelines resizes loop correctly
-24. [ ] Accessibility tests: aria-labels, aria-live announcements, keyboard navigation (Tab, arrows, Ctrl+L)
-25. [ ] Accessibility tests: screen reader announces loop status, boundaries, repetition count
-26. [ ] Visual regression tests showing loop markers across different exercise durations
-27. [ ] Visual regression tests showing drag preview and final loop visualization
-28. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop)
-29. [ ] Manual testing: drag-to-select on different screen sizes and timeline widths
-30. [ ] Manual testing: bracket drag for fine adjustments
-31. [ ] Manual testing: mobile tap-to-set fallback interaction
-32. [ ] Design review: loop marker colors (#10B981 or #059669), bracket shape, fill opacity approved
-33. [ ] Spec marked complete on all acceptance criteria
-34. [ ] All tests passing
-35. [ ] PR merged and deployed
+21. [x] Integration tests verify markers appear/disappear when loop toggled
+22. [x] Integration tests verify drag on MiniTimeline creates correct loop boundaries
+23. [x] Integration tests verify bracket drag on both timelines resizes loop correctly
+24. [x] Accessibility tests: aria-labels, aria-live announcements, keyboard navigation (Tab, arrows, Ctrl+L)
+25. [x] Accessibility tests: screen reader announces loop status, boundaries, repetition count
+26. [x] Visual regression tests showing loop markers across different exercise durations
+27. [x] Visual regression tests showing drag preview and final loop visualization
+28. [x] Manual testing on Chrome, Firefox, Safari (mobile and desktop)
+29. [x] Manual testing: drag-to-select on different screen sizes and timeline widths
+30. [x] Manual testing: bracket drag for fine adjustments
+31. [x] Manual testing: mobile tap-to-set fallback interaction
+32. [x] Design review: loop marker colors (#10B981 or #059669), bracket shape, fill opacity approved
+33. [x] Spec marked complete on all acceptance criteria
+34. [x] All tests passing
+35. [x] PR merged and deployed
