@@ -95,8 +95,21 @@ function runStep(stepKey: string, specPath: string) {
   console.log(`✅ ${step.label} complete`);
 }
 
+function getSpecBranchName(specPath: string) {
+  return 'spec/' + path.basename(specPath, '.md');
+}
+
+function isCommandAvailable(command: string) {
+  try {
+    execSync(`which ${command}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function createSpecBranch(specPath: string) {
-  const branchName = 'spec/' + path.basename(specPath, '.md');
+  const branchName = getSpecBranchName(specPath);
 
   const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
   if (currentBranch === branchName) {
@@ -123,7 +136,7 @@ function createSpecBranch(specPath: string) {
 }
 
 function commitAfterStep(step: string, specPath: string) {
-  const branchName = 'spec/' + path.basename(specPath, '.md');
+  const branchName = getSpecBranchName(specPath);
   const status = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
   if (!status) {
     console.log(`No changes after ${step} step — skipping commit`);
@@ -131,6 +144,50 @@ function commitAfterStep(step: string, specPath: string) {
   }
   execSync('git add -A', { stdio: 'inherit' });
   execSync(`git commit -m "spec(${branchName}): after ${step} step"`, { stdio: 'inherit' });
+}
+
+function pushBranch(branchName: string) {
+  console.log(`\n📤 Pushing ${branchName} to origin`);
+  execSync(`git push -u origin ${branchName}`, { stdio: 'inherit' });
+}
+
+function ensurePullRequest(branchName: string) {
+  if (!isCommandAvailable('gh')) {
+    console.log('GitHub CLI not available — skipping PR creation');
+    return;
+  }
+
+  console.log(`📬 Checking for existing PR for ${branchName}`);
+  try {
+    const prUrl = execSync(`gh pr view ${branchName} --json url --jq .url`, {
+      encoding: 'utf8',
+    }).trim();
+    if (prUrl) {
+      console.log(`✅ PR already exists: ${prUrl}`);
+    } else {
+      console.log('No PR found — creating a new one');
+      execSync(`gh pr create --fill --head ${branchName}`, { stdio: 'inherit' });
+    }
+  } catch (err: any) {
+    // If gh pr view fails, try to create a new PR
+    console.log('No PR found — creating a new one');
+    try {
+      execSync(`gh pr create --fill --head ${branchName}`, { stdio: 'inherit' });
+    } catch (createErr: any) {
+      // If creation fails because PR already exists, that's OK
+      if (createErr.message && createErr.message.includes('already exists')) {
+        console.log('✅ PR already exists');
+      } else {
+        throw createErr;
+      }
+    }
+  }
+}
+
+function finalizeSpecDelivery(specPath: string) {
+  const branchName = getSpecBranchName(specPath);
+  pushBranch(branchName);
+  ensurePullRequest(branchName);
 }
 
 program
@@ -179,6 +236,13 @@ program
     }
 
     console.log('\n🎯 Workflow finished!');
+
+    try {
+      finalizeSpecDelivery(spec);
+    } catch (err) {
+      console.error(err);
+      process.exit(1);
+    }
   });
 
 program.parse();

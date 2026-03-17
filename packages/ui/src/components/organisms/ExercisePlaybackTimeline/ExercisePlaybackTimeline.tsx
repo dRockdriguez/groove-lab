@@ -60,7 +60,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
           <div
             data-testid="playhead"
             className="absolute top-0 bottom-0 w-0.5 bg-green-500 z-10 pointer-events-none"
-            style={{ left: `${playheadPercent}%` }}
+            style={{ left: `${playheadPercent}%`, position: 'absolute', pointerEvents: 'none' }}
             aria-hidden="true"
           />
 

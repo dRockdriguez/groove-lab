@@ -3,6 +3,7 @@ import type { ExercisePlaybackData, PlaybackState, SessionStatistics } from '@gr
 import { formatDuration } from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
+import { MetronomeControl } from '../../molecules/MetronomeControl';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
 import { MidiStatusIndicator, type MidiConnectionStatus } from '../../atoms/MidiStatusIndicator';
 import { ExercisePlaybackTimeline } from '../ExercisePlaybackTimeline';
@@ -192,6 +193,14 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, []);
 
+  const handleBpmChange = useCallback((newBpm: number) => {
+    if (audioRef.current) {
+      // Convert BPM to playback rate: 120 BPM = 1.0x speed
+      const playbackRate = newBpm / 120;
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, []);
+
   // Pause playback when the browser window loses focus (tab switch or reload).
   useEffect(() => {
     const handleBlur = () => {
@@ -305,6 +314,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         durationMs={exercise.durationMs}
         onTogglePlay={() => void handleTogglePlay()}
         onSeek={handleSeek}
+      />
+
+      {/* Metronome control */}
+      <MetronomeControl
+        initialBpm={exercise.bpm}
+        isPlaying={playbackState === 'playing'}
+        onBpmChange={handleBpmChange}
       />
 
       {/* Mini timeline overview */}

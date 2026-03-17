@@ -84,7 +84,7 @@ describe('ExercisePlaybackPage — Keyboard Accessibility', () => {
       <ExercisePlaybackPage exercise={mockExercise} />
     );
 
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('Seek playback position');
     slider.focus();
 
     // Simulate Right Arrow key (seeking forward 5 seconds = 5000ms)
@@ -100,7 +100,7 @@ describe('ExercisePlaybackPage — Keyboard Accessibility', () => {
     const mockExerciseWithProgress = { ...mockExercise, durationMs: 60000 };
     render(<ExercisePlaybackPage exercise={mockExerciseWithProgress} />);
 
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('Seek playback position');
     slider.focus();
 
     // Simulate Left Arrow key (seeking backward 5 seconds)
@@ -113,7 +113,7 @@ describe('ExercisePlaybackPage — Keyboard Accessibility', () => {
     const user = userEvent.setup({ delay: null });
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('Seek playback position');
     slider.focus();
 
     // Simulate Home key
@@ -126,7 +126,7 @@ describe('ExercisePlaybackPage — Keyboard Accessibility', () => {
     const user = userEvent.setup({ delay: null });
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('Seek playback position');
     slider.focus();
 
     // Simulate End key
@@ -160,7 +160,7 @@ describe('ExercisePlaybackPage — Keyboard Accessibility', () => {
 
   it('renders seek slider with accessible aria-label', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('Seek playback position');
     expect(slider).toHaveAttribute('aria-label', expect.stringMatching(/seek/i));
   });
 
@@ -175,7 +175,7 @@ describe('ExercisePlaybackPage — Keyboard Accessibility', () => {
     const user = userEvent.setup({ delay: null });
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByLabelText('Seek playback position');
     slider.focus();
 
     expect(slider).toHaveFocus();
