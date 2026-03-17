@@ -404,8 +404,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
           ref={audioRef}
           src={exercise.audioUrl}
           onEnded={() => {
-            setPlaybackStateSynced('stopped');
-            setCurrentLoopRepetition(0);
+            // Only stop playback if loop is NOT active or if we've exhausted repetitions
+            // The updatePlayhead rAF will handle loop jumps before this fires
+            if (!isLoopActiveRef.current) {
+              setPlaybackStateSynced('stopped');
+              setCurrentLoopRepetition(0);
+            }
           }}
           onError={() => {
             setAudioError('Could not load audio file. Please try again later.');

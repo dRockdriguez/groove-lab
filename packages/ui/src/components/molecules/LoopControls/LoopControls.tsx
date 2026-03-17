@@ -361,11 +361,11 @@ export const LoopControls: React.FC<LoopControlsProps> = ({
         </div>
       )}
 
-      {/* Repetition counter (read-only during playback) */}
+      {/* Repetition counter (prominently displayed during playback) */}
       {repetitionCounterText && (
         <div
           aria-live="polite"
-          className="text-xs text-gray-500 dark:text-gray-400"
+          className="text-lg font-bold px-3 py-2 rounded bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 w-full text-center"
         >
           {repetitionCounterText}
         </div>
