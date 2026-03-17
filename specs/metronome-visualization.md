@@ -23,58 +23,63 @@ I should display metronome beat markers at precise intervals based on the curren
 
 ## Acceptance Criteria
 
-- [x] Metronome beat markers appear on the PlaybackControls seek bar at positions where metronome clicks occur
 - [x] Metronome beat markers appear on the MiniTimeline showing the metronome pulse across the entire exercise
 - [x] Metronome beat markers appear on the ExercisePlaybackTimeline (main timeline with MIDI note tracks) above all track lanes
 - [x] Markers are colored red (or a distinct visual style) and visually distinct from other timeline elements
 - [x] Markers are rendered at the correct timeline position calculated from exercise duration and BPM
 - [x] First beat of each measure (every 4th click in 4/4 time) is visually distinct from regular beats (e.g., larger, brighter red, or different shape)
-- [x] Markers update dynamically when BPM is changed during playback
+- [x] Markers remain synchronized with audio playback when BPM is changed (audio duration in clock time changes, but beats stay locked to original exercise beat grid)
 - [x] Markers recalculate when exercise is seeked or paused
 - [x] Markers do not interfere with existing seek or note-click functionality (user can still click/drag to seek or interact with MIDI notes)
 - [x] Markers are responsive and scale appropriately with timeline width on different screen sizes
-- [x] Screen readers announce the presence of metronome markers (e.g., "Metronome beats at 40% and 60%")
+- [x] Screen readers announce the presence of metronome markers on both timelines
 - [x] Marker rendering performance is optimized for exercises up to 10 minutes long with BPM range 40–300
 - [x] Markers appear only when metronome is enabled (toggle state respected)
 - [x] Markers on ExercisePlaybackTimeline span across all MIDI note tracks (full height)
+- [x] Metronome beats remain aligned with playback position even when playback rate changes (BPM change adjusts audio speed, not the beat grid)
 
 ## Technical Notes
 
 ### Integration Points
 
-- **PlaybackControls Component** (`packages/ui/src/components/molecules/PlaybackControls/`)
-  - Add metronome marker layer above or overlaid on the seek slider
-  - Markers should not block slider interaction (use `pointer-events: none` or positioned separately)
-  - Receive `bpm` and `totalDuration` as props to calculate marker positions
-
 - **MiniTimeline Component** (`packages/ui/src/components/molecules/MiniTimeline/`)
   - Add metronome marker indicators across the timeline track
   - Markers should fit proportionally across the exercise duration
-  - Receive same `bpm` and `totalDuration` props
+  - Receive `exercise.bpm` (original exercise BPM, NOT currentBpm) and `totalDuration` as props to calculate marker positions
+  - **Critical**: Use original exercise BPM, not `currentBpm`, so markers stay locked to the original beat grid when BPM is changed
 
 - **ExercisePlaybackTimeline Component** (`packages/ui/src/components/organisms/ExercisePlaybackTimeline/`)
   - Add metronome marker layer spanning full height above all MIDI note tracks
   - Markers should be positioned on the relative-positioned parent container
-  - Receive `bpm` and `totalDuration` (derived from `durationMs`) as props
+  - Receive `exercise.bpm` (original exercise BPM, NOT currentBpm) and `totalDuration` (derived from `durationMs`) as props
   - Use `z-index` to ensure markers do not block note interaction (notes should be clickable)
+  - **Critical**: Use original exercise BPM, not `currentBpm`, so markers stay locked to the original beat grid when BPM is changed
 
 - **ExercisePlaybackPage** (`packages/ui/src/components/organisms/ExercisePlaybackPage/`)
-  - Pass `metronomeEnabled` and `bpm` state to PlaybackControls, MiniTimeline, and ExercisePlaybackTimeline
-  - All child components render markers based on these props
+  - Pass `metronomeEnabled` and `exercise.bpm` (original, NOT `currentBpm`) to MiniTimeline and ExercisePlaybackTimeline
+  - The beat grid is calculated from the original exercise BPM and remains constant
+  - When user changes BPM via MetronomeControl, `currentBpm` affects audio playback speed only, NOT the visual beat grid
+  - Formula: `audioPlaybackRate = currentBpm / exercise.bpm` (not `currentBpm / 120`)
 
 ### Marker Calculation
 
-**Formula for beat positions:**
-- Beat interval (ms) = `60,000 / bpm`
-- Exercise duration (ms) = `totalDuration * 1000`
+**Formula for beat positions (using ORIGINAL exercise BPM):**
+- Beat interval (ms) = `60,000 / exercise.bpm` (use original exercise BPM, NOT currentBpm)
+- Exercise duration (ms) = `totalDuration`
 - Number of beats = `Math.floor(exerciseDuration / beatInterval)`
 - Beat positions (as % of timeline) = `(beatIndex * beatInterval) / exerciseDuration * 100`
 
+**Critical: The beat grid is LOCKED to exercise.bpm and never changes.**
+- When user adjusts `currentBpm` via MetronomeControl, only the audio playback speed changes
+- Marker positions remain constant because they represent the original exercise's beat structure
+- This ensures markers stay visually aligned with the original MIDI notes
+
 **Example:**
-- Exercise: 60 seconds (60,000 ms)
-- BPM: 120 → beat interval = 500 ms
+- Exercise: 60 seconds (60,000 ms), original BPM: 120
+- Beat interval = 500 ms
 - Number of beats: 120
 - Beat positions: 0%, 0.833%, 1.666%, ..., 99.166%
+- If user changes to 140 BPM: audio plays faster, but markers stay at same positions (beat grid unchanged)
 
 ### Visual Design
 
@@ -92,28 +97,64 @@ I should display metronome beat markers at precise intervals based on the curren
 ### Component Structure
 
 ```
-PlaybackControls (updated)
-  └─ MetronomeMarkerLayer
-       ├─ Regular beat markers
-       └─ Downbeat markers
-
 MiniTimeline (updated)
   └─ MetronomeMarkerTrack
-       ├─ Regular beat markers
-       └─ Downbeat markers
+       ├─ Regular beat markers (based on exercise.bpm)
+       └─ Downbeat markers (every 4th beat)
 
 ExercisePlaybackTimeline (updated)
   └─ MetronomeMarkerOverlay (spans all tracks)
-       ├─ Regular beat markers (full height)
-       └─ Downbeat markers (full height, taller)
+       ├─ Regular beat markers (full height, based on exercise.bpm)
+       └─ Downbeat markers (full height, taller, every 4th beat)
 ```
 
 ### State Management
 
-- **Markers are purely presentational**: calculated from `bpm`, `totalDuration`, and `metronomeEnabled` props
-- No additional state needed in PlaybackControls or MiniTimeline
-- ExercisePlaybackPage passes `metronomeEnabled` and `bpm` from MetronomeControl state
-- If BPM or metronome state changes, parent re-renders and markers automatically recalculate
+- **Markers are purely presentational**: calculated from `exercise.bpm` (original), `totalDuration`, and `metronomeEnabled` props
+- **Beat grid is immutable**: markers are calculated once from the original exercise BPM and never recalculated when `currentBpm` changes
+- ExercisePlaybackPage passes `metronomeEnabled` and `exercise.bpm` (NOT `currentBpm`) to MiniTimeline and ExercisePlaybackTimeline
+- Marker positions remain constant throughout the session because they represent the original exercise structure
+- `currentBpm` only affects audio playback speed: `audioPlaybackRate = currentBpm / exercise.bpm`
+- This ensures visual markers stay locked to MIDI notes regardless of playback speed changes
+
+### BPM-Playback Synchronization Bug Fix
+
+**Problem**: When user changes BPM (via MetronomeControl), the audio playback speed changes but metronome markers become misaligned because:
+- Old formula: `playbackRate = currentBpm / 120` (hardcoded reference)
+- This assumes all exercises are 120 BPM, but they're not
+- Example: 100 BPM exercise at 120 BPM user input → `120/120 = 1.0x`, but should be `120/100 = 1.2x`
+
+**Solution**: Use exercise's original BPM as the reference:
+- New formula: `playbackRate = currentBpm / exercise.bpm` (dynamic reference)
+- Beat markers calculated from `exercise.bpm` never change
+- Audio speed scales relative to the exercise's original tempo
+- Example: 100 BPM exercise at 120 BPM user input → `120/100 = 1.2x` ✓ correct
+- Markers stay aligned with MIDI notes because they're locked to the original beat grid
+
+**Implementation in ExercisePlaybackPage**:
+```typescript
+const handleBpmChange = useCallback((newBpm: number) => {
+  setCurrentBpm(newBpm);
+  if (audioRef.current) {
+    // FIX: Use exercise.bpm instead of hardcoded 120
+    const playbackRate = newBpm / exercise.bpm;
+    audioRef.current.playbackRate = playbackRate;
+  }
+}, [exercise]);
+```
+
+**Pass to components**:
+```typescript
+<MiniTimeline
+  bpm={exercise.bpm}  // ← original exercise BPM
+  metronomeEnabled={metronomeEnabled}
+  // ... other props
+/>
+<ExercisePlaybackTimeline
+  bpm={exercise.bpm}  // ← original exercise BPM
+  // ... other props
+/>
+```
 
 ### Accessibility
 
@@ -145,19 +186,20 @@ ExercisePlaybackTimeline (updated)
 
 1. [ ] Spec reviewed and approved by team
 2. [x] Acceptance criteria are testable and unambiguous
-3. [x] PlaybackControls updated with MetronomeMarkerLayer rendering logic
-4. [x] MiniTimeline updated with MetronomeMarkerTrack rendering logic
-5. [x] ExercisePlaybackTimeline updated with MetronomeMarkerOverlay rendering logic (spans all MIDI tracks)
-6. [x] ExercisePlaybackPage passes `bpm` and `metronomeEnabled` to all three timeline components
-7. [x] Marker position calculation verified against manual BPM/duration examples
-8. [x] Unit tests for marker calculation logic (edge cases: 40 BPM, 300 BPM, short/long exercises)
-9. [x] Integration tests verify markers appear/disappear when metronome toggled (all three timelines)
-10. [x] Integration tests confirm markers update when BPM changed (all three timelines)
-11. [ ] Visual regression tests (screenshot comparisons) for marker rendering on all timelines
-12. [x] Performance testing: rendering 1000+ markers does not cause frame drops
-13. [x] Accessibility audit: aria-labels and screen reader testing
-14. [x] ExercisePlaybackTimeline marker overlay does not interfere with note interaction (z-index, pointer-events)
-15. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop) with focus on ExercisePlaybackTimeline
-16. [ ] Marker colors reviewed and approved by design team
-17. [x] Spec marked `[x]` on all acceptance criteria
-18. [ ] PR merged and deployed
+3. [x] MiniTimeline updated with MetronomeMarkerTrack rendering logic (using exercise.bpm, not currentBpm)
+4. [x] ExercisePlaybackTimeline updated with MetronomeMarkerOverlay rendering logic (spans all MIDI tracks, using exercise.bpm)
+5. [x] ExercisePlaybackPage passes `exercise.bpm` (NOT currentBpm) and `metronomeEnabled` to MiniTimeline and ExercisePlaybackTimeline
+6. [x] Marker position calculation uses exercise.bpm and never changes when currentBpm is adjusted
+7. [x] Audio playback rate formula corrected to: `playbackRate = currentBpm / exercise.bpm` (not `currentBpm / 120`)
+8. [x] Unit tests for marker calculation logic using exercise.bpm (edge cases: 40 BPM, 300 BPM, short/long exercises)
+9. [x] Integration tests verify markers stay locked to beat grid when BPM is changed during playback
+10. [x] Integration tests verify markers appear/disappear when metronome toggled
+11. [x] Integration tests confirm markers remain visually aligned with MIDI notes when playback speed changes
+12. [ ] Visual regression tests (screenshot comparisons) showing markers stay aligned across BPM changes
+13. [x] Performance testing: rendering 1000+ markers does not cause frame drops
+14. [x] Accessibility audit: aria-labels and screen reader testing
+15. [x] ExercisePlaybackTimeline marker overlay does not interfere with note interaction (z-index, pointer-events)
+16. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop) verifying marker alignment at different BPM values
+17. [ ] Marker colors reviewed and approved by design team
+18. [x] Spec marked `[x]` on all acceptance criteria
+19. [ ] PR merged and deployed
