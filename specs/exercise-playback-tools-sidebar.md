@@ -1,0 +1,268 @@
+# Spec: Exercise Playback Tools Sidebar
+
+**Status:** Draft
+**Version:** 0.1.0
+**Last updated:** 2026-03-17
+
+## Problem
+
+The ExercisePlaybackPage UI is becoming crowded with MetronomeControl and LoopControls stacked vertically below the seek slider. This creates several issues:
+- Limited vertical space for the main timeline visualization
+- Controls take attention away from the exercise playback feedback
+- Long scroll required to see both controls and playback timeline
+- Mobile users face significant screen clutter
+- No clear visual hierarchy between primary (playback) and secondary (tools) controls
+
+Musicians need quick access to metronome and loop controls without sacrificing visibility of the main playback timeline where MIDI notes and visual feedback are displayed.
+
+## User Stories
+
+### As a drummer practicing,
+I want the metronome and loop controls in a collapsible sidebar so that I can focus on the main timeline without scrolling, and quickly toggle tools on/off without distracting from playback.
+
+### As a mobile user,
+I want tools hidden by default and accessible via a toggle button so that I can see more of the timeline on a small screen.
+
+### As a teacher using the app,
+I want to show students the main timeline and playback without tool clutter so that they can focus on the exercise structure and their performance feedback.
+
+### As the system,
+I should provide a smooth, non-disruptive way to access tools while keeping the primary playback UI clean and spacious.
+
+## Acceptance Criteria
+
+- [ ] Tools sidebar appears as a fixed left-side panel (desktop) or bottom drawer (mobile)
+- [ ] Sidebar contains MetronomeControl and LoopControls stacked vertically
+- [ ] Sidebar has a toggle button (hamburger icon or chevron) to show/hide
+- [ ] Sidebar is hidden by default on page load (or remembers last state via sessionStorage)
+- [ ] Sidebar animates smoothly (slide-in/slide-out) with 300ms duration
+- [ ] Sidebar width is responsive: 320px (desktop), full-width drawer (mobile < 640px)
+- [ ] Main timeline expands to fill available space when sidebar is closed
+- [ ] Sidebar has a semi-transparent backdrop on mobile when open (click to close)
+- [ ] Toggle button remains visible/accessible at all times
+- [ ] Keyboard shortcut to toggle sidebar (e.g., Ctrl+T or Alt+T)
+- [ ] Sidebar does not interfere with timeline interaction (z-index managed correctly)
+- [ ] All controls in sidebar remain fully functional (no loss of features)
+- [ ] Sidebar is accessible: aria-labels, keyboard navigation, screen reader support
+- [ ] Sidebar respects color scheme (dark/light mode)
+- [ ] Sidebar state persists within session (sessionStorage, NOT localStorage)
+- [ ] On very small screens (< 320px), sidebar becomes a modal instead of drawer
+- [ ] Sidebar is responsive and smooth even with 100+ metronome markers on timeline
+
+## Technical Notes
+
+### Integration Points
+
+- **New Sidebar Component** (`packages/ui/src/components/organisms/ToolsSidebar/`)
+  - Wrapper component that manages sidebar state
+  - Contains MetronomeControl and LoopControls as children
+  - Handles show/hide animation
+  - Receives toggle callback from parent (ExercisePlaybackPage)
+  - Props:
+    - `isOpen: boolean` — whether sidebar is visible
+    - `onToggle: () => void` — callback when toggle button clicked
+    - `metronomeProps: MetronomeControlProps` — pass-through to MetronomeControl
+    - `loopProps: LoopControlsProps` — pass-through to LoopControls
+
+- **Toggle Button** (`ToolsSidebar` header)
+  - Icon: hamburger (≡) or chevron (◀/▶) depending on state
+  - Label: "Show Tools" or "Hide Tools"
+  - Keyboard accessible (Tab to focus, Enter to toggle)
+  - Aria-label: "Toggle tools sidebar"
+
+- **ExercisePlaybackPage** (Updated)
+  - Add `toolsSidebarOpen` state (default: false)
+  - Add `handleToggleToolsSidebar` callback
+  - Use sessionStorage to persist state:
+    ```typescript
+    useEffect(() => {
+      const stored = sessionStorage.getItem('exerciseTools_sidebarOpen');
+      if (stored !== null) {
+        setToolsSidebarOpen(JSON.parse(stored));
+      }
+    }, []);
+
+    const handleToggleToolsSidebar = useCallback(() => {
+      setToolsSidebarOpen(prev => {
+        const next = !prev;
+        sessionStorage.setItem('exerciseTools_sidebarOpen', JSON.stringify(next));
+        return next;
+      });
+    }, []);
+    ```
+  - Wrap MetronomeControl and LoopControls in ToolsSidebar
+  - Pass all relevant props to sidebar
+
+- **Layout Structure**
+  ```typescript
+  <div className="flex h-screen">
+    {/* Tools Sidebar (fixed left, or bottom drawer on mobile) */}
+    <ToolsSidebar
+      isOpen={toolsSidebarOpen}
+      onToggle={handleToggleToolsSidebar}
+      metronomeProps={{ /* ... */ }}
+      loopProps={{ /* ... */ }}
+    />
+
+    {/* Main content area (flex-1 to expand) */}
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Playback controls (compact) */}
+      <PlaybackControls /* ... */ />
+
+      {/* Timeline area (expands to fill space) */}
+      <div className="flex-1 overflow-auto">
+        <MiniTimeline /* ... */ />
+        <ExercisePlaybackTimeline /* ... */ />
+      </div>
+
+      {/* Statistics (fixed bottom) */}
+      <SessionStatisticsPanel /* ... */ />
+    </div>
+  </div>
+  ```
+
+### Sidebar Layout (Desktop)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ ≡ Tools        │ ▶ 00:01 ├───●─────┤ 00:02                      │
+│                │                                                  │
+│ ┌────────────┐ │ Start: 00:00  End: 00:02                        │
+│ │ Metronome  │ │ Repeat: ∞ Infinite  [Disable Loop] [Clear]      │
+│ │            │ │                                                  │
+│ │ 120 ▁▁▁▁  │ │ ┌──────────────────────────────────────────────┐│
+│ │ -   120  + │ │ │ Metronome beats │ Loop region               ││
+│ │ [On]       │ │ │   │    │    │    │ [════════════════════]  ││
+│ │            │ │ │                                              ││
+│ │ Loop       │ │ │ Kick Drum  • • • •[•   •   •   •   •   •]  ││
+│ │            │ │ │            (green loop overlay, full height) ││
+│ │ Start 00:00│ │ │                                              ││
+│ │ End   00:02│ │ │ Snare     •   •[•   •   •   •   •   •]•   • ││
+│ │            │ │ │                                              ││
+│ │ Repeat: ∞ │ │ │ Hi-Hat ●●●●●[●●●●●●●●●●●●●●●●●●●●]●●●●●● ││
+│ │ [Loop On]  │ │ └──────────────────────────────────────────────┘│
+│ │            │ │                                                  │
+│ │ Repeat ∞ / │ │ Accuracy: 0%   Hits: 0/0   Timing: 0ms  Violations: 0
+│ └────────────┘ │                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Sidebar Styling (Desktop)**:
+- Width: 320px (fixed, can be adjusted via CSS variable)
+- Position: `fixed` left: 0, top: 0, height: 100vh
+- Background: `bg-gray-50 dark:bg-gray-900` (matches page background)
+- Border right: `border-r border-gray-200 dark:border-gray-700`
+- Shadow: `shadow-lg` for depth
+- Padding: `p-4` inside
+- Overflow: `overflow-y-auto` for scrolling if controls exceed height
+
+**Toggle Button**:
+- Position: Top-left of sidebar (in header row with "Tools" label)
+- Size: 40x40px (touch-friendly)
+- Icon: hamburger (≡) or chevron (◀/▶)
+- Hover: background color change for feedback
+- Aria-label: "Toggle tools sidebar" or "Show/Hide tools"
+
+**Animation**:
+- Slide-in: `translate-x-0` (visible)
+- Slide-out: `translate-x-[-100%]` (hidden off-screen left)
+- Duration: 300ms
+- Easing: `ease-in-out`
+- Use CSS transitions or Framer Motion for smooth animation
+
+### Mobile Layout
+
+**Small Screens (< 640px)**:
+- Sidebar becomes a bottom drawer instead of left panel
+- Position: `fixed` bottom: 0, left: 0, right: 0, height: auto (or max 60vh)
+- Slides up from bottom instead of in from left
+- Semi-transparent backdrop: `bg-black/50` when open
+- Clicking backdrop closes drawer
+- Swipe-down gesture to close (optional enhancement)
+
+**Very Small Screens (< 320px)**:
+- Sidebar becomes a modal overlay (full screen)
+- Position: `fixed` inset: 0
+- Close button and backdrop for accessibility
+
+### State Management
+
+- Sidebar state: `isOpen: boolean` (default: false)
+- Persisted via `sessionStorage` (not localStorage, so state resets on page reload)
+- Key: `exerciseTools_sidebarOpen`
+
+**Why sessionStorage instead of localStorage**:
+- Users may want fresh start after closing/reopening browser tab
+- Prevents annoying persistent UI state across sessions
+- Aligns with practice session lifecycle (tools reset between sessions)
+
+### Accessibility
+
+- Toggle button:
+  - `aria-label="Toggle tools sidebar"` or `aria-label="Show tools"` / `aria-label="Hide tools"`
+  - Keyboard: Tab to focus, Enter/Space to toggle
+  - Visual focus indicator (outline or highlight)
+
+- Sidebar itself:
+  - `role="complementary"` or `role="navigation"` (depending on purpose)
+  - Aria-label: `aria-label="Tools sidebar containing metronome and loop controls"`
+
+- Backdrop (mobile):
+  - `aria-hidden="true"` on backdrop (not focusable, click closes)
+
+- Keyboard shortcut:
+  - Ctrl+T or Alt+T to toggle (document in help or tooltip)
+  - Aria-label on toggle button should mention shortcut: `"Toggle tools sidebar (Ctrl+T)"`
+
+### Performance Considerations
+
+- Use CSS transforms for animation (GPU-accelerated): `transform: translateX(...)`
+- Avoid re-rendering sidebar when timeline updates
+- Memoize MetronomeControl and LoopControls to prevent unnecessary re-renders
+- Consider lazy-loading sidebar content if it's not immediately visible
+
+### Responsive Behavior
+
+| Breakpoint | Layout | Sidebar Position | Width |
+|---|---|---|---|
+| Desktop (≥ 1024px) | Left sidebar | Fixed left | 320px |
+| Tablet (640-1024px) | Left sidebar (narrower) | Fixed left | 280px |
+| Mobile (< 640px) | Bottom drawer | Bottom | Full width, max 60vh |
+| Very small (< 320px) | Modal | Fullscreen | Full screen |
+
+## Out of Scope
+
+- Draggable/resizable sidebar width
+- Docking sidebar to different edges (right, top, etc.)
+- Multiple sidebar panels or tabs
+- Sidebar animations with spring physics (CSS transitions sufficient)
+- Persistent sidebar state across browser sessions (sessionStorage only)
+- Sidebar collapsing into mini icons/drawer when narrow
+- Customizable sidebar content or reordering of controls
+
+## Definition of Done
+
+1. [ ] Spec reviewed and approved by team
+2. [ ] ToolsSidebar component created with MetronomeControl and LoopControls
+3. [ ] Toggle button with hamburger/chevron icon and aria-label
+4. [ ] Sidebar animates smoothly (slide-in/slide-out 300ms ease-in-out)
+5. [ ] sessionStorage persistence: sidebar state saved and restored
+6. [ ] Desktop layout: fixed left sidebar 320px wide
+7. [ ] Mobile layout: bottom drawer on screens < 640px
+8. [ ] Very small screens: modal overlay on screens < 320px
+9. [ ] Backdrop on mobile: semi-transparent, closes on click
+10. [ ] Keyboard shortcut: Ctrl+T or Alt+T to toggle
+11. [ ] Main content expands when sidebar is closed (flex-1)
+12. [ ] Z-index managed: sidebar above timeline, but not blocking interaction
+13. [ ] All controls remain fully functional in sidebar (no feature loss)
+14. [ ] Accessibility: aria-labels, keyboard navigation, screen reader support
+15. [ ] Dark/light mode support: sidebar respects theme
+16. [ ] Performance: no frame drops during sidebar animation
+17. [ ] Responsive testing: verified on desktop, tablet, mobile, very small screens
+18. [ ] Unit tests: toggle state, persistence, animation triggers
+19. [ ] Integration tests: sidebar + metronome sync, sidebar + loop interaction
+20. [ ] Accessibility audit: keyboard nav, screen reader, contrast
+21. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
+22. [ ] Visual regression tests: sidebar in open/closed states
+23. [ ] All tests passing
+24. [ ] PR merged and deployed
