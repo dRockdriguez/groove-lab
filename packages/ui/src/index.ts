@@ -47,6 +47,8 @@ export { MiniTimeline } from './components/molecules/MiniTimeline';
 export type { MiniTimelineProps } from './components/molecules/MiniTimeline';
 export { MetronomeControl } from './components/molecules/MetronomeControl';
 export type { MetronomeControlProps } from './components/molecules/MetronomeControl';
+export { LoopControls } from './components/molecules/LoopControls';
+export type { LoopControlsProps } from './components/molecules/LoopControls';
 
 // Organisms
 export { Table } from './components/organisms/Table';
