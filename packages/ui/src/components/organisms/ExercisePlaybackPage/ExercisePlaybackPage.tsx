@@ -3,11 +3,12 @@ import type { ExercisePlaybackData, PlaybackState, SessionStatistics } from '@gr
 import { formatDuration } from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
-import { MetronomeControl } from '../../molecules/MetronomeControl';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
+import { LoopRepetitionCounter } from '../../molecules/LoopRepetitionCounter';
 import { MidiStatusIndicator, type MidiConnectionStatus } from '../../atoms/MidiStatusIndicator';
 import { ExercisePlaybackTimeline } from '../ExercisePlaybackTimeline';
 import { SessionStatisticsPanel } from '../SessionStatisticsPanel';
+import { ToolsSidebar } from '../ToolsSidebar';
 
 export interface ExercisePlaybackPageProps {
   /** Provide exercise data directly (no fetch needed) */
@@ -323,6 +324,48 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, [exercise]);
 
+  // ─── Loop state ──────────────────────────────────────────────────────────────
+  const [isLoopActive, setIsLoopActive] = useState(false);
+  const [loopStartMs, setLoopStartMs] = useState(0);
+  const [loopEndMs, setLoopEndMs] = useState(0);
+  const [currentLoopRepetition, setCurrentLoopRepetition] = useState(0);
+  const [loopRepetitions, setLoopRepetitions] = useState<number | 'infinite'>(1);
+
+  // ─── Tools sidebar state ───────────────────────────────────────────────────
+  const [toolsSidebarOpen, setToolsSidebarOpen] = useState(false);
+
+  // Restore sidebar state from sessionStorage on mount.
+  useEffect(() => {
+    const stored = sessionStorage.getItem('exerciseTools_sidebarOpen');
+    if (stored !== null) {
+      try {
+        setToolsSidebarOpen(JSON.parse(stored) as boolean);
+      } catch {
+        // ignore malformed sessionStorage value
+      }
+    }
+  }, []);
+
+  const handleToggleToolsSidebar = useCallback(() => {
+    setToolsSidebarOpen(prev => {
+      const next = !prev;
+      sessionStorage.setItem('exerciseTools_sidebarOpen', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  // Keyboard shortcut: Ctrl+T to toggle tools sidebar.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        handleToggleToolsSidebar();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleToggleToolsSidebar]);
+
   // ─── Statistics ────────────────────────────────────────────────────────────
   const [statistics] = useState<SessionStatistics>(DEFAULT_STATS);
 
@@ -369,119 +412,137 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   return (
     <div
       className={[
-        'flex flex-col gap-6 p-4 sm:p-6 max-w-6xl mx-auto',
+        'flex h-screen overflow-hidden',
         className,
       ].join(' ')}
     >
-      {/* Header — use flat text (no nested child spans) so getByText(/bpm/i)
-          matches exactly one element, not the label span + the container span. */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          {exercise.title}
-        </h1>
-        <div
-          className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400"
-          aria-live="polite"
-        >
-          <span>BPM: {exercise.bpm}</span>
-          <span>Duration: {formatDuration(exercise.durationMs)}</span>
-        </div>
-      </div>
-
-      {/* Audio load error message */}
-      {audioError && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {audioError}
-        </p>
-      )}
-
-      {/* MIDI connection status */}
-      <MidiStatusIndicator status={midiStatus} deviceName={midiDeviceName} />
-
-      {/* Audio element — requestAnimationFrame handles smooth playhead updates */}
-      {exercise.audioUrl ? (
-        <audio
-          ref={audioRef}
-          src={exercise.audioUrl}
-          onEnded={() => {
-            // Only stop playback if loop is NOT active or if we've exhausted repetitions
-            // The updatePlayhead rAF will handle loop jumps before this fires
-            if (!isLoopActiveRef.current) {
-              setPlaybackStateSynced('stopped');
-              setCurrentLoopRepetition(0);
-            }
-          }}
-          onError={() => {
-            setAudioError('Could not load audio file. Please try again later.');
-            setPlaybackStateSynced('stopped');
-          }}
-          aria-hidden="true"
-        />
-      ) : (
-        <p className="text-sm text-yellow-700 dark:text-yellow-400" role="note">
-          No audio file found for this exercise.
-        </p>
-      )}
-
-      {/* Playback controls with loop */}
-      <PlaybackControls
-        state={playbackState}
-        currentTimeMs={currentTimeMs}
-        durationMs={exercise.durationMs}
-        onTogglePlay={() => void handleTogglePlay()}
-        onSeek={handleSeek}
-        loopControls={{
+      {/* ── Tools Sidebar ────────────────────────────────────────────────────
+          Fixed left panel (desktop) or bottom drawer (mobile).
+          MetronomeControl lives here; the sidebar can be toggled via the
+          always-visible toggle button or the Ctrl+T keyboard shortcut.      */}
+      <ToolsSidebar
+        isOpen={toolsSidebarOpen}
+        onToggle={handleToggleToolsSidebar}
+        metronomeProps={{
+          initialBpm: exercise.bpm,
+          originalBpm: exercise.bpm,
+          isPlaying: playbackState === 'playing',
+          currentTimeMs,
+          onBpmChange: handleBpmChange,
+          onToggle: setMetronomeEnabled,
+        }}
+        loopProps={{
           loopStartMs,
+          onLoopStartChange: setLoopStartMs,
           loopEndMs,
-          isLoopActive,
+          onLoopEndChange: setLoopEndMs,
           loopRepetitions,
-          currentLoopRepetition,
+          onLoopRepetitionsChange: setLoopRepetitions,
+          isLoopActive,
+          onLoopToggle: setIsLoopActive,
           durationMs: exercise.durationMs,
-          onLoopStartChange: handleLoopStartChange,
-          onLoopEndChange: handleLoopEndChange,
-          onLoopToggle: handleLoopToggle,
-          onLoopRepetitionsChange: handleLoopRepetitionsChange,
-          onLoopClear: handleLoopClear,
         }}
       />
 
-      {/* Metronome control */}
-      <MetronomeControl
-        initialBpm={exercise.bpm}
-        originalBpm={exercise.bpm}
-        isPlaying={playbackState === 'playing'}
-        currentTimeMs={currentTimeMs}
-        onBpmChange={handleBpmChange}
-        onToggle={setMetronomeEnabled}
-      />
+      {/* ── Main content area ────────────────────────────────────────────────
+          flex-1 so it fills all space not occupied by the sidebar.          */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header — use flat text (no nested child spans) so getByText(/bpm/i)
+            matches exactly one element, not the label span + the container span. */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 sm:p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {exercise.title}
+          </h1>
+          <div
+            className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400"
+            aria-live="polite"
+          >
+            <span>BPM: {exercise.bpm}</span>
+            <span>Duration: {formatDuration(exercise.durationMs)}</span>
+          </div>
+        </div>
 
-      {/* Mini timeline overview */}
-      <MiniTimeline
-        midiEvents={exercise.midiEvents}
-        durationMs={exercise.durationMs}
-        currentTimeMs={currentTimeMs}
-        onSeek={handleSeek}
-        bpm={exercise.bpm}
-        metronomeEnabled={metronomeEnabled}
-        {...loopMarkerProps}
-        onLoopStartChange={handleLoopStartChange}
-        onLoopEndChange={handleLoopEndChange}
-      />
+        {/* Audio load error message */}
+        {audioError && (
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400 px-4 sm:px-6">
+            {audioError}
+          </p>
+        )}
 
-      {/* Main timeline */}
-      <ExercisePlaybackTimeline
-        midiEvents={exercise.midiEvents}
-        durationMs={exercise.durationMs}
-        currentTimeMs={currentTimeMs}
-        bpm={exercise.bpm}
-        metronomeEnabled={metronomeEnabled}
-        {...loopMarkerProps}
-        onLoopStartChange={handleLoopStartChange}
-        onLoopEndChange={handleLoopEndChange}
-      />
+        {/* MIDI connection status */}
+        <div className="px-4 sm:px-6">
+          <MidiStatusIndicator status={midiStatus} deviceName={midiDeviceName} />
+        </div>
 
-      {/* Session statistics */}
-      <SessionStatisticsPanel statistics={statistics} />
+        {/* Audio element — requestAnimationFrame handles smooth playhead updates */}
+        {exercise.audioUrl ? (
+          <audio
+            ref={audioRef}
+            src={exercise.audioUrl}
+            onEnded={() => setPlaybackStateSynced('stopped')}
+            onError={() => {
+              setAudioError('Could not load audio file. Please try again later.');
+              setPlaybackStateSynced('stopped');
+            }}
+            aria-hidden="true"
+          />
+        ) : (
+          <p
+            className="text-sm text-yellow-700 dark:text-yellow-400 px-4 sm:px-6"
+            role="note"
+          >
+            No audio file found for this exercise.
+          </p>
+        )}
+
+        {/* Playback controls */}
+        <div className="px-4 sm:px-6 py-2">
+          <PlaybackControls
+            state={playbackState}
+            currentTimeMs={currentTimeMs}
+            durationMs={exercise.durationMs}
+            onTogglePlay={() => void handleTogglePlay()}
+            onSeek={handleSeek}
+          />
+        </div>
+
+        {/* Loop repetition counter — visible only when loop is active */}
+        {isLoopActive && (
+          <div className="px-4 sm:px-6 py-1">
+            <LoopRepetitionCounter
+              currentRepetition={currentLoopRepetition}
+              totalRepetitions={loopRepetitions}
+            />
+          </div>
+        )}
+
+        {/* Timeline area — scrollable */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 flex flex-col gap-4">
+          {/* Mini timeline overview */}
+          <MiniTimeline
+            midiEvents={exercise.midiEvents}
+            durationMs={exercise.durationMs}
+            currentTimeMs={currentTimeMs}
+            onSeek={handleSeek}
+            bpm={exercise.bpm}
+            metronomeEnabled={metronomeEnabled}
+          />
+
+          {/* Main timeline */}
+          <ExercisePlaybackTimeline
+            midiEvents={exercise.midiEvents}
+            durationMs={exercise.durationMs}
+            currentTimeMs={currentTimeMs}
+            bpm={exercise.bpm}
+            metronomeEnabled={metronomeEnabled}
+          />
+        </div>
+
+        {/* Session statistics — directly after timeline, no padding */}
+        <div className="px-4 sm:px-6 py-3">
+          <SessionStatisticsPanel statistics={statistics} />
+        </div>
+      </div>
     </div>
   );
 };

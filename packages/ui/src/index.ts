@@ -47,8 +47,8 @@ export { MiniTimeline } from './components/molecules/MiniTimeline';
 export type { MiniTimelineProps } from './components/molecules/MiniTimeline';
 export { MetronomeControl } from './components/molecules/MetronomeControl';
 export type { MetronomeControlProps } from './components/molecules/MetronomeControl';
-export { LoopControls } from './components/molecules/LoopControls';
-export type { LoopControlsProps } from './components/molecules/LoopControls';
+export { LoopRepetitionCounter } from './components/molecules/LoopRepetitionCounter';
+export type { LoopRepetitionCounterProps } from './components/molecules/LoopRepetitionCounter';
 
 // Organisms
 export { Table } from './components/organisms/Table';
@@ -63,3 +63,5 @@ export { SessionStatisticsPanel } from './components/organisms/SessionStatistics
 export type { SessionStatisticsPanelProps } from './components/organisms/SessionStatisticsPanel';
 export { ExercisePlaybackPage } from './components/organisms/ExercisePlaybackPage';
 export type { ExercisePlaybackPageProps } from './components/organisms/ExercisePlaybackPage';
+export { ToolsSidebar } from './components/organisms/ToolsSidebar';
+export type { ToolsSidebarProps } from './components/organisms/ToolsSidebar';
