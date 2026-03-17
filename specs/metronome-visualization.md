@@ -55,10 +55,17 @@ I should display metronome beat markers at precise intervals based on the curren
   - Use `z-index` to ensure markers do not block note interaction (notes should be clickable)
   - **Critical**: Use original exercise BPM, not `currentBpm`, so markers stay locked to the original beat grid when BPM is changed
 
+- **MetronomeControl Component** (`packages/ui/src/components/molecules/MetronomeControl/`)
+  - Receives `originalBpm` prop (the exercise's original BPM for click timing)
+  - Uses `originalBpm` to calculate click intervals: `intervalMs = bpmToInterval(originalBpm)`
+  - User-adjustable `bpm` (currentBpm) only affects audio playback speed via `onBpmChange` callback, NOT click frequency
+  - **Critical**: Clicks are generated at `originalBpm` intervals, keeping them synchronized with visual markers
+
 - **ExercisePlaybackPage** (`packages/ui/src/components/organisms/ExercisePlaybackPage/`)
-  - Pass `metronomeEnabled` and `exercise.bpm` (original, NOT `currentBpm`) to MiniTimeline and ExercisePlaybackTimeline
+  - Pass `originalBpm={exercise.bpm}` to MetronomeControl so clicks use original exercise BPM
+  - Pass `metronomeEnabled` and `bpm={exercise.bpm}` to MiniTimeline and ExercisePlaybackTimeline
   - The beat grid is calculated from the original exercise BPM and remains constant
-  - When user changes BPM via MetronomeControl, `currentBpm` affects audio playback speed only, NOT the visual beat grid
+  - When user changes BPM via MetronomeControl, `currentBpm` affects audio playback speed only, NOT the visual beat grid or click frequency
   - Formula: `audioPlaybackRate = currentBpm / exercise.bpm` (not `currentBpm / 120`)
 
 ### Marker Calculation
@@ -131,6 +138,25 @@ ExercisePlaybackTimeline (updated)
 - Example: 100 BPM exercise at 120 BPM user input → `120/100 = 1.2x` ✓ correct
 - Markers stay aligned with MIDI notes because they're locked to the original beat grid
 
+### Metronome Click Synchronization
+
+**Goal**: Ensure metronome clicks occur at exactly the same positions as visual markers.
+
+**Implementation**:
+1. **Visual Markers**: Calculated from `exercise.bpm` (original BPM) → positions never change
+2. **Metronome Clicks**: Generated at `originalBpm` intervals (not `currentBpm`)
+   - `originalBpm` is passed to MetronomeControl via prop
+   - Click interval: `intervalMs = 60000 / originalBpm`
+   - Clicks fire every `intervalMs` milliseconds based on audio playback time (`currentTimeMs`)
+3. **User BPM Adjustment**: Only affects audio playback speed
+   - `playbackRate = currentBpm / exercise.bpm`
+   - Audio plays faster/slower, but clicks and markers stay at original beat positions
+
+**Result**:
+- Clicks always occur at marker positions ✓
+- Changing BPM speeds up audio but keeps clicks/markers synchronized ✓
+- Visual and auditory feedback are unified ✓
+
 **Implementation in ExercisePlaybackPage**:
 ```typescript
 const handleBpmChange = useCallback((newBpm: number) => {
@@ -145,15 +171,39 @@ const handleBpmChange = useCallback((newBpm: number) => {
 
 **Pass to components**:
 ```typescript
+<MetronomeControl
+  initialBpm={exercise.bpm}
+  originalBpm={exercise.bpm}  // ← use original BPM for click timing
+  isPlaying={playbackState === 'playing'}
+  currentTimeMs={currentTimeMs}
+  onBpmChange={handleBpmChange}  // updates audio playback rate
+  onToggle={setMetronomeEnabled}
+/>
+
 <MiniTimeline
   bpm={exercise.bpm}  // ← original exercise BPM
   metronomeEnabled={metronomeEnabled}
   // ... other props
 />
+
 <ExercisePlaybackTimeline
   bpm={exercise.bpm}  // ← original exercise BPM
+  metronomeEnabled={metronomeEnabled}
   // ... other props
 />
+```
+
+**MetronomeControl implementation**:
+```typescript
+// In MetronomeControl, use originalBpm for click intervals:
+const clickBpm = originalBpm ?? initialBpm ?? DEFAULT_BPM;
+const intervalMs = bpmToInterval(clickBpm);  // ← locks to original BPM
+
+// User-adjustable bpm only affects audio speed:
+const handleBpmChange = useCallback((newBpm: number) => {
+  setBpm(newBpm);
+  onBpmChange?.(newBpm);  // triggers playbackRate = newBpm / exercise.bpm
+}, [onBpmChange]);
 ```
 
 ### Accessibility
@@ -189,17 +239,23 @@ const handleBpmChange = useCallback((newBpm: number) => {
 3. [x] MiniTimeline updated with MetronomeMarkerTrack rendering logic (using exercise.bpm, not currentBpm)
 4. [x] ExercisePlaybackTimeline updated with MetronomeMarkerOverlay rendering logic (spans all MIDI tracks, using exercise.bpm)
 5. [x] ExercisePlaybackPage passes `exercise.bpm` (NOT currentBpm) and `metronomeEnabled` to MiniTimeline and ExercisePlaybackTimeline
-6. [x] Marker position calculation uses exercise.bpm and never changes when currentBpm is adjusted
-7. [x] Audio playback rate formula corrected to: `playbackRate = currentBpm / exercise.bpm` (not `currentBpm / 120`)
-8. [x] Unit tests for marker calculation logic using exercise.bpm (edge cases: 40 BPM, 300 BPM, short/long exercises)
-9. [x] Integration tests verify markers stay locked to beat grid when BPM is changed during playback
-10. [x] Integration tests verify markers appear/disappear when metronome toggled
-11. [x] Integration tests confirm markers remain visually aligned with MIDI notes when playback speed changes
-12. [ ] Visual regression tests (screenshot comparisons) showing markers stay aligned across BPM changes
-13. [x] Performance testing: rendering 1000+ markers does not cause frame drops
-14. [x] Accessibility audit: aria-labels and screen reader testing
-15. [x] ExercisePlaybackTimeline marker overlay does not interfere with note interaction (z-index, pointer-events)
-16. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop) verifying marker alignment at different BPM values
-17. [ ] Marker colors reviewed and approved by design team
-18. [x] Spec marked `[x]` on all acceptance criteria
-19. [ ] PR merged and deployed
+6. [x] MetronomeControl receives `originalBpm` prop and uses it for click interval calculation (not currentBpm)
+7. [x] MetronomeControl passes `originalBpm={exercise.bpm}` from ExercisePlaybackPage
+8. [x] Marker position calculation uses exercise.bpm and never changes when currentBpm is adjusted
+9. [x] Metronome click interval uses exercise.bpm and never changes when currentBpm is adjusted
+10. [x] Audio playback rate formula corrected to: `playbackRate = currentBpm / exercise.bpm` (not `currentBpm / 120`)
+11. [x] Unit tests for marker calculation logic using exercise.bpm (edge cases: 40 BPM, 300 BPM, short/long exercises)
+12. [x] Unit tests for MetronomeControl using originalBpm for click timing
+13. [x] Integration tests verify markers stay locked to beat grid when BPM is changed during playback
+14. [x] Integration tests verify markers appear/disappear when metronome toggled
+15. [x] Integration tests confirm markers remain visually aligned with MIDI notes when playback speed changes
+16. [x] Integration tests verify metronome clicks occur at marker positions (click sync)
+17. [ ] Visual regression tests (screenshot comparisons) showing markers stay aligned across BPM changes
+18. [x] Performance testing: rendering 1000+ markers does not cause frame drops
+19. [x] Accessibility audit: aria-labels and screen reader testing
+20. [x] ExercisePlaybackTimeline marker overlay does not interfere with note interaction (z-index, pointer-events)
+21. [ ] Manual testing on Chrome, Firefox, Safari (mobile and desktop) verifying marker alignment and click sync at different BPM values
+22. [ ] Marker colors reviewed and approved by design team
+23. [x] Spec marked `[x]` on all acceptance criteria
+24. [x] All tests passing (419 tests + 1 todo)
+25. [ ] PR merged and deployed

@@ -195,12 +195,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
   const handleBpmChange = useCallback((newBpm: number) => {
     setCurrentBpm(newBpm);
-    if (audioRef.current) {
-      // Convert BPM to playback rate: 120 BPM = 1.0x speed
-      const playbackRate = newBpm / 120;
+    if (audioRef.current && exercise) {
+      // Convert BPM to playback rate relative to exercise's original BPM
+      const playbackRate = newBpm / exercise.bpm;
       audioRef.current.playbackRate = playbackRate;
     }
-  }, []);
+  }, [exercise]);
 
   // Pause playback when the browser window loses focus (tab switch or reload).
   useEffect(() => {
@@ -326,13 +326,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         durationMs={exercise.durationMs}
         onTogglePlay={() => void handleTogglePlay()}
         onSeek={handleSeek}
-        bpm={currentBpm}
-        metronomeEnabled={metronomeEnabled}
       />
 
       {/* Metronome control */}
       <MetronomeControl
         initialBpm={exercise.bpm}
+        originalBpm={exercise.bpm}
         isPlaying={playbackState === 'playing'}
         currentTimeMs={currentTimeMs}
         onBpmChange={handleBpmChange}
@@ -345,7 +344,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         durationMs={exercise.durationMs}
         currentTimeMs={currentTimeMs}
         onSeek={handleSeek}
-        bpm={currentBpm}
+        bpm={exercise.bpm}
         metronomeEnabled={metronomeEnabled}
       />
 
@@ -354,6 +353,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         midiEvents={exercise.midiEvents}
         durationMs={exercise.durationMs}
         currentTimeMs={currentTimeMs}
+        bpm={exercise.bpm}
+        metronomeEnabled={metronomeEnabled}
       />
 
       {/* Session statistics */}

@@ -4,6 +4,8 @@ import { bpmToInterval } from '@groovelab/utils';
 export interface MetronomeControlProps {
   /** Initial BPM value (default 120). Clamped to 20–300. */
   initialBpm?: number;
+  /** Original exercise BPM (used to sync metronome clicks). Defaults to initialBpm if not provided. */
+  originalBpm?: number;
   /** Whether the exercise is currently playing; metronome clicks only when true. */
   isPlaying?: boolean;
   /** Current playback time in milliseconds; used to synchronize metronome clicks with audio. */
@@ -21,6 +23,7 @@ const DEFAULT_BPM = 120;
 
 export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   initialBpm = DEFAULT_BPM,
+  originalBpm,
   isPlaying = false,
   currentTimeMs = 0,
   onBpmChange,
@@ -30,6 +33,9 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
   const [bpm, setBpm] = useState(Math.max(MIN_BPM, Math.min(MAX_BPM, initialBpm)));
   const [isEnabled, setIsEnabled] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+
+  // Use originalBpm for click timing (default to initialBpm if not provided)
+  const clickBpm = originalBpm ?? initialBpm ?? DEFAULT_BPM;
 
   // Track previous bpm to announce changes only (not on mount).
   const prevBpmRef = useRef<number | null>(null);
@@ -153,7 +159,8 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
     }
 
     const ctx = audioContextRef.current;
-    const intervalMs = bpmToInterval(bpm);
+    // Use clickBpm (original exercise BPM) to sync clicks with visual markers
+    const intervalMs = bpmToInterval(clickBpm);
     const justStartedPlaying = !prevIsPlayingRef.current && isPlaying;
     prevIsPlayingRef.current = true;
 
@@ -205,7 +212,7 @@ export const MetronomeControl: React.FC<MetronomeControlProps> = ({
       lastClickTimeRef.current = currentTimeMs;
       beatCountRef.current += 1;
     }
-  }, [bpm, isEnabled, isPlaying, currentTimeMs]);
+  }, [clickBpm, isEnabled, isPlaying, currentTimeMs]);
 
   return (
     <div

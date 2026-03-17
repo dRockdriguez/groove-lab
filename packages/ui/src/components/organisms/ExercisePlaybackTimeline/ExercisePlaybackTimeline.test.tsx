@@ -81,4 +81,46 @@ describe('ExercisePlaybackTimeline', () => {
     );
     expect(screen.getByText(/kick drum/i)).toBeInTheDocument();
   });
+
+  it('renders metronome beat markers when metronomeEnabled is true', () => {
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={4000}
+        currentTimeMs={0}
+        bpm={120}
+        metronomeEnabled={true}
+      />
+    );
+    const beatMarkers = container.querySelectorAll('[data-testid="metronome-beat-marker"]');
+    expect(beatMarkers.length).toBeGreaterThan(0);
+  });
+
+  it('renders downbeat markers every 4 beats', () => {
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={4000}
+        currentTimeMs={0}
+        bpm={120}
+        metronomeEnabled={true}
+      />
+    );
+    const downbeatMarkers = container.querySelectorAll('[data-testid="metronome-downbeat-marker"]');
+    expect(downbeatMarkers.length).toBeGreaterThan(0);
+  });
+
+  it('does not render metronome markers when metronomeEnabled is false', () => {
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={4000}
+        currentTimeMs={0}
+        bpm={120}
+        metronomeEnabled={false}
+      />
+    );
+    const beatMarkers = container.querySelectorAll('[data-testid="metronome-beat-marker"]');
+    expect(beatMarkers.length).toBe(0);
+  });
 });

@@ -64,19 +64,10 @@ describe('ExercisePlaybackPage — Metronome Visualization', () => {
     expect(container.querySelectorAll('[data-testid="metronome-downbeat-marker"]').length).toBe(0);
   });
 
-  it('shows beat markers on PlaybackControls after metronome is enabled', () => {
+  it('shows beat markers on MiniTimeline and ExercisePlaybackTimeline after metronome is enabled', () => {
     const { container } = render(<ExercisePlaybackPage exercise={mockExercise} />);
     fireEvent.click(screen.getByRole('button', { name: 'Toggle metronome' }));
-    expect(
-      container.querySelectorAll('[data-testid="metronome-beat-marker"]').length +
-      container.querySelectorAll('[data-testid="metronome-downbeat-marker"]').length
-    ).toBeGreaterThan(0);
-  });
-
-  it('shows beat markers on MiniTimeline after metronome is enabled', () => {
-    const { container } = render(<ExercisePlaybackPage exercise={mockExercise} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle metronome' }));
-    // There should be markers (from both PlaybackControls + MiniTimeline)
+    // Markers should appear on MiniTimeline and ExercisePlaybackTimeline (not PlaybackControls)
     const allMarkers = container.querySelectorAll(
       '[data-testid="metronome-beat-marker"], [data-testid="metronome-downbeat-marker"]'
     );
@@ -97,7 +88,7 @@ describe('ExercisePlaybackPage — Metronome Visualization', () => {
     expect(container.querySelectorAll('[data-testid="metronome-downbeat-marker"]').length).toBe(0);
   });
 
-  it('updates marker count when BPM is increased', () => {
+  it('marker count remains the same when BPM is changed (beat grid is locked)', () => {
     const { container } = render(<ExercisePlaybackPage exercise={mockExercise} />);
     fireEvent.click(screen.getByRole('button', { name: 'Toggle metronome' }));
 
@@ -105,9 +96,7 @@ describe('ExercisePlaybackPage — Metronome Visualization', () => {
       container.querySelectorAll('[data-testid="metronome-beat-marker"]').length +
       container.querySelectorAll('[data-testid="metronome-downbeat-marker"]').length;
 
-    // Increase BPM by clicking Increase BPM 60 times (120 -> 180)
-    // This doubles the beat count for a 60s exercise: 120 BPM -> 180 BPM
-    // Use BPM input directly instead for reliability
+    // Change BPM (should NOT affect marker count because beat grid is locked to exercise.bpm)
     const bpmInput = screen.getByLabelText('BPM');
     fireEvent.change(bpmInput, { target: { value: '240' } });
 
@@ -115,8 +104,8 @@ describe('ExercisePlaybackPage — Metronome Visualization', () => {
       container.querySelectorAll('[data-testid="metronome-beat-marker"]').length +
       container.querySelectorAll('[data-testid="metronome-downbeat-marker"]').length;
 
-    // 240 BPM = 2x beats of 120 BPM for a 60s exercise
-    expect(countAfter).toBeGreaterThan(countBefore);
+    // Marker count should remain constant (beat grid is locked to original exercise BPM)
+    expect(countAfter).toBe(countBefore);
   });
 
   it('marker layer aria-label reflects correct beat count', () => {
