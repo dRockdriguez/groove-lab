@@ -4,14 +4,21 @@ import userEvent from '@testing-library/user-event';
 import { MiniTimeline } from './MiniTimeline';
 
 describe('MiniTimeline - Loop Interactions', () => {
+  const mockMidiEvents = [
+    { note: 36, time: 5000, velocity: 100 },
+    { note: 36, time: 10000, velocity: 95 },
+    { note: 38, time: 7500, velocity: 100 },
+    { note: 38, time: 12500, velocity: 100 },
+  ];
+
   const defaultProps = {
-    exerciseDuration: 60000, // 60 seconds
+    midiEvents: mockMidiEvents,
+    durationMs: 60000, // 60 seconds
     currentTimeMs: 0,
     onSeek: vi.fn(),
     loopStartMs: 15000,
     loopEndMs: 45000,
     isLoopActive: false,
-    isDraggingLoop: false,
     onLoopStartChange: vi.fn(),
     onLoopEndChange: vi.fn(),
     onLoopDragStart: vi.fn(),
@@ -47,7 +54,7 @@ describe('MiniTimeline - Loop Interactions', () => {
       render(
         <MiniTimeline
           {...defaultProps}
-          exerciseDuration={60000}
+          durationMs={60000}
           loopStartMs={15000}
           loopEndMs={45000}
           isLoopActive={true}
@@ -525,7 +532,7 @@ describe('MiniTimeline - Loop Interactions', () => {
       const { rerender } = render(
         <MiniTimeline
           {...defaultProps}
-          exerciseDuration={60000}
+          durationMs={60000}
           loopStartMs={15000}
           loopEndMs={45000}
           isLoopActive={true}
@@ -540,7 +547,7 @@ describe('MiniTimeline - Loop Interactions', () => {
       rerender(
         <MiniTimeline
           {...defaultProps}
-          exerciseDuration={60000}
+          durationMs={60000}
           loopStartMs={15000}
           loopEndMs={45000}
           isLoopActive={true}

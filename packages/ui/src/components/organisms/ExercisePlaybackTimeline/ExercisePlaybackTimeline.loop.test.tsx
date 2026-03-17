@@ -4,43 +4,22 @@ import userEvent from '@testing-library/user-event';
 import { ExercisePlaybackTimeline } from './ExercisePlaybackTimeline';
 
 describe('ExercisePlaybackTimeline - Loop Overlay', () => {
-  const mockExercise = {
-    id: '1',
-    name: 'Exercise 1',
-    bpm: 120,
-    duration: 60000, // 60 seconds
-    instrumentType: 'drums' as const,
-    tracks: [
-      {
-        id: 'track1',
-        name: 'Kick',
-        color: '#FF0000',
-        notes: [
-          { time: 5000, velocity: 100 },
-          { time: 10000, velocity: 95 },
-        ],
-      },
-      {
-        id: 'track2',
-        name: 'Snare',
-        color: '#00FF00',
-        notes: [
-          { time: 7500, velocity: 100 },
-          { time: 12500, velocity: 100 },
-        ],
-      },
-    ],
-  };
+  const mockMidiEvents = [
+    { note: 36, time: 5000, velocity: 100 },
+    { note: 36, time: 10000, velocity: 95 },
+    { note: 38, time: 7500, velocity: 100 },
+    { note: 38, time: 12500, velocity: 100 },
+  ];
 
   const defaultProps = {
-    exercise: mockExercise,
+    midiEvents: mockMidiEvents,
+    durationMs: 60000, // 60 seconds
     currentTimeMs: 0,
-    isPlaying: false,
-    onSeek: vi.fn(),
+    bpm: 120,
+    metronomeEnabled: false,
     loopStartMs: 15000,
     loopEndMs: 45000,
     isLoopActive: false,
-    isDraggingLoop: false,
     onLoopStartChange: vi.fn(),
     onLoopEndChange: vi.fn(),
     onLoopDragStart: vi.fn(),
@@ -134,7 +113,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           isLoopActive={true}
           loopStartMs={15000}
           loopEndMs={45000}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -213,7 +192,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           loopStartMs={15000}
           loopEndMs={45000}
           onLoopStartChange={onStartChange}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -239,8 +218,8 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           isLoopActive={true}
           loopStartMs={15000}
           loopEndMs={45000}
-          onEndChange={onEndChange}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          onLoopEndChange={onEndChange}
+          durationMs={60000}
         />
       );
 
@@ -267,7 +246,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           loopStartMs={15000}
           loopEndMs={45000}
           onLoopStartChange={onStartChange}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -293,8 +272,8 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           isLoopActive={true}
           loopStartMs={15000}
           loopEndMs={45000}
-          onEndChange={onEndChange}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          onLoopEndChange={onEndChange}
+          durationMs={60000}
         />
       );
 
@@ -354,7 +333,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           loopStartMs={15000}
           loopEndMs={45000}
           onLoopStartChange={onStartChange}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -374,29 +353,16 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
 
   describe('Loop Overlay with Multiple Tracks', () => {
     it('should span across all instrument tracks', () => {
-      const exerciseWithMoreTracks = {
-        ...mockExercise,
-        tracks: [
-          ...mockExercise.tracks,
-          {
-            id: 'track3',
-            name: 'Hi-Hat',
-            color: '#0000FF',
-            notes: [],
-          },
-          {
-            id: 'track4',
-            name: 'Tom',
-            color: '#FFFF00',
-            notes: [],
-          },
-        ],
-      };
+      const midiEventsWithMoreTracks = [
+        ...mockMidiEvents,
+        { note: 42, time: 2000, velocity: 100 },
+        { note: 46, time: 4000, velocity: 100 },
+      ];
 
       render(
         <ExercisePlaybackTimeline
           {...defaultProps}
-          exercise={exerciseWithMoreTracks}
+          midiEvents={midiEventsWithMoreTracks}
           isLoopActive={true}
         />
       );
@@ -407,23 +373,20 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
 
     it('should allow note interaction within loop region', async () => {
       const user = await userEvent.setup();
-      const onNoteClick = vi.fn();
 
-      render(
+      const { container } = render(
         <ExercisePlaybackTimeline
           {...defaultProps}
           isLoopActive={true}
           loopStartMs={5000}
           loopEndMs={12500}
-          onNoteClick={onNoteClick}
         />
       );
 
-      // Click on a note within the loop region
-      const noteElement = screen.getByTestId('note-5000-track1');
-      await user.click(noteElement);
-
-      expect(onNoteClick).toHaveBeenCalled();
+      // Verify that the component renders without blocking note interaction
+      // (loop fill should have pointer-events: none)
+      const loopFill = screen.getByTestId('loop-fill');
+      expect(loopFill).toHaveStyle('pointer-events: none');
     });
   });
 
@@ -435,7 +398,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           isLoopActive={true}
           loopStartMs={15000}
           loopEndMs={45000}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -451,7 +414,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           isLoopActive={true}
           loopStartMs={15000}
           loopEndMs={45000}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -464,7 +427,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           isLoopActive={true}
           loopStartMs={10000}
           loopEndMs={50000}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -516,7 +479,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           isLoopActive={true}
           loopStartMs={15000}
           loopEndMs={45000}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 
@@ -544,7 +507,7 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
           loopStartMs={15000}
           loopEndMs={45000}
           onLoopStartChange={onStartChange}
-          exercise={{ ...mockExercise, duration: 60000 }}
+          durationMs={60000}
         />
       );
 

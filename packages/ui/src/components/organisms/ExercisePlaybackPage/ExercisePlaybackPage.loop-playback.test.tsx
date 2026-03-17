@@ -6,24 +6,16 @@ import { ExercisePlaybackPage } from './ExercisePlaybackPage';
 describe('ExercisePlaybackPage - Loop Playback Logic', () => {
   const mockExercise = {
     id: '1',
-    name: 'Exercise 1',
+    title: 'Exercise 1',
     bpm: 120,
-    duration: 60000,
-    instrumentType: 'drums' as const,
-    filePath: '/path/to/audio.mp3',
-    tracks: [
-      {
-        id: 'kick',
-        name: 'Kick',
-        color: '#FF0000',
-        notes: [
-          { time: 5000, velocity: 100 },
-          { time: 10000, velocity: 95 },
-          { time: 20000, velocity: 100 },
-          { time: 30000, velocity: 95 },
-          { time: 50000, velocity: 100 },
-        ],
-      },
+    durationMs: 60000,
+    audioUrl: '/path/to/audio.mp3',
+    midiEvents: [
+      { note: 36, timestamp: 5000, velocity: 100 },
+      { note: 36, timestamp: 10000, velocity: 95 },
+      { note: 36, timestamp: 20000, velocity: 100 },
+      { note: 36, timestamp: 30000, velocity: 95 },
+      { note: 36, timestamp: 50000, velocity: 100 },
     ],
   };
 
@@ -40,8 +32,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should initialize with default loop state (no loop)', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      expect(screen.getByLabelText(/loop start time/i)).toHaveValue('00:00');
-      expect(screen.getByLabelText(/loop end time/i)).toHaveValue('00:00');
+      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toHaveValue('00:00');
+      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toHaveValue('00:00');
       expect(
         screen.getByRole('button', { name: /enable loop/i })
       ).toBeDisabled();
@@ -51,7 +43,7 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
       await user.clear(startInput);
       await user.type(startInput, '00:15');
 
@@ -64,7 +56,7 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
       await user.clear(endInput);
       await user.type(endInput, '00:45');
 
@@ -78,8 +70,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
 
       // Set loop times
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(startInput);
       await user.type(startInput, '00:15');
@@ -109,7 +101,7 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const repetitionsInput = screen.getByLabelText(/loop repetitions/i);
+      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i);
       await user.clear(repetitionsInput);
       await user.type(repetitionsInput, '5');
 
@@ -136,8 +128,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
       // Set loop
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '30000' } });
@@ -163,9 +155,9 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
       // Setup loop with 3 repetitions
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
-      const repetitionsInput = screen.getByLabelText(/loop repetitions/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
+      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '30000' } });
@@ -190,9 +182,9 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should continue past loop end when repetitions exhausted', async () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
-      const repetitionsInput = screen.getByLabelText(/loop repetitions/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
+      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '30000' } });
@@ -217,8 +209,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should not jump if loop is disabled', async () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '30000' } });
@@ -239,8 +231,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should handle infinite loop repetitions', async () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
       const infiniteRadio = screen.getByRole('radio', { name: /infinite/i });
 
       fireEvent.change(startInput, { target: { value: '15000' } });
@@ -270,8 +262,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should render loop markers when loop is set', () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '45000' } });
@@ -287,8 +279,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(startInput);
       await user.type(startInput, '00:15');
@@ -314,8 +306,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(startInput);
       await user.type(startInput, '00:15');
@@ -335,7 +327,7 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const repetitionsInput = screen.getByLabelText(/loop repetitions/i);
+      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i);
       await user.clear(repetitionsInput);
       await user.type(repetitionsInput, '5');
 
@@ -351,8 +343,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(startInput);
       await user.type(startInput, '00:15');
@@ -373,8 +365,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should clear loop automatically when playback ends', async () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '45000' } });
@@ -406,8 +398,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       fireEvent.click(metronomeToggle);
 
       // Setup loop
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '30000' } });
@@ -431,8 +423,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(startInput);
       await user.type(startInput, '00:15');
@@ -450,7 +442,7 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
       startInput.focus();
 
       await user.keyboard('{ArrowUp}');
@@ -465,7 +457,7 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should not persist loop in localStorage', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
       fireEvent.change(startInput, { target: { value: '15000' } });
 
       // Loop state should be in React state, not localStorage
@@ -475,7 +467,7 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should clear loop on page reload simulation', () => {
       const { unmount } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
       fireEvent.change(startInput, { target: { value: '15000' } });
 
       unmount();
@@ -491,8 +483,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should announce repetition counter updates', async () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i) as HTMLInputElement;
-      const endInput = screen.getByLabelText(/loop end time/i) as HTMLInputElement;
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i) as HTMLInputElement;
 
       fireEvent.change(startInput, { target: { value: '15000' } });
       fireEvent.change(endInput, { target: { value: '30000' } });
@@ -516,15 +508,15 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
       startInput.focus();
 
       await user.keyboard('{Tab}');
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
       expect(endInput).toHaveFocus();
 
       await user.keyboard('{Tab}');
-      const repetitionsInput = screen.getByLabelText(/loop repetitions/i);
+      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i);
       expect(repetitionsInput).toHaveFocus();
     });
   });
@@ -534,8 +526,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(endInput);
       await user.type(endInput, '00:30');
@@ -551,8 +543,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(endInput);
       await user.type(endInput, '00:30');
@@ -567,8 +559,8 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time/i);
-      const endInput = screen.getByLabelText(/loop end time/i);
+      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
+      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
 
       await user.clear(startInput);
       await user.type(startInput, '00:10');
