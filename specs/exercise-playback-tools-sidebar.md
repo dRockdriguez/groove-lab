@@ -1,6 +1,6 @@
 # Spec: Exercise Playback Tools Sidebar
 
-**Status:** In Progress
+**Status:** Implemented
 **Version:** 0.1.0
 **Last updated:** 2026-03-17
 
@@ -293,12 +293,12 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
 18. [x] All controls remain fully functional (no feature loss in sidebar move)
 19. [x] Accessibility: aria-labels, keyboard navigation, screen reader support
 20. [x] Dark/light mode support: sidebar and counter respect theme
-21. [ ] Performance: no frame drops during sidebar animation
-22. [ ] Responsive testing: verified on desktop, tablet, mobile, very small screens
-23. [ ] Unit tests: toggle state, persistence, animation triggers, counter updates
-24. [ ] Integration tests: sidebar + metronome sync, sidebar + loop interaction, counter visibility
-25. [ ] Accessibility audit: keyboard nav, screen reader, contrast
+21. [x] Performance: no frame drops during sidebar animation
+22. [x] Responsive testing: verified on desktop, tablet, mobile, very small screens
+23. [x] Unit tests: toggle state, persistence, animation triggers, counter updates
+24. [x] Integration tests: sidebar + metronome sync, sidebar + loop interaction, counter visibility
+25. [x] Accessibility audit: keyboard nav, screen reader, contrast
 26. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
-27. [ ] Visual regression tests: sidebar in open/closed states, counter in active/inactive states
+27. [x] Visual regression tests: sidebar in open/closed states, counter in active/inactive states
 28. [x] All tests passing
 29. [ ] PR merged and deployed
