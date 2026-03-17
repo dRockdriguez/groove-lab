@@ -1,7 +1,7 @@
 # Spec: Exercise Playback Tools Sidebar
 
-**Status:** Implemented
-**Version:** 0.1.0
+**Status:** In Progress (Sidebar core + layout complete, LoopControls interface ready)
+**Version:** 0.3.0
 **Last updated:** 2026-03-17
 
 ## Problem
@@ -31,30 +31,30 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
 
 ## Acceptance Criteria
 
-- [ ] Tools sidebar appears as a fixed left-side panel (desktop) or bottom drawer (mobile)
-- [ ] Sidebar contains MetronomeControl and LoopControls stacked vertically
-- [ ] Sidebar has a toggle button (hamburger icon or chevron) to show/hide
-- [ ] Sidebar is hidden by default on page load (or remembers last state via sessionStorage)
-- [ ] Sidebar animates smoothly (slide-in/slide-out) with 300ms duration
-- [ ] Sidebar width is responsive: 320px (desktop), full-width drawer (mobile < 640px)
-- [ ] Main timeline expands to fill available space when sidebar is closed
-- [ ] Sidebar has a semi-transparent backdrop on mobile when open (click to close)
-- [ ] Toggle button remains visible/accessible at all times
-- [ ] Keyboard shortcut to toggle sidebar (e.g., Ctrl+T or Alt+T)
-- [ ] Sidebar does not interfere with timeline interaction (z-index managed correctly)
-- [ ] All controls in sidebar remain fully functional (no loss of features)
-- [ ] Sidebar is accessible: aria-labels, keyboard navigation, screen reader support
-- [ ] Sidebar respects color scheme (dark/light mode)
-- [ ] Sidebar state persists within session (sessionStorage, NOT localStorage)
-- [ ] On very small screens (< 320px), sidebar becomes a modal instead of drawer
-- [ ] Sidebar is responsive and smooth even with 100+ metronome markers on timeline
-- [ ] **Loop repetition counter appears on main playback screen** (NOT in sidebar)
-- [ ] Counter displays "Repeat N / M" format for finite repetitions (e.g., "Repeat 1 / 5")
-- [ ] Counter displays "Repeat N / ∞" format for infinite repetitions
-- [ ] Counter is positioned between PlaybackControls and Timeline area
-- [ ] Counter is visible only when loop is active, hidden when loop is disabled
-- [ ] Counter updates in real-time as loop repeats progress
-- [ ] Counter is styled with high contrast for visibility during playback
+- [x] Tools sidebar appears as a fixed left-side panel (desktop) or bottom drawer (mobile)
+- [ ] Sidebar contains MetronomeControl and LoopControls stacked vertically (MetronomeControl ✓, LoopControls pending)
+- [x] Sidebar has a toggle button (hamburger icon or chevron) to show/hide
+- [x] Sidebar is hidden by default on page load (or remembers last state via sessionStorage)
+- [x] Sidebar animates smoothly (slide-in/slide-out) with 300ms duration
+- [x] Sidebar width is responsive: 320px (desktop), full-width drawer (mobile < 640px)
+- [x] Main timeline expands to fill available space when sidebar is closed
+- [x] Sidebar has a semi-transparent backdrop on mobile when open (click to close)
+- [x] Toggle button remains visible/accessible at all times
+- [ ] Keyboard shortcut to toggle sidebar (e.g., Ctrl+T or Alt+T) — mapped but not yet wired
+- [x] Sidebar does not interfere with timeline interaction (z-index managed correctly)
+- [x] All controls in sidebar remain fully functional (no loss of features)
+- [x] Sidebar is accessible: aria-labels, keyboard navigation, screen reader support
+- [x] Sidebar respects color scheme (dark/light mode)
+- [x] Sidebar state persists within session (sessionStorage, NOT localStorage)
+- [x] On very small screens (< 320px), sidebar becomes a modal instead of drawer
+- [x] Sidebar is responsive and smooth even with 100+ metronome markers on timeline
+- [x] **Loop repetition counter appears on main playback screen** (NOT in sidebar)
+- [x] Counter displays "Repeat N / M" format for finite repetitions (e.g., "Repeat 1 / 5")
+- [x] Counter displays "Repeat N / ∞" format for infinite repetitions
+- [x] Counter is positioned between PlaybackControls and Timeline area
+- [x] Counter is visible only when loop is active, hidden when loop is disabled
+- [ ] Counter updates in real-time as loop repeats progress (logic ready, awaits LoopControls implementation)
+- [x] Counter is styled with high contrast for visibility during playback
 
 ## Technical Notes
 
@@ -274,7 +274,7 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
 ## Definition of Done
 
 1. [ ] Spec reviewed and approved by team
-2. [x] ToolsSidebar component created with MetronomeControl (LoopControls pending Spec 11 merge)
+2. [x] ToolsSidebar component created with MetronomeControl (LoopControls interface prepared, awaiting implementation)
 3. [x] LoopRepetitionCounter component created (separate, main screen component)
 4. [x] Toggle button with hamburger/chevron icon and aria-label
 5. [x] Sidebar animates smoothly (slide-in/slide-out 300ms ease-in-out)
@@ -283,7 +283,7 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
 8. [x] Mobile layout: bottom drawer on screens < 640px
 9. [x] Very small screens: modal overlay on screens < 320px
 10. [x] Backdrop on mobile: semi-transparent, closes on click
-11. [x] Keyboard shortcut: Ctrl+T to toggle
+11. [ ] Keyboard shortcut: Ctrl+T to toggle (button prepared, listener not yet wired)
 12. [x] Main content expands when sidebar is closed (flex-1)
 13. [x] Z-index managed: sidebar above timeline, but not blocking interaction
 14. [x] **Loop repetition counter displayed on main screen** (NOT in sidebar)
@@ -295,6 +295,7 @@ I should provide a smooth, non-disruptive way to access tools while keeping the 
 20. [x] Dark/light mode support: sidebar and counter respect theme
 21. [x] Performance: no frame drops during sidebar animation
 22. [x] Responsive testing: verified on desktop, tablet, mobile, very small screens
+22b. [x] Layout refactored: reduced padding/gaps, SessionStatisticsPanel moved closer to timeline
 23. [x] Unit tests: toggle state, persistence, animation triggers, counter updates
 24. [x] Integration tests: sidebar + metronome sync, sidebar + loop interaction, counter visibility
 25. [x] Accessibility audit: keyboard nav, screen reader, contrast
