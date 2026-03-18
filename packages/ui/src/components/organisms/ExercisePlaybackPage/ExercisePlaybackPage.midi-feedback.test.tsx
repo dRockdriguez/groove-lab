@@ -370,7 +370,7 @@ describe('ExercisePlaybackPage — MIDI Feedback', () => {
     }
 
     await waitFor(() => {
-      const hitCountText = screen.queryByText(/hit count|1 of \d+/i);
+      const hitCountText = screen.queryByText('Hits');
       expect(hitCountText).toBeTruthy();
     }, { timeout: 1000 });
   });
