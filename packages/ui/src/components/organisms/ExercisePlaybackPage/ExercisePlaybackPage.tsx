@@ -527,10 +527,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             onLoopEndChange={handleLoopEndChange}
             isLoopActive={isLoopActive}
           />
-        </div>
 
-        {/* Session statistics — directly after timeline, no padding */}
-        <div className="px-4 sm:px-6 py-3">
+          {/* Session statistics — directly below timeline */}
           <SessionStatisticsPanel statistics={statistics} />
         </div>
       </div>
