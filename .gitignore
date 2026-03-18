@@ -11,10 +11,6 @@ coverage/
 storybook-static/
 .env
 
-# Local database files
-*.db
-apps/api/storage/
-
 # Editor/IDE
 .vscode/
 .idea/
