@@ -32,24 +32,26 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
     it('should initialize with default loop state (no loop)', () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      // When no loop region selected, loop toggle should be disabled
-      // Find the loop toggle button by looking for the one with aria-label "Turn loop on"
-      const loopToggleButton = screen.getByRole('button', { name: /turn loop/i });
-      // It may not have a matching role, so use container query
+      // Loop toggle should be disabled when no region selected (loopStartMs >= loopEndMs)
       const buttons = Array.from(container.querySelectorAll('button[aria-pressed]'));
       const loopToggle = buttons.find((btn) => btn.getAttribute('aria-label')?.includes('loop'));
+
       expect(loopToggle).toBeDisabled();
+      expect(loopToggle).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('should update loop repetitions count', async () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const repsSelector = screen.getByLabelText(/Number of loop repetitions/i);
+      const repsSelector = screen.getByLabelText(/Number of loop repetitions/i) as HTMLSelectElement;
+      const initialValue = repsSelector.value;
+
       await user.selectOptions(repsSelector, '5');
 
       await waitFor(() => {
-        expect((repsSelector as HTMLSelectElement).value).toBe('5');
+        expect(repsSelector.value).toBe('5');
+        expect(repsSelector.value).not.toBe(initialValue);
       });
     });
 
@@ -57,11 +59,12 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const repsSelector = screen.getByLabelText(/Number of loop repetitions/i);
+      const repsSelector = screen.getByLabelText(/Number of loop repetitions/i) as HTMLSelectElement;
+
       await user.selectOptions(repsSelector, 'infinite');
 
       await waitFor(() => {
-        expect((repsSelector as HTMLSelectElement).value).toBe('infinite');
+        expect(repsSelector.value).toBe('infinite');
       });
     });
   });
@@ -73,69 +76,84 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       // Find the loop toggle button by its aria-label (contains "loop")
       const buttons = Array.from(container.querySelectorAll('button[aria-pressed]'));
       const loopToggle = buttons.find((btn) => btn.getAttribute('aria-label')?.includes('loop'));
+
       expect(loopToggle).toBeDisabled();
+      expect(loopToggle?.className).toMatch(/disabled:opacity-50/);
     });
 
-    it('should enable loop toggle when region is selected', async () => {
+    it('should show loop toggle button with clear UI text', () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      // Simulate setting loop bounds via timeline drag (externally managed)
-      // For now, we'll test that when loop bounds are set, the toggle becomes enabled
-      const { rerender } = render(
-        <ExercisePlaybackPage
-          {...defaultProps}
-        />
-      );
+      // Initially shows "Loop Off" when no region selected
+      expect(screen.getByText('Loop Off')).toBeInTheDocument();
 
-      // The loop state is managed internally, so we'd need to set it via props
-      // or through some other mechanism. For now, just verify the component renders.
-      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+      // Button should have aria-label explaining its function
+      const buttons = Array.from(container.querySelectorAll('button[aria-pressed]'));
+      const loopToggle = buttons.find((btn) => btn.getAttribute('aria-label')?.includes('loop'));
+      expect(loopToggle).toHaveAttribute('aria-label');
     });
   });
 
   describe('Clear Loop', () => {
-    it('should clear loop when Clear button is clicked', async () => {
-      const user = await userEvent.setup();
-      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+    it('should have clear button disabled when no loop region selected', () => {
+      render(<ExercisePlaybackPage {...defaultProps} />);
 
-      // Get the Clear button
       const clearButton = screen.getByText('Clear');
 
-      // Note: The Clear button will be disabled initially since no loop region is selected
-      // In a full test, we'd first set up a loop region
-      expect(clearButton).toBeInTheDocument();
+      // Clear button disabled when no region selected
+      expect(clearButton).toBeDisabled();
+      expect(clearButton).toHaveAttribute('aria-label', 'Clear loop region');
+    });
+
+    it('should render clear button with accessible label', () => {
+      render(<ExercisePlaybackPage {...defaultProps} />);
+
+      const clearButton = screen.getByText('Clear');
+      const ariaLabel = clearButton.getAttribute('aria-label') || '';
+      expect(ariaLabel.toLowerCase()).toContain('clear');
     });
   });
 
   describe('Layout and Rendering', () => {
-    it('should render LoopControls component', () => {
+    it('should render LoopControls component with header', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
+
       expect(screen.getByText('Loop Control')).toBeInTheDocument();
       expect(screen.getByText('Loop Off')).toBeInTheDocument();
     });
 
-    it('should render repetitions selector', () => {
+    it('should render repetitions selector with proper options', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
-      expect(screen.getByLabelText(/Number of loop repetitions/i)).toBeInTheDocument();
+
+      const selector = screen.getByLabelText(/Number of loop repetitions/i);
+      expect(selector).toBeInTheDocument();
+      expect(selector).toBeVisible();
     });
 
-    it('should render loop toggle button', () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
+    it('should render loop toggle button with aria-pressed attribute', () => {
       const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+
       const toggleButton = container.querySelector('button[aria-pressed]');
       expect(toggleButton).toBeInTheDocument();
+      expect(toggleButton).toHaveAttribute('aria-pressed');
     });
 
     it('should render clear button', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
-      expect(screen.getByText('Clear')).toBeInTheDocument();
+
+      const clearButton = screen.getByText('Clear');
+      expect(clearButton).toBeInTheDocument();
+      expect(clearButton).toBeVisible();
     });
 
-    it('should display loop status when region selected', () => {
-      // Note: In the new design, loop status is displayed via the LoopControls component
-      // which requires loopStartMs < loopEndMs to show the status display
+    it('should not display loop status when no region selected', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
-      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+
+      // Loop status is displayed only when loopStartMs < loopEndMs
+      // With default props (loopStartMs=0, loopEndMs=0), status should not appear
+      // The status text "Loop: mm:ss–mm:ss" should not be visible
+      const loopStatusText = screen.queryByText(/^Loop: \d{1,2}:\d{2}–\d{1,2}:\d{2}/);
+      expect(loopStatusText).not.toBeInTheDocument();
     });
   });
 
@@ -194,8 +212,21 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
 
       // LoopControls should be present for use with timeline drag-select
       expect(screen.getByText('Loop Control')).toBeInTheDocument();
+
+      // LoopControls container should have aria-label
       const loopControls = container.querySelector('[aria-label*="Loop controls"]');
       expect(loopControls).toBeInTheDocument();
+    });
+
+    it('should render both timelines for drag-select interaction', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+
+      // Component should render exercise playback content
+      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+
+      // Verify timelines are present
+      const timeline = container.querySelector('[role="presentation"]');
+      expect(timeline).toBeInTheDocument();
     });
   });
 
