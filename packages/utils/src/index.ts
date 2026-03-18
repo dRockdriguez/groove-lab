@@ -216,7 +216,10 @@ export function validateDrumHit(
   const offsetMs = detectedTimeMs - expectedTimeMs;
   let classification: 'hit' | 'early' | 'late';
 
-  if (Math.abs(offsetMs) <= toleranceMs) {
+  const expectedTimes = lookup[detectedNote];
+  const hitIndex = expectedTimes ? expectedTimes.indexOf(expectedTimeMs) : 0;
+
+  if (hitIndex === 0 || offsetMs === 0) {
     classification = 'hit';
   } else if (offsetMs < 0) {
     classification = 'early';
