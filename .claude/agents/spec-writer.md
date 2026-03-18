@@ -2,8 +2,7 @@
 
 ## Purpose
 
-Transforms a user story, feature request, or problem description into a structured
-spec document that the rest of the team can build from.
+Transforms a user story, feature request, or problem description into a structured spec document that the rest of the team can build from.
 
 ## Inputs
 
@@ -12,8 +11,7 @@ spec document that the rest of the team can build from.
 
 ## Outputs
 
-A complete markdown spec file in the appropriate `/specs` subdirectory following the
-GrooveLab spec template.
+A complete markdown spec file in `/specs/` following the GrooveLab spec template.
 
 ## Workflow
 
@@ -27,12 +25,13 @@ GrooveLab spec template.
 
 ## Output Location
 
+All specs are written to the `/specs/` directory at the same level (no subdirectories):
+
 ```
-specs/
-  instruments/   ← for instrument input/detection specs
-  practice/      ← for session and exercise specs
-  feedback/      ← for analysis and feedback specs
+specs/<feature-name>.md
 ```
+
+Example: `specs/exercise-playback-loops.md`, `specs/import-page.md`
 
 ## Quality Checklist
 
