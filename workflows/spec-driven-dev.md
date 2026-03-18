@@ -13,7 +13,7 @@ prompts/generate-tests.md
 3. Implement feature
 
 Prompt:
-prompts/implement-feature.md
+prompts/implement-feature-first.md
 
 4. Verify implementation
 

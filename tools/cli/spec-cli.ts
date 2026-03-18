@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 import os from 'os';
+import readline from 'readline';
 
 const program = new Command();
 
@@ -25,8 +26,13 @@ const steps: Record<string, Step> = {
     model: 'claude-opus-4-6',
   },
   implement: {
-    label: 'Implement feature',
+    label: 'Implement feature from tests',
     prompt: 'prompts/implement-feature.md',
+    model: 'claude-sonnet-4-6',
+  },
+  'implement-first': {
+    label: 'Implement feature from spec',
+    prompt: 'prompts/implement-feature-first.md',
     model: 'claude-sonnet-4-6',
   },
   test: {
@@ -35,7 +41,7 @@ const steps: Record<string, Step> = {
     model: 'claude-haiku-4-5-20251001',
   },
   'implement-tests': {
-    label: 'Impelement tests',
+    label: 'Implement tests',
     prompt: 'prompts/implement-tests.md',
     model: 'claude-haiku-4-5-20251001',
   },
@@ -47,16 +53,74 @@ const steps: Record<string, Step> = {
 };
 
 const flows: Record<string, string[]> = {
-  default: ['implement', 'test', 'implement-tests', 'verify'],
-  plan: ['plan', 'implement', 'test', 'implement-tests', 'verify'],
+  default: ['implement-first', 'test', 'implement-tests', 'verify'],
+  plan: ['plan', 'implement-first', 'test', 'implement-tests', 'verify'],
   tdd: ['analyze', 'test', 'implement-tests', 'implement', 'verify'],
-  'no-tdd': ['analyze', 'implement', 'verify'],
+  'no-tdd': ['analyze', 'implement-first', 'verify'],
 };
 
-function runStep(stepKey: string, specPath: string) {
-  const step = steps[stepKey];
+// Helper: create readline interface for interactive prompts
+function createReadlineInterface(): readline.Interface {
+  return readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+}
 
-  console.log(`\n⏩ STEP: ${step.label} using ${step.model}`);
+// Helper: ask user a yes/no/other question
+async function prompt(rl: readline.Interface, question: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      resolve(answer.toLowerCase().trim());
+    });
+  });
+}
+
+// Validate spec file exists and is readable
+function validateSpecFile(specPath: string): void {
+  if (!specPath.endsWith('.md')) {
+    console.error(`❌ Spec path must end with .md: ${specPath}`);
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(specPath)) {
+    console.error(`❌ Spec file not found: ${specPath}`);
+    process.exit(1);
+  }
+
+  try {
+    fs.accessSync(specPath, fs.constants.R_OK);
+  } catch {
+    console.error(`❌ Cannot read spec file: ${specPath}`);
+    process.exit(1);
+  }
+}
+
+// Format elapsed time
+function formatElapsed(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s`;
+  }
+  return `${seconds}s`;
+}
+
+async function runStep(
+  stepKey: string,
+  specPath: string,
+  modelOverride?: string,
+  stepIndex?: number,
+  totalSteps?: number
+): Promise<void> {
+  const step = steps[stepKey];
+  const model = modelOverride || step.model;
+
+  // Show step progress
+  const progress = stepIndex !== undefined && totalSteps !== undefined
+    ? ` (${stepIndex}/${totalSteps})`
+    : '';
+  console.log(`\n⏩ STEP: ${step.label}${progress} using ${model}`);
 
   const template = fs.readFileSync(step.prompt, 'utf-8');
   const prompt = template.replace('{{SPEC_PATH}}', specPath);
@@ -68,14 +132,14 @@ function runStep(stepKey: string, specPath: string) {
   // This sends the prompt, waits 2s for response, then kills after 5m of inactivity
   // On macOS, timeout doesn't exist - try gtimeout first, fall back to no timeout
   const timeoutCmd = os.platform() === 'darwin' ? 'gtimeout' : 'timeout';
-  let command = `(echo '${escapedPrompt}'; sleep 2) | ${timeoutCmd} 300 claude --model ${step.model} || true`;
+  let command = `(echo '${escapedPrompt}'; sleep 2) | ${timeoutCmd} 300 claude --model ${model} || true`;
 
   // If on macOS and gtimeout not available, run without timeout
   if (os.platform() === 'darwin') {
     try {
       execSync('which gtimeout', { stdio: 'ignore' });
     } catch {
-      command = `(echo '${escapedPrompt}'; sleep 2) | claude --model ${step.model}`;
+      command = `(echo '${escapedPrompt}'; sleep 2) | claude --model ${model}`;
     }
   }
 
@@ -142,9 +206,20 @@ function commitAfterStep(step: string, specPath: string) {
     console.log(`No changes after ${step} step — skipping commit`);
     return;
   }
-  // Stage only source code and spec files (avoid accidentally committing .env, node_modules, etc)
-  execSync('git add src/ packages/ apps/ specs/ .astro/ public/ 2>/dev/null || true', { stdio: 'inherit' });
-  execSync(`git commit -m "spec(${branchName}): after ${step} step"`, { stdio: 'inherit' });
+
+  try {
+    // Stage all changes (.gitignore will exclude node_modules, .env, etc)
+    execSync('git add -A', { stdio: 'inherit' });
+
+    const commitMsg = step === 'all'
+      ? `spec(${branchName}): implement + test + verify workflow complete`
+      : `spec(${branchName}): after ${step} step`;
+
+    execSync(`git commit -m "${commitMsg}"`, { stdio: 'inherit' });
+  } catch (err: any) {
+    // If commit fails, it's likely no changes to commit (all staged)
+    console.log(`⚠️ Could not commit after ${step} — ${err.message}`);
+  }
 }
 
 function pushBranch(branchName: string) {
@@ -191,53 +266,152 @@ function finalizeSpecDelivery(specPath: string) {
   ensurePullRequest(branchName);
 }
 
+// Command: flows — list all available workflows
+program
+  .command('flows')
+  .description('List all available workflows')
+  .action(() => {
+    console.log('\n📋 Available Spec Workflows\n');
+    console.log('Flow Name    | Steps\n' + '─'.repeat(60));
+    for (const [name, flowSteps] of Object.entries(flows)) {
+      const stepLabels = flowSteps
+        .map((s) => steps[s].label)
+        .join(' → ');
+      console.log(`${name.padEnd(12)} | ${stepLabels}`);
+    }
+    console.log();
+  });
+
+// Command: step — run a single step
 program
   .command('step <step> <spec>')
-  .description('Run spec workflow')
-  .action((step, spec) => {
+  .option('--model <model>', 'override Claude model for this step')
+  .description('Run a single spec workflow step')
+  .action(async (step, spec, options) => {
     try {
+      validateSpecFile(spec);
       createSpecBranch(spec);
-      runStep(step, spec);
+      const startTime = Date.now();
+      await runStep(step, spec, options.model);
+      const elapsed = formatElapsed(Date.now() - startTime);
+      console.log(`\n🎯 Step complete (${elapsed})`);
     } catch (err) {
       console.error(err);
       process.exit(1);
     }
-    console.log('\n🎯 Workflow finished!');
   });
 
+// Command: run — execute a full workflow
 program
   .command('run <spec>')
   .option('--flow <flow>', 'workflow to run', 'default')
-  .description('Run spec workflow')
-  .action((spec, options) => {
+  .option('--interactive', 'pause after each step to review changes')
+  .option('--commit-steps', 'commit after each step (vs. single final commit)')
+  .option('--model <model>', 'override Claude model for all steps')
+  .description('Run a complete spec workflow')
+  .action(async (spec, options) => {
     const flow = flows[options.flow];
     if (!flow) {
-      console.error(`Unknown flow: ${options.flow}`);
+      console.error(`❌ Unknown flow: ${options.flow}`);
       process.exit(1);
     }
 
     try {
+      validateSpecFile(spec);
       createSpecBranch(spec);
     } catch (err) {
       console.error(err);
       process.exit(1);
     }
 
-    console.log(`\nStarting with flow: ${flow}`);
+    console.log(`\n🚀 Starting workflow: ${options.flow} (${flow.length} steps)`);
+    console.log(`📝 Spec: ${spec}\n`);
 
-    for (const step of flow) {
+    const workflowStart = Date.now();
+    let completedSteps = 0;
+
+    for (let i = 0; i < flow.length; i++) {
+      const stepKey = flow[i];
+      const stepStart = Date.now();
+
       try {
-        runStep(step, spec);
-        commitAfterStep(step, spec);
+        await runStep(stepKey, spec, options.model, i + 1, flow.length);
+        const stepElapsed = formatElapsed(Date.now() - stepStart);
+        console.log(`⏱️  Step took ${stepElapsed}`);
+        completedSteps++;
+
+        // Commit after each step if requested
+        if (options.commitSteps) {
+          try {
+            commitAfterStep(stepKey, spec);
+          } catch (err) {
+            console.warn(`⚠️ Could not commit after ${stepKey}`);
+          }
+        }
+
+        // Interactive mode: pause and show diff
+        if (options.interactive) {
+          const rl = createReadlineInterface();
+          const status = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+
+          if (status) {
+            console.log('\n📊 Changes after this step:');
+            console.log(execSync('git diff --stat', { encoding: 'utf8' }));
+          }
+
+          const answer = await prompt(rl, '\n➡️  Continue? [y]es / [s]kip / [a]bort: ');
+          rl.close();
+
+          if (answer === 'a' || answer === 'abort') {
+            console.log('❌ Workflow aborted by user');
+            process.exit(1);
+          } else if (answer === 's' || answer === 'skip') {
+            console.log(`⏭️  Skipping next steps...\n`);
+            break;
+          }
+        }
       } catch (err) {
-        console.error(`⚠️ Step failed: ${step}`);
-        console.error(err);
-        process.exit(1);
+        console.error(`\n⚠️ Step failed: ${stepKey}`);
+        console.error(`${err}\n`);
+
+        // Recovery: offer retry/skip/abort
+        const rl = createReadlineInterface();
+        const answer = await prompt(
+          rl,
+          '💡 Options? [r]etry / [s]kip this step / [a]bort workflow: '
+        );
+        rl.close();
+
+        if (answer === 'r' || answer === 'retry') {
+          console.log('🔄 Retrying step...\n');
+          i--; // Retry same step
+          continue;
+        } else if (answer === 's' || answer === 'skip') {
+          console.log(`⏭️  Skipping ${stepKey}...\n`);
+          continue;
+        } else {
+          console.log('❌ Workflow aborted');
+          process.exit(1);
+        }
       }
     }
 
-    console.log('\n🎯 Workflow finished!');
+    console.log('\n' + '='.repeat(60));
+    const totalElapsed = formatElapsed(Date.now() - workflowStart);
+    console.log(`🎯 Workflow complete! (${completedSteps}/${flow.length} steps, total: ${totalElapsed})`);
+    console.log('='.repeat(60));
 
+    // Commit all remaining changes at the end (if not --commit-steps)
+    if (!options.commitSteps) {
+      try {
+        commitAfterStep('all', spec);
+      } catch (err) {
+        console.error('⚠️ Warning: Could not commit after workflow completion');
+        console.error(err);
+      }
+    }
+
+    // Push and create PR
     try {
       finalizeSpecDelivery(spec);
     } catch (err) {

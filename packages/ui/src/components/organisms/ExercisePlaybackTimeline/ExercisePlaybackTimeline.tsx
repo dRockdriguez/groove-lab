@@ -1,5 +1,6 @@
 import React from 'react';
 import type { MidiEvent } from '@groovelab/types';
+import type { DrumHitValidation } from '@groovelab/utils';
 import { clamp, getDrumColor } from '@groovelab/utils';
 import { TrackLabel } from '../../molecules/TrackLabel';
 
@@ -9,6 +10,8 @@ export interface ExercisePlaybackTimelineProps {
   currentTimeMs: number;
   bpm?: number;
   metronomeEnabled?: boolean;
+  /** Validated hits for real-time visual feedback overlays */
+  validatedHits?: DrumHitValidation[];
   /** Loop region start in ms */
   loopStartMs?: number;
   /** Loop region end in ms */
@@ -32,6 +35,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   currentTimeMs,
   bpm = 120,
   metronomeEnabled = false,
+  validatedHits,
   loopStartMs,
   loopEndMs,
   isLoopActive = false,
@@ -42,6 +46,17 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   className = '',
 }) => {
   const tracksRef = React.useRef<HTMLDivElement>(null);
+
+  // ─── Hit overlay lookup for O(1) classification lookup ──────────────────────
+  // Map: `${note}_${expectedTimeMs}` → classification
+  const hitOverlayMap = React.useMemo(() => {
+    const map = new Map<string, DrumHitValidation['classification']>();
+    for (const hit of validatedHits ?? []) {
+      if (hit.classification === 'violation') continue; // no expected position to anchor
+      map.set(`${hit.expectedNote}_${hit.expectedTimeMs}`, hit.classification);
+    }
+    return map;
+  }, [validatedHits]);
 
   // ─── Drag-to-create loop state ─────────────────────────────────────────────
   const [dragStartMs, setDragStartMs] = React.useState<number | null>(null);
@@ -339,17 +354,50 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                 const opacity = Math.max(0.3, event.velocity / 127);
 
                 return (
-                  <div
-                    key={index}
-                    data-testid="note-marker"
-                    className="absolute top-1 bottom-1 w-2 rounded-sm"
-                    style={{
-                      left: `${leftPercent}%`,
-                      opacity,
-                      backgroundColor: getDrumColor(event.note),
-                    }}
-                    title={`t=${event.timestamp}ms v=${event.velocity}`}
-                  />
+                  <div key={index} className="absolute top-1 bottom-1 w-2" style={{ left: `${leftPercent}%` }}>
+                    {/* Note marker bar */}
+                    <div
+                      data-testid="note-marker"
+                      className="absolute top-0 bottom-0 w-2 rounded-sm"
+                      style={{
+                        opacity,
+                        backgroundColor: getDrumColor(event.note),
+                      }}
+                      title={`t=${event.timestamp}ms v=${event.velocity}`}
+                    />
+
+                    {/* Hit feedback overlay */}
+                    {(() => {
+                      const classification = hitOverlayMap.get(
+                        `${event.note}_${event.timestamp}`
+                      );
+                      if (!classification) return null;
+
+                      // Fade over 800ms using currentTimeMs vs expectedTimeMs
+                      const elapsed = currentTimeMs - event.timestamp;
+                      const overlayOpacity = Math.max(0, 1 - elapsed / 800);
+                      if (overlayOpacity <= 0) return null;
+
+                      const overlayColor =
+                        classification === 'hit'
+                          ? 'rgba(34,197,94,' // green-500
+                          : classification === 'early'
+                            ? 'rgba(234,179,8,' // yellow-500
+                            : 'rgba(249,115,22,'; // orange-500 (late)
+
+                      return (
+                        <div
+                          data-testid="hit-overlay"
+                          className="absolute top-0 bottom-0 w-2 rounded-sm pointer-events-none"
+                          style={{
+                            backgroundColor: `${overlayColor}${overlayOpacity * 0.85})`,
+                            zIndex: 5,
+                          }}
+                          aria-hidden="true"
+                        />
+                      );
+                    })()}
+                  </div>
                 );
               })}
             </div>

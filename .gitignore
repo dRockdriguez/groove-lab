@@ -10,3 +10,13 @@ coverage/
 .pytest_cache/
 storybook-static/
 .env
+
+# Local database files
+*.db
+apps/api/storage/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo

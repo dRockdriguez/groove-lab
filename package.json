@@ -16,9 +16,11 @@
     "spec:plan": "ts-node tools/cli/spec-cli.ts step plan",
     "spec:test": "ts-node tools/cli/spec-cli.ts step test",
     "spec:implement:test": "ts-node tools/cli/spec-cli.ts step implement-tests",
-    "spec:implement": "ts-node tools/cli/spec-cli.ts step implement",
+    "spec:implement": "ts-node tools/cli/spec-cli.ts step implement-first",
+    "spec:implement:tdd": "ts-node tools/cli/spec-cli.ts step implement",
     "spec:verify": "ts-node tools/cli/spec-cli.ts step verify",
-    "spec:run": "ts-node tools/cli/spec-cli.ts run"
+    "spec:run": "ts-node tools/cli/spec-cli.ts run",
+    "spec:flows": "ts-node tools/cli/spec-cli.ts flows"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

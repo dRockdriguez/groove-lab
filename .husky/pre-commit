@@ -1,0 +1,38 @@
+#!/bin/sh
+# Pre-commit hook: prevent accidental deletion of storage files and database
+
+# Check if any storage files are being deleted
+DELETED_FILES=$(git diff --cached --name-only --diff-filter=D)
+
+if echo "$DELETED_FILES" | grep -E "^apps/api/storage/" > /dev/null 2>&1; then
+  echo "❌ ERROR: Attempting to delete files from apps/api/storage/"
+  echo ""
+  echo "🚫 The storage directory is protected and should never be committed/deleted."
+  echo "   This directory contains user-uploaded exercise files and local databases."
+  echo ""
+  echo "✅ If you need to clean up storage, delete files manually from the filesystem"
+  echo "   but do NOT commit deletions to git."
+  echo ""
+  echo "To fix this:"
+  echo "  1. Run: git reset HEAD -- apps/api/storage/*"
+  echo "  2. Verify with: git status"
+  echo "  3. Commit again without storage changes"
+  exit 1
+fi
+
+# Check for any database files being added (should be in .gitignore)
+ADDED_FILES=$(git diff --cached --name-only --diff-filter=A)
+
+if echo "$ADDED_FILES" | grep -E "\.(db|sqlite|sqlite3)$" > /dev/null 2>&1; then
+  echo "❌ ERROR: Attempting to commit database files (.db, .sqlite, .sqlite3)"
+  echo ""
+  echo "🚫 Database files should never be committed. They are already in .gitignore."
+  echo ""
+  echo "To fix this:"
+  echo "  1. Run: git reset HEAD -- <database-file>"
+  echo "  2. Run: git rm --cached <database-file> (if already tracked)"
+  echo "  3. Commit again"
+  exit 1
+fi
+
+exit 0

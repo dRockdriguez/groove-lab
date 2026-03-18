@@ -41,7 +41,7 @@ Each agent lives in `agents/<name>/README.md` and defines:
 
 | Agent | When to use |
 |---|---|
-| `agents/spec-writer` | Turning a feature request into a spec document |
+| `agents/spec-writer` | Decomposing a feature request into executable mini-specs |
 | `agents/test-writer` | Generating test stubs from a spec's acceptance criteria (optional, for TDD) |
 | `agents/test-implementer` | Generating test from a spec's acceptance criteria (optional, for TDD) |
 | `agents/feature-builder` | Implementing a feature to satisfy spec acceptance criteria |
@@ -89,12 +89,41 @@ Use these commands when implementing specs. They wrap the spec-driven workflow s
 pnpm spec:analyze    # Analyze a spec file and understand requirements
 pnpm spec:plan       # Plan implementation approach and architecture
 pnpm spec:test       # Generate test stubs from acceptance criteria (optional)
-pnpm spec:implement  # Scaffold implementation based on spec
+pnpm spec:implement  # Implement directly from the spec (non-TDD / implementation-first)
+pnpm spec:implement:tdd  # Implement from existing failing tests (TDD)
 pnpm spec:verify     # Verify implementation against spec acceptance criteria
+pnpm spec:flows      # List all available workflows and their steps
 ```
 
 **Always prefer these commands** over manually running individual tools when the workflow
 step matches.
+
+### CLI Flags
+
+Use these flags to customize spec-cli behavior:
+
+| Flag | Works with | Effect |
+|------|-----------|--------|
+| `--flow <name>` | `spec:run` | Choose workflow: `no-tdd`, `default`, `plan`, or `tdd` |
+| `--interactive` | `spec:run` | Pause after each step to review changes (git diff) before continuing |
+| `--commit-steps` | `spec:run` | Make a commit after each successful step (vs single final commit) |
+| `--model <model>` | `spec:run`, `spec:analyze`, `spec:plan`, etc. | Override Claude model for step(s): e.g., `claude-opus-4-6` |
+
+**Examples:**
+```bash
+# Review changes between steps
+pnpm spec:run specs/foo.md --interactive
+
+# Granular git history with per-step commits
+pnpm spec:run specs/foo.md --commit-steps
+
+# Use a specific model for better results or cost control
+pnpm spec:analyze specs/foo.md --model claude-opus-4-6
+pnpm spec:implement specs/foo.md --model claude-sonnet-4-6
+
+# Combine flags
+pnpm spec:run specs/foo.md --flow plan --interactive --commit-steps --model claude-opus-4-6
+```
 
 ### Spec CLI Workflows
 
@@ -102,10 +131,10 @@ Use `pnpm spec:run <spec-file> --flow <workflow>` to automate multi-step impleme
 
 | Workflow | Command | Best for | Flow |
 |----------|---------|----------|------|
-| **No TDD** | `--flow no-tdd` | Implementing directly against spec without tests | analyze → implement → verify |
-| **Default** | `--flow default` | Implement first, write tests after | implement → test → verify |
-| **Plan First** | `--flow plan` | Complex features needing architecture planning | plan → implement → test → verify |
-| **TDD** | `--flow tdd` | Pure Test-Driven Development | analyze → test → implement → verify |
+| **No TDD** | `--flow no-tdd` | Implementing directly against spec without tests | analyze → implement-first → verify |
+| **Default** | `--flow default` | Implement first, write tests after | implement-first → test → implement-tests → verify |
+| **Plan First** | `--flow plan` | Complex features needing architecture planning | plan → implement-first → test → implement-tests → verify |
+| **TDD** | `--flow tdd` | Pure Test-Driven Development | analyze → test → implement-tests → implement → verify |
 
 **Examples:**
 ```bash
@@ -245,31 +274,28 @@ Base config: `tsconfig.base.json`. All packages extend it. Key settings: `strict
 
 ## Specs Reference
 
-Specs live in `/specs/` as individual Markdown files, not organized into subdirectories:
+The repository still contains legacy single-file specs in `/specs/`, but the `spec-writer`
+agent now creates new work as decomposed feature folders with executable mini-specs:
 
-```
-specs/
-  browse-exercises.md     ← Exercise browser feature
-  import-page.md          ← File import feature
-  theme.md                ← Theme/styling specification
-  homepage.md             ← Homepage feature
-  ...
+```text
+specs/<feature-name>/
+  00-overview.md
+  01-<mini-spec-name>.md
+  02-<mini-spec-name>.md
 ```
 
-Every spec follows this structure:
+`00-overview.md` should summarize the problem, architecture, mini-spec list, and execution
+order. Each mini-spec should follow this structure:
 
 ```markdown
-# Spec: [Feature Name]
-**Status:** Draft | In Progress | Implemented
-**Version:** 0.1.0
-**Last updated:** YYYY-MM-DD
+# Spec: [Mini Spec Name]
 
-## Problem
-## User Stories
+## Scope
+## Inputs
+## Outputs
 ## Acceptance Criteria
-## Technical Notes
-## Out of Scope
-## Definition of Done
+## Edge Cases
+## Notes
 ```
 
 When writing or updating a spec, use the `spec-writer` agent (`agents/spec-writer/README.md`).
