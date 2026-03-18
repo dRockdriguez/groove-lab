@@ -250,16 +250,19 @@ describe('DrumHitFeedback', () => {
   });
 
   describe('Most Recent Hit Feedback', () => {
-    it('shows visual feedback for most recent hit when playing', () => {
-      const { getByText } = render(
+    it('does not show feedback banner for violation classification', () => {
+      const { container, queryByText } = render(
         <DrumHitFeedback
           validatedHits={mockValidations}
           totalExpectedHits={10}
           isPlaying={true}
         />
       );
-      // Most recent hit is a violation
-      expect(getByText('✗ Violation')).toBeTruthy();
+      // Most recent hit is a violation — should NOT show "✗ Violation"
+      expect(queryByText('✗ Violation')).toBeFalsy();
+      // The feedback banner (mb-4) should not exist when last hit is violation
+      const feedbackBox = container.querySelector('[class*="mb-4"]');
+      expect(feedbackBox).toBeFalsy();
     });
 
     it('hides recent hit feedback when not playing', () => {
@@ -339,7 +342,7 @@ describe('DrumHitFeedback', () => {
       expect(feedback).toBeTruthy();
     });
 
-    it('applies red styling to violation feedback', () => {
+    it('does not apply red styling to violation banner (banner hidden)', () => {
       const violation: DrumHitValidation[] = [
         { expectedNote: 49, expectedTimeMs: 300, detectedTimeMs: 350, offsetMs: 0, classification: 'violation' },
       ];
@@ -350,8 +353,12 @@ describe('DrumHitFeedback', () => {
           isPlaying={true}
         />
       );
-      const feedback = container.querySelector('[class*="bg-red"]');
-      expect(feedback).toBeTruthy();
+      // The banner itself should not appear for violations
+      const feedbackBanner = container.querySelector('[class*="mb-4"][class*="bg-"]');
+      expect(feedbackBanner).toBeFalsy();
+      // But violations are still counted in the stats grid with red color
+      const violationStat = container.querySelectorAll('[class*="text-red"]');
+      expect(violationStat.length).toBeGreaterThan(0);
     });
 
     it('applies blue styling to timing offset stat', () => {

@@ -44,22 +44,19 @@ export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
         className,
       ].join(' ')}
     >
-      {/* Most recent hit visual feedback */}
-      {isPlaying && mostRecentClassification && (
+      {/* Most recent hit visual feedback (violation excluded) */}
+      {isPlaying && mostRecentClassification && mostRecentClassification !== 'violation' && (
         <div
           className={[
             'mb-4 px-3 py-2 rounded text-center text-sm font-medium transition-colors',
             mostRecentClassification === 'hit'
               ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-              : mostRecentClassification === 'violation'
-                ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
-                : mostRecentClassification === 'early'
-                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100'
-                  : 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-100',
+              : mostRecentClassification === 'early'
+                ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100'
+                : 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-100',
           ].join(' ')}
         >
           {mostRecentClassification === 'hit' && '✓ Hit!'}
-          {mostRecentClassification === 'violation' && '✗ Violation'}
           {mostRecentClassification === 'early' && '⇠ Too early'}
           {mostRecentClassification === 'late' && '⇢ Too late'}
         </div>

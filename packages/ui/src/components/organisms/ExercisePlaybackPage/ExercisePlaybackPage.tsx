@@ -76,6 +76,9 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   const [midiDeviceName, setMidiDeviceName] = useState<string | undefined>();
   const midiInitializedRef = useRef(false);
 
+  // ±250ms tolerance window for hit detection (more forgiving for real players)
+  const HIT_TOLERANCE_MS = 250;
+
   // MIDI message handler — parses Web MIDI bytes and validates drum hits
   const handleMidiMessage = useCallback((e: any) => {
     // Only validate during active playback
@@ -98,8 +101,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     if (now - lastHitTime < 50) return;
     lastHitTimePerNoteRef.current[note] = now;
 
-    // Validate hit against exercise
-    const result = validateDrumHit(note, now, hitLookupRef.current);
+    // Validate hit against exercise with lenient tolerance
+    const result = validateDrumHit(note, now, hitLookupRef.current, HIT_TOLERANCE_MS);
     if (result !== null) {
       setValidatedHits(prev => [...prev, result]);
     }
@@ -608,6 +611,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             currentTimeMs={currentTimeMs}
             bpm={exercise.bpm}
             metronomeEnabled={metronomeEnabled}
+            validatedHits={validatedHits}
             {...loopMarkerProps}
             onLoopStartChange={handleLoopStartChange}
             onLoopEndChange={handleLoopEndChange}

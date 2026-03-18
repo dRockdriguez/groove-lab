@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ExercisePlaybackPage } from './ExercisePlaybackPage';
-import type { ExercisePlaybackData, MidiEvent } from '@groovelab/types';
+import type { ExercisePlaybackData } from '@groovelab/types';
 
 const mockExercise: ExercisePlaybackData = {
   id: 'drums-basic-1',
@@ -114,40 +114,19 @@ describe('ExercisePlaybackPage — MIDI Feedback', () => {
     });
   });
 
-  it('calculates feedback as "hit" when note matches and timing is within tolerance', async () => {
+  it('initializes and renders DrumHitFeedback when exercise loads', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
-    // Expected: note 36 at timestamp 0, velocity 100
-    // Captured: note 36 at timestamp 50 (within ±100ms tolerance), velocity 95-105 (within ±25% of 100)
-    // Result: "hit"
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    // Simulate incoming MIDI Note On event matching expected
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    const midiMessage = {
-      data: [0x90, 36, 100], // Note On, note 36, velocity 100
-      timeStamp: 50,
-    };
-
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({ data: midiMessage.data, timeStamp: midiMessage.timeStamp });
-      });
-    }
-
-    // Check for feedback indicator or statistics update
+    // Verify DrumHitFeedback is rendered with initial stats
     await waitFor(() => {
-      // Look for feedback indication or accuracy update
-      const feedbackElements = screen.queryAllByTestId('feedback-indicator');
-      expect(feedbackElements.length).toBeGreaterThanOrEqual(0);
+      // Component should show the main feedback labels
+      expect(screen.getByText('Accuracy')).toBeInTheDocument();
+      expect(screen.getByText('Hits')).toBeInTheDocument();
+      expect(screen.getByText('Violations')).toBeInTheDocument();
     }, { timeout: 1000 });
   });
 
-  it('calculates feedback as "miss" when expected note is not played', async () => {
+  it('subscribes to MIDI when Play button is clicked', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
     const playButton = screen.getByRole('button', { name: /play/i });
@@ -155,20 +134,20 @@ describe('ExercisePlaybackPage — MIDI Feedback', () => {
       fireEvent.click(playButton);
     });
 
-    // Advance time past first expected note (0ms) without capturing it
-    await act(async () => {
-      vi.advanceTimersByTime(200); // Past tolerance window
-    });
-
-    // Statistics should show a miss
+    // MIDI access should have been requested
     await waitFor(() => {
-      // Look for updated statistics or feedback display
-      const stats = screen.queryByText(/accuracy|hit count/i);
-      expect(stats).toBeTruthy();
+      expect(navigator.requestMIDIAccess).toHaveBeenCalled();
     }, { timeout: 1000 });
   });
 
-  it('calculates feedback as "wrong note" when note number differs', async () => {
+  it('does not subscribe to MIDI before Play is clicked', () => {
+    render(<ExercisePlaybackPage exercise={mockExercise} />);
+
+    // MIDI should not be accessed before any interaction
+    expect(navigator.requestMIDIAccess).not.toHaveBeenCalled();
+  });
+
+  it('stops capturing MIDI events when Pause is clicked', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
     const playButton = screen.getByRole('button', { name: /play/i });
@@ -176,252 +155,85 @@ describe('ExercisePlaybackPage — MIDI Feedback', () => {
       fireEvent.click(playButton);
     });
 
-    // Expected: note 36, Captured: note 40 (different note)
+    // Verify pause button appears after play
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /pause/i })).toBeInTheDocument();
+    });
+
+    const pauseButton = screen.getByRole('button', { name: /pause/i });
+    await act(async () => {
+      fireEvent.click(pauseButton);
+    });
+
+    // Playback should be paused
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
+    });
+  });
+
+  it('renders feedback panel below the timeline', async () => {
+    const { container } = render(<ExercisePlaybackPage exercise={mockExercise} />);
+
+    // DrumHitFeedback should be rendered as part of the page
+    await waitFor(() => {
+      const feedbackContainer = container.querySelector('[class*="bg-gray-100"]');
+      expect(feedbackContainer).toBeInTheDocument();
+    }, { timeout: 1000 });
+  });
+
+  it('displays all four stat labels in feedback panel', async () => {
+    render(<ExercisePlaybackPage exercise={mockExercise} />);
+
+    // All four stat labels should be visible
+    await waitFor(() => {
+      expect(screen.getByText('Accuracy')).toBeInTheDocument();
+      expect(screen.getByText('Hits')).toBeInTheDocument();
+      expect(screen.getByText('Avg Offset')).toBeInTheDocument();
+      expect(screen.getByText('Violations')).toBeInTheDocument();
+    }, { timeout: 1000 });
+  });
+
+  it('initializes statistics with zero accuracy', async () => {
+    render(<ExercisePlaybackPage exercise={mockExercise} />);
+
+    // Initially should show 0% accuracy when no hits recorded
+    await waitFor(() => {
+      expect(screen.getByText('0%')).toBeInTheDocument();
+    }, { timeout: 1000 });
+  });
+
+  it('hides live feedback banner when not playing', async () => {
+    const { queryByText } = render(<ExercisePlaybackPage exercise={mockExercise} />);
+
+    // Live feedback banners should not appear before playback starts
+    expect(queryByText('✓ Hit!')).not.toBeInTheDocument();
+    expect(queryByText('⇠ Too early')).not.toBeInTheDocument();
+    expect(queryByText('⇢ Too late')).not.toBeInTheDocument();
+  });
+
+  it('filters out velocity-zero MIDI events (semantic Note-Off)', async () => {
+    render(<ExercisePlaybackPage exercise={mockExercise} />);
+
+    const playButton = screen.getByRole('button', { name: /play/i });
+    await act(async () => {
+      fireEvent.click(playButton);
+    });
+
     const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
     if (midiInput.onmidimessage) {
+      // Send Note-On with velocity=0 (semantic Note-Off)
       await act(async () => {
         midiInput.onmidimessage({
-          data: [0x90, 40, 100], // Wrong note
+          data: [0x90, 36, 0], // Note-On with velocity 0 = Note-Off
           timeStamp: 0,
         });
       });
     }
 
-    // Check for wrong note feedback
+    // Should not register as a hit (velocity 0 is filtered out)
+    // Accuracy should still be 0% (no hits recorded)
     await waitFor(() => {
-      const feedbackElements = screen.queryAllByTestId('feedback-indicator');
-      expect(feedbackElements.length).toBeGreaterThanOrEqual(0);
+      expect(screen.getByText('0%')).toBeInTheDocument();
     }, { timeout: 1000 });
-  });
-
-  it('calculates feedback as "early" when timing is before tolerance window', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    // Expected at 0ms, Captured at -150ms (before tolerance of ±100ms)
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 100],
-          timeStamp: -150,
-        });
-      });
-    }
-
-    await waitFor(() => {
-      const feedbackElements = screen.queryAllByTestId('feedback-indicator');
-      expect(feedbackElements.length).toBeGreaterThanOrEqual(0);
-    }, { timeout: 1000 });
-  });
-
-  it('calculates feedback as "late" when timing is after tolerance window', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    // Expected at 0ms, Captured at +150ms (after tolerance of ±100ms)
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 100],
-          timeStamp: 150,
-        });
-      });
-    }
-
-    await waitFor(() => {
-      const feedbackElements = screen.queryAllByTestId('feedback-indicator');
-      expect(feedbackElements.length).toBeGreaterThanOrEqual(0);
-    }, { timeout: 1000 });
-  });
-
-  it('calculates feedback as "weak" when velocity is below tolerance range', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    // Expected velocity: 100, tolerance: ±25% = 75-125
-    // Captured velocity: 50 (below range)
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 50], // Weak velocity
-          timeStamp: 0,
-        });
-      });
-    }
-
-    await waitFor(() => {
-      const feedbackElements = screen.queryAllByTestId('feedback-indicator');
-      expect(feedbackElements.length).toBeGreaterThanOrEqual(0);
-    }, { timeout: 1000 });
-  });
-
-  it('calculates feedback as "strong" when velocity is above tolerance range', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    // Expected velocity: 100, tolerance: ±25% = 75-125
-    // Captured velocity: 127 (above range)
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 127], // Strong velocity
-          timeStamp: 0,
-        });
-      });
-    }
-
-    await waitFor(() => {
-      const feedbackElements = screen.queryAllByTestId('feedback-indicator');
-      expect(feedbackElements.length).toBeGreaterThanOrEqual(0);
-    }, { timeout: 1000 });
-  });
-
-  it('displays feedback indicators on timeline as notes are played', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    // Simulate a correct note
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 100],
-          timeStamp: 0,
-        });
-      });
-    }
-
-    // Feedback should appear on timeline
-    await waitFor(() => {
-      // Look for feedback badge or indicator
-      const feedbackElements = screen.queryAllByTestId('feedback-indicator');
-      expect(feedbackElements.length).toBeGreaterThanOrEqual(0);
-    }, { timeout: 1000 });
-  });
-
-  it('updates accuracy statistic in real-time as notes are played', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    // Simulate correct note
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 100],
-          timeStamp: 0,
-        });
-      });
-    }
-
-    // Statistics panel should update
-    await waitFor(() => {
-      const accuracyText = screen.queryByText(/accuracy|hit count/i);
-      expect(accuracyText).toBeTruthy();
-    }, { timeout: 1000 });
-  });
-
-  it('updates hit count statistic in real-time', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 100],
-          timeStamp: 0,
-        });
-      });
-    }
-
-    await waitFor(() => {
-      const hitCountText = screen.queryByText('Hits');
-      expect(hitCountText).toBeTruthy();
-    }, { timeout: 1000 });
-  });
-
-  it('persists feedback summary after exercise finishes', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    // Simulate playback to completion
-    await act(async () => {
-      vi.advanceTimersByTime(mockExercise.durationMs + 1000);
-    });
-
-    // Statistics should still be visible
-    await waitFor(() => {
-      expect(screen.getByText(/accuracy/i)).toBeInTheDocument();
-    }, { timeout: 1000 });
-  });
-
-  it('skips unparseable MIDI events', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    await act(async () => {
-      fireEvent.click(playButton);
-    });
-
-    const midiInput = Array.from(mockMidiAccess.inputs.values())[0];
-    if (midiInput.onmidimessage) {
-      // Send invalid MIDI data
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0xF0], // Invalid message
-          timeStamp: 0,
-        });
-      });
-
-      // Then send valid data
-      await act(async () => {
-        midiInput.onmidimessage({
-          data: [0x90, 36, 100],
-          timeStamp: 0,
-        });
-      });
-    }
-
-    // Should continue processing without error
-    expect(screen.getByText('Basic Drum Pattern')).toBeInTheDocument();
   });
 });

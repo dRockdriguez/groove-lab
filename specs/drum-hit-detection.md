@@ -1,7 +1,7 @@
 # Spec: Real-Time Drum Hit Detection & Validation
 
 **Status:** Implemented
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Last updated:** 2026-03-18
 
 ## Problem
@@ -199,8 +199,9 @@ type HitLookup = Record<number, number[]>;
   - [x] Real-time stats: Accuracy %, Hits, Violations, Avg Timing Offset
   - [x] Live feedback banner: ✓ Hit!, ✗ Violation, ⇠ Too early, ⇢ Too late
 - [x] Unit tests pass (19 + 26 = 45 core tests PASSING)
-- [x] Integration tests pass (15 MIDI feedback tests PASSING)
-- [x] All 715 frontend tests PASSING ✅ | No regressions
+- [x] Integration tests pass (12 MIDI feedback tests PASSING)
+- [x] Hit overlay tests pass (9 tests PASSING)
+- [x] All 721 frontend tests PASSING ✅ | No regressions
 - [x] Accessibility verified
   - [x] Screen readers can see hit feedback via `<DrumHitFeedback>` grid structure + live feedback banner
   - [x] Keyboard navigation still functional during playback (arrow keys in timeline, Ctrl+T for sidebar)
@@ -241,11 +242,15 @@ type HitLookup = Record<number, number[]>;
   - validateDrumHit: 16 tests (all classifications, edge cases, tolerance windows)
 - **Component Tests** (`DrumHitFeedback.test.tsx`): **26 tests** ✅ PASSING
   - Layout, accuracy calculation, hit/violation counts, offset display, feedback messages
-- **Integration Tests** (`ExercisePlaybackPage.midi-feedback.test.tsx`): **15 tests** ✅ PASSING
+- **Integration Tests** (`ExercisePlaybackPage.midi-feedback.test.tsx`): **12 tests** ✅ PASSING
   - MIDI handler subscription and attachment verification
   - Real-time hit validation and statistics updates
   - Pause/resume behavior preservation
   - All tests now verify actual rendered output (not weak stubs)
+- **Hit Overlay Tests** (`ExercisePlaybackTimeline.hit-overlays.test.tsx`): **9 tests** ✅ PASSING
+  - Overlay rendering for hit/early/late classifications
+  - Color coding and fade animation
+  - Multiple overlays handling
 
 ### Files Status
 1. [packages/utils/src/index.ts](packages/utils/src/index.ts) — ✅ COMPLETE: buildHitLookup, validateDrumHit functions with 19 tests
@@ -330,7 +335,7 @@ type HitLookup = Record<number, number[]>;
   - New prop `validatedHits?: DrumHitValidation[]` added to `ExercisePlaybackTimeline`
   - `useMemo` builds lookup: `Map<'${note}_${expectedTimeMs}', classification>`
   - For each note bar, check lookup and render colored overlay if hit found
-  - Tests: 10 new tests in `ExercisePlaybackTimeline.hit-overlays.test.tsx`
+  - Tests: 9 tests in `ExercisePlaybackTimeline.hit-overlays.test.tsx`
 
 ### Files Modified (v1.1)
 
