@@ -15,10 +15,7 @@ describe('PlaybackControls - Loop Integration', () => {
       loopEndMs: 45000,
       isLoopActive: false,
       loopRepetitions: 3,
-      currentLoopRepetition: 0,
       durationMs: 60000,
-      onLoopStartChange: vi.fn(),
-      onLoopEndChange: vi.fn(),
       onLoopToggle: vi.fn(),
       onLoopRepetitionsChange: vi.fn(),
       onLoopClear: vi.fn(),
@@ -28,44 +25,71 @@ describe('PlaybackControls - Loop Integration', () => {
   describe('LoopControls Integration', () => {
     it('should render LoopControls when loopControls prop provided', () => {
       render(<PlaybackControls {...defaultProps} />);
-
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toBeInTheDocument();
+      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+      expect(screen.getByText('Loop Off')).toBeInTheDocument();
     });
 
     it('should display LoopControls below seek slider', () => {
       const { container } = render(<PlaybackControls {...defaultProps} />);
 
       const seekSlider = container.querySelector('[role="slider"]');
-      const loopControls = screen.getByLabelText(/loop controls/i).parentElement;
+      const loopControls = screen.getByLabelText(/loop controls/i);
 
       const sliderRect = seekSlider!.getBoundingClientRect();
-      const loopRect = loopControls!.getBoundingClientRect();
+      const loopRect = loopControls.getBoundingClientRect();
 
       // LoopControls should be below seek slider
       expect(loopRect.top).toBeGreaterThanOrEqual(sliderRect.bottom);
     });
 
-    it('should pass loop props to LoopControls', () => {
-      render(
+    it('should display loop status when region is selected', () => {
+      const { container } = render(
         <PlaybackControls
           {...defaultProps}
           loopControls={{
             ...defaultProps.loopControls,
             loopStartMs: 20000,
             loopEndMs: 50000,
-            loopRepetitions: 5,
           }}
         />
       );
 
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toHaveValue('00:20');
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toHaveValue('00:50');
-      expect(screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i)).toHaveValue(5);
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv).toBeInTheDocument();
+      expect(statusDiv?.textContent).toMatch(/Loop:/);
+    });
+
+    it('should update loop status when loop times change', () => {
+      const { rerender, container } = render(
+        <PlaybackControls
+          {...defaultProps}
+          loopControls={{
+            ...defaultProps.loopControls,
+            loopStartMs: 15000,
+            loopEndMs: 45000,
+          }}
+        />
+      );
+
+      let statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/0:15/);
+
+      rerender(
+        <PlaybackControls
+          {...defaultProps}
+          loopControls={{
+            ...defaultProps.loopControls,
+            loopStartMs: 20000,
+            loopEndMs: 50000,
+          }}
+        />
+      );
+
+      statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/0:20/);
     });
 
     it('should pass loop callbacks to LoopControls', async () => {
-      const onLoopStartChange = vi.fn();
       const onLoopToggle = vi.fn();
       const user = await userEvent.setup();
 
@@ -74,17 +98,17 @@ describe('PlaybackControls - Loop Integration', () => {
           {...defaultProps}
           loopControls={{
             ...defaultProps.loopControls,
-            onLoopStartChange,
+            loopStartMs: 10000,
+            loopEndMs: 30000,
             onLoopToggle,
           }}
         />
       );
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      await user.clear(startInput);
-      await user.type(startInput, '00:10');
+      const toggleButton = screen.getByText('Loop Off');
+      await user.click(toggleButton);
 
-      expect(onLoopStartChange).toHaveBeenCalled();
+      expect(onLoopToggle).toHaveBeenCalledWith(true);
     });
 
     it('should update LoopControls when loop state changes', () => {
@@ -95,12 +119,13 @@ describe('PlaybackControls - Loop Integration', () => {
             ...defaultProps.loopControls,
             isLoopActive: false,
             loopRepetitions: 3,
+            loopStartMs: 10000,
+            loopEndMs: 30000,
           }}
         />
       );
 
-      let toggleButton = screen.getByRole('button', { name: /enable loop/i });
-      expect(toggleButton).toBeInTheDocument();
+      expect(screen.getByText('Loop Off')).toBeInTheDocument();
 
       rerender(
         <PlaybackControls
@@ -109,14 +134,13 @@ describe('PlaybackControls - Loop Integration', () => {
             ...defaultProps.loopControls,
             isLoopActive: true,
             loopRepetitions: 3,
-            currentLoopRepetition: 1,
+            loopStartMs: 10000,
+            loopEndMs: 30000,
           }}
         />
       );
 
-      toggleButton = screen.getByRole('button', { name: /disable loop/i });
-      expect(toggleButton).toBeInTheDocument();
-      expect(screen.getByText(/repeat 1 of 3/i)).toBeInTheDocument();
+      expect(screen.getByText(/✓ Loop On/)).toBeInTheDocument();
     });
   });
 
@@ -219,18 +243,36 @@ describe('PlaybackControls - Loop Integration', () => {
   });
 
   describe('Disabled State During Playback', () => {
-    it('should disable LoopControls inputs when playing', () => {
-      render(
+    it('should disable loop toggle when no region selected', () => {
+      const { container } = render(
         <PlaybackControls
           {...defaultProps}
-          state="playing"
+          loopControls={{
+            ...defaultProps.loopControls,
+            loopStartMs: 0,
+            loopEndMs: 0,
+          }}
         />
       );
 
-      // Note: LoopControls inputs are disabled based on isPlaying prop passed to LoopControls, not PlaybackControls
-      // Since PlaybackControls doesn't accept isPlaying, we just verify the controls exist
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toBeInTheDocument();
+      const toggleButton = container.querySelector('button[aria-pressed]');
+      expect(toggleButton).toBeDisabled();
+    });
+
+    it('should enable loop toggle when region is selected', () => {
+      const { container } = render(
+        <PlaybackControls
+          {...defaultProps}
+          loopControls={{
+            ...defaultProps.loopControls,
+            loopStartMs: 10000,
+            loopEndMs: 30000,
+          }}
+        />
+      );
+
+      const toggleButton = container.querySelector('button[aria-pressed]');
+      expect(toggleButton).not.toBeDisabled();
     });
 
     it('should allow seek slider during playback', () => {
@@ -240,22 +282,6 @@ describe('PlaybackControls - Loop Integration', () => {
 
       const seekSlider = container.querySelector('[role="slider"]');
       expect(seekSlider).not.toBeDisabled();
-    });
-
-    it('should disable loop toggle when range is invalid', () => {
-      render(
-        <PlaybackControls
-          {...defaultProps}
-          loopControls={{
-            ...defaultProps.loopControls,
-            loopStartMs: 30000,
-            loopEndMs: 30100, // Only 100ms - less than 500ms minimum
-          }}
-        />
-      );
-
-      const toggleButton = screen.getByRole('button', { name: /enable loop/i });
-      expect(toggleButton).toBeDisabled();
     });
   });
 
@@ -268,103 +294,131 @@ describe('PlaybackControls - Loop Integration', () => {
           loopControls={{
             ...defaultProps.loopControls,
             isLoopActive: true,
-            currentLoopRepetition: 2,
+            loopStartMs: 15000,
+            loopEndMs: 45000,
             loopRepetitions: 5,
           }}
         />
       );
 
-      expect(screen.getByText(/repeat 2 of 5/i)).toBeInTheDocument();
+      const { container } = render(
+        <PlaybackControls
+          {...defaultProps}
+          state="playing"
+          loopControls={{
+            ...defaultProps.loopControls,
+            isLoopActive: true,
+            loopStartMs: 15000,
+            loopEndMs: 45000,
+            loopRepetitions: 5,
+          }}
+        />
+      );
+
+      // Check that loop status is displayed
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/5x/);
     });
 
-    it('should update repetition counter in real-time', () => {
-      const { rerender } = render(
+    it('should display infinite loop status', () => {
+      const { container } = render(
         <PlaybackControls
           {...defaultProps}
           loopControls={{
             ...defaultProps.loopControls,
             isLoopActive: true,
-            currentLoopRepetition: 1,
-            loopRepetitions: 3,
+            loopStartMs: 15000,
+            loopEndMs: 45000,
+            loopRepetitions: 'infinite',
           }}
         />
       );
 
-      expect(screen.getByText(/repeat 1 of 3/i)).toBeInTheDocument();
-
-      rerender(
-        <PlaybackControls
-          {...defaultProps}
-          loopControls={{
-            ...defaultProps.loopControls,
-            isLoopActive: true,
-            currentLoopRepetition: 2,
-            loopRepetitions: 3,
-          }}
-        />
-      );
-
-      expect(screen.getByText(/repeat 2 of 3/i)).toBeInTheDocument();
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/∞ reps/);
     });
+  });
 
-    it('should announce infinite loop status', () => {
+  describe('Repetitions Control', () => {
+    it('should update repetitions when selector changes', async () => {
+      const onRepetitionsChange = vi.fn();
+      const user = await userEvent.setup();
+
       render(
         <PlaybackControls
           {...defaultProps}
           loopControls={{
             ...defaultProps.loopControls,
-            isLoopActive: true,
-            loopRepetitions: 'infinite',
-            currentLoopRepetition: 10,
+            onLoopRepetitionsChange: onRepetitionsChange,
           }}
         />
       );
 
-      expect(screen.getByText(/repeat 10 \/ ∞/i)).toBeInTheDocument();
+      const selector = screen.getByLabelText(/Number of loop repetitions/i);
+      await user.selectOptions(selector, '50');
+
+      expect(onRepetitionsChange).toHaveBeenCalledWith(50);
+    });
+
+    it('should support switching to infinite repetitions', async () => {
+      const onRepetitionsChange = vi.fn();
+      const user = await userEvent.setup();
+
+      render(
+        <PlaybackControls
+          {...defaultProps}
+          loopControls={{
+            ...defaultProps.loopControls,
+            loopRepetitions: 5,
+            onLoopRepetitionsChange: onRepetitionsChange,
+          }}
+        />
+      );
+
+      const selector = screen.getByLabelText(/Number of loop repetitions/i);
+      await user.selectOptions(selector, 'infinite');
+
+      expect(onRepetitionsChange).toHaveBeenCalledWith('infinite');
     });
   });
 
-  describe('Keyboard Shortcuts Availability', () => {
-    it('should support keyboard shortcuts in LoopControls', async () => {
-      const onLoopStartChange = vi.fn();
+  describe('Clear Functionality', () => {
+    it('should call onLoopClear when clear button clicked', async () => {
+      const onLoopClear = vi.fn();
       const user = await userEvent.setup();
+
+      render(
+        <PlaybackControls
+          {...defaultProps}
+          loopControls={{
+            ...defaultProps.loopControls,
+            loopStartMs: 10000,
+            loopEndMs: 30000,
+            onLoopClear,
+          }}
+        />
+      );
+
+      const clearButton = screen.getByText('Clear');
+      await user.click(clearButton);
+
+      expect(onLoopClear).toHaveBeenCalled();
+    });
+
+    it('should disable clear button when no region selected', () => {
       render(
         <PlaybackControls
           {...defaultProps}
           loopControls={{
             ...defaultProps.loopControls,
             loopStartMs: 0,
-            loopEndMs: 30000,
-            onLoopStartChange,
+            loopEndMs: 0,
           }}
         />
       );
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
-      startInput.focus();
-
-      // Test arrow key adjustment - just verify it doesn't error
-      await user.keyboard('{ArrowUp}');
-
-      // The callback should have been called (implementation may vary)
-      // Just verify the input is still there and accessible
-      expect(startInput).toBeInTheDocument();
-    });
-
-    it('should tab through seek slider and LoopControls', async () => {
-      const user = await userEvent.setup();
-      const { container } = render(<PlaybackControls {...defaultProps} />);
-
-      const playPauseButton = screen.getByRole('button', { name: /play/i });
-      playPauseButton.focus();
-
-      await user.keyboard('{Tab}');
-      const seekSlider = container.querySelector('[role="slider"]');
-      expect(seekSlider).toHaveFocus();
-
-      await user.keyboard('{Tab}');
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      expect(startInput).toHaveFocus();
+      const clearButton = screen.getByText('Clear');
+      expect(clearButton).toBeDisabled();
     });
   });
 
@@ -372,17 +426,25 @@ describe('PlaybackControls - Loop Integration', () => {
     it('should have accessible structure for screen readers', () => {
       render(<PlaybackControls {...defaultProps} />);
 
-      // The component should render with accessible labels
       expect(screen.getByLabelText(/loop controls/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i)).toBeInTheDocument();
+      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Number of loop repetitions/i)).toBeInTheDocument();
+    });
+
+    it('should have aria-labels on interactive controls', () => {
+      const { container } = render(<PlaybackControls {...defaultProps} />);
+
+      const toggleButton = container.querySelector('button[aria-pressed]');
+      expect(toggleButton).toHaveAttribute('aria-label');
+
+      const clearButton = screen.getByText('Clear');
+      expect(clearButton).toHaveAttribute('aria-label');
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle very long exercises (>10 minutes)', () => {
-      render(
+      const { container } = render(
         <PlaybackControls
           {...defaultProps}
           durationMs={600000} // 10 minutes
@@ -395,12 +457,13 @@ describe('PlaybackControls - Loop Integration', () => {
         />
       );
 
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toHaveValue('05:00');
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toHaveValue('06:00');
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/5:00/);
+      expect(statusDiv?.textContent).toMatch(/6:00/);
     });
 
     it('should handle loop at very beginning of exercise', () => {
-      render(
+      const { container } = render(
         <PlaybackControls
           {...defaultProps}
           loopControls={{
@@ -411,12 +474,13 @@ describe('PlaybackControls - Loop Integration', () => {
         />
       );
 
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toHaveValue('00:00');
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toHaveValue('00:05');
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/0:00/);
+      expect(statusDiv?.textContent).toMatch(/0:05/);
     });
 
     it('should handle loop at very end of exercise', () => {
-      render(
+      const { container } = render(
         <PlaybackControls
           {...defaultProps}
           durationMs={60000}
@@ -429,55 +493,43 @@ describe('PlaybackControls - Loop Integration', () => {
         />
       );
 
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toHaveValue('00:55');
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toHaveValue('01:00');
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/0:55/);
+      expect(statusDiv?.textContent).toMatch(/1:00/);
     });
 
     it('should handle maximum repetitions (999)', () => {
-      render(
+      const { container } = render(
         <PlaybackControls
           {...defaultProps}
           loopControls={{
             ...defaultProps.loopControls,
             loopRepetitions: 999,
+            loopStartMs: 10000,
+            loopEndMs: 30000,
           }}
         />
       );
 
-      expect(screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i)).toHaveValue(999);
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/999x/);
     });
 
-    it('should render gracefully with valid loop props', () => {
-      render(<PlaybackControls {...defaultProps} />);
+    it('should handle infinite repetitions', () => {
+      const { container } = render(
+        <PlaybackControls
+          {...defaultProps}
+          loopControls={{
+            ...defaultProps.loopControls,
+            loopRepetitions: 'infinite',
+            loopStartMs: 10000,
+            loopEndMs: 30000,
+          }}
+        />
+      );
 
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toBeInTheDocument();
-    });
-  });
-
-  describe('Performance', () => {
-    it('should not cause frame drops during rapid loop prop updates', () => {
-      const { rerender } = render(<PlaybackControls {...defaultProps} />);
-
-      const startTime = performance.now();
-
-      for (let i = 0; i < 100; i++) {
-        rerender(
-          <PlaybackControls
-            {...defaultProps}
-            loopControls={{
-              ...defaultProps.loopControls,
-              currentLoopRepetition: i,
-            }}
-          />
-        );
-      }
-
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      // 100 re-renders should complete in reasonable time (not exceed 2000ms)
-      expect(duration).toBeLessThan(2000);
+      const statusDiv = container.querySelector('.bg-gray-100');
+      expect(statusDiv?.textContent).toMatch(/∞ reps/);
     });
   });
 });
