@@ -120,3 +120,115 @@ const DRUM_COLOR_DEFAULT = '#6B7280'; // Gray
 export function getDrumColor(midiNote: number): string {
   return DRUM_COLOR_MAP[midiNote] ?? DRUM_COLOR_DEFAULT;
 }
+
+// ─── Drum Hit Detection ────────────────────────────────────────────────────
+
+/** Result of validating a detected drum hit against expected notes */
+export interface DrumHitValidation {
+  /** Expected MIDI note from the exercise */
+  expectedNote: number;
+  /** Time of the expected hit in milliseconds */
+  expectedTimeMs: number;
+  /** Time of the detected hit in milliseconds */
+  detectedTimeMs: number;
+  /** Timing offset: detected - expected (negative = early, positive = late) */
+  offsetMs: number;
+  /** Classification of the hit */
+  classification: 'hit' | 'miss' | 'violation' | 'early' | 'late';
+}
+
+/** Lookup structure: note → sorted timestamps of expected hits */
+export type HitLookup = Record<number, number[]>;
+
+/**
+ * Build a hit lookup structure from MIDI events for fast validation.
+ * Maps each MIDI note to a sorted array of expected hit times.
+ */
+export function buildHitLookup(midiEvents: Array<{ note: number; timestamp: number }>): HitLookup {
+  const lookup: HitLookup = {};
+  for (const event of midiEvents) {
+    if (!lookup[event.note]) {
+      lookup[event.note] = [];
+    }
+    lookup[event.note].push(event.timestamp);
+  }
+  // Ensure all arrays are sorted
+  for (const note in lookup) {
+    lookup[Number(note)].sort((a, b) => a - b);
+  }
+  return lookup;
+}
+
+/**
+ * Find the nearest expected hit time for a given note within tolerance window.
+ * Returns the closest match if within ±tolerance, or undefined if not found.
+ */
+function findNearestHit(
+  note: number,
+  detectedTimeMs: number,
+  lookup: HitLookup,
+  toleranceMs: number
+): number | undefined {
+  const expectedTimes = lookup[note];
+  if (!expectedTimes || expectedTimes.length === 0) return undefined;
+
+  let nearest: number | undefined;
+  let nearestDistance = toleranceMs + 1;
+
+  for (const expectedTime of expectedTimes) {
+    const distance = Math.abs(detectedTimeMs - expectedTime);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = expectedTime;
+    }
+  }
+
+  return nearestDistance <= toleranceMs ? nearest : undefined;
+}
+
+/**
+ * Validate a detected drum hit against expected notes.
+ * @param detectedNote MIDI note number of the detected hit
+ * @param detectedTimeMs Time when the hit was detected (ms from exercise start)
+ * @param lookup Hit lookup structure from buildHitLookup()
+ * @param toleranceMs Timing tolerance window (default: 150ms)
+ * @returns Validation result with classification and timing offset
+ */
+export function validateDrumHit(
+  detectedNote: number,
+  detectedTimeMs: number,
+  lookup: HitLookup,
+  toleranceMs: number = 150
+): DrumHitValidation | null {
+  const expectedTimeMs = findNearestHit(detectedNote, detectedTimeMs, lookup, toleranceMs);
+
+  if (expectedTimeMs === undefined) {
+    // No expected hit found for this note — it's a violation
+    return {
+      expectedNote: detectedNote,
+      expectedTimeMs: detectedTimeMs,
+      detectedTimeMs,
+      offsetMs: 0,
+      classification: 'violation',
+    };
+  }
+
+  const offsetMs = detectedTimeMs - expectedTimeMs;
+  let classification: 'hit' | 'early' | 'late';
+
+  if (Math.abs(offsetMs) <= toleranceMs) {
+    classification = 'hit';
+  } else if (offsetMs < 0) {
+    classification = 'early';
+  } else {
+    classification = 'late';
+  }
+
+  return {
+    expectedNote: detectedNote,
+    expectedTimeMs,
+    detectedTimeMs,
+    offsetMs,
+    classification,
+  };
+}
