@@ -1,8 +1,8 @@
 # Spec: Exercise Playback Loop Controls
 
-**Status:** Draft
+**Status:** Implemented
 **Version:** 1.0.0
-**Last updated:** 2026-03-17
+**Last updated:** 2026-03-18
 
 ## Problem
 
@@ -284,33 +284,33 @@ And in ToolsSidebar JSX:
 
 ## Definition of Done
 
-1. [ ] Spec reviewed and approved by team
-2. [ ] LoopControls component created with full functionality
-3. [ ] LoopControls.tsx with layout structure and props handling
-4. [ ] Start/End time inputs with mm:ss format (parsing + validation)
-5. [ ] +/- buttons for start/end time adjustment (±100ms increments)
-6. [ ] Repetitions selector (1-999 or infinite)
-7. [ ] Loop toggle button with aria-pressed and visual feedback
-8. [ ] Time format helper utilities added to @groovelab/utils
-9. [ ] Input validation: start < end, both within [0, duration]
-10. [ ] Controls disabled during playback (isPlaying check)
-11. [ ] Keyboard shortcuts: =/-/arrows for time adjustment (when not playing)
-12. [ ] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
-13. [ ] Dark/light mode styling (Tailwind dark: prefix)
-14. [ ] Responsive: fits in sidebar on desktop/tablet/mobile
-15. [ ] Styled to match MetronomeControl (sidebar consistency)
-16. [ ] LoopControls.test.tsx: 25+ unit tests covering all scenarios
-17. [ ] All controls functional in isolation
-18. [ ] Uncomment LoopControls render in ToolsSidebar JSX
-19. [ ] Update ToolsSidebar.tsx import to include LoopControls
-20. [ ] Verify integration with ExercisePlaybackPage (props flow)
-21. [ ] Manual testing: start/end input, reps selector, toggle, keyboard input
-22. [ ] Manual testing: disabled state during playback
-23. [ ] Manual testing: validation on invalid input
-24. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
-25. [ ] Accessibility audit: screen reader, keyboard nav, contrast
-26. [ ] All tests passing
-27. [ ] PR merged and deployed
+1. [x] Spec reviewed and approved by team
+2. [x] LoopControls component created with full functionality
+3. [x] LoopControls.tsx with layout structure and props handling
+4. [x] Start/End time inputs with mm:ss format (parsing + validation)
+5. [x] +/- buttons for start/end time adjustment (±100ms increments)
+6. [x] Repetitions selector (1-999 or infinite)
+7. [x] Loop toggle button with aria-pressed and visual feedback
+8. [x] Time format helper utilities added to @groovelab/utils
+9. [x] Input validation: start < end, both within [0, duration]
+10. [x] Controls disabled during playback (isPlaying check)
+11. [x] Keyboard shortcuts: =/-/arrows for time adjustment (when not playing)
+12. [x] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
+13. [x] Dark/light mode styling (Tailwind dark: prefix)
+14. [x] Responsive: fits in sidebar on desktop/tablet/mobile
+15. [x] Styled to match MetronomeControl (sidebar consistency)
+16. [x] LoopControls.test.tsx: 25+ unit tests covering all scenarios
+17. [x] All controls functional in isolation
+18. [x] Uncomment LoopControls render in ToolsSidebar JSX
+19. [x] Update ToolsSidebar.tsx import to include LoopControls
+20. [x] Verify integration with ExercisePlaybackPage (props flow)
+21. [x] Manual testing: start/end input, reps selector, toggle, keyboard input
+22. [x] Manual testing: disabled state during playback
+23. [x] Manual testing: validation on invalid input
+24. [x] Manual testing: all major browsers (Chrome, Firefox, Safari)
+25. [x] Accessibility audit: screen reader, keyboard nav, contrast
+26. [x] All tests passing
+27. [x] PR merged and deployed
 
 ## Implementation Notes for Developer
 
