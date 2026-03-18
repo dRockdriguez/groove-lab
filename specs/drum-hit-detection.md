@@ -222,11 +222,44 @@ type HitLookup = Record<number, number[]>;
 3. [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx) — Feedback component (NEW)
 4. [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx) — 29 component tests (NEW)
 5. [packages/ui/src/index.ts](packages/ui/src/index.ts) — Export DrumHitFeedback
+6. [packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx](packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx) — MIDI integration (MODIFIED)
+7. [packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.midi-feedback.test.tsx](packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.midi-feedback.test.tsx) — Integration tests rewritten (MODIFIED)
 
-### Next Steps (Post-MVP Integration)
-- Integrate `buildHitLookup()` + `validateDrumHit()` into ExercisePlaybackPage
-- Connect MIDI input events to validation during playback
-- Pass validated hits to `<DrumHitFeedback />` component
-- Position feedback component below `<ExercisePlaybackTimeline />`
-- Wire up pause/resume to pause hit detection
-- Add MIDI device detection/connection UI
+### Integration into ExercisePlaybackPage (v1.1)
+
+**State & Refs:**
+- `validatedHits: DrumHitValidation[]` — Replaces the frozen `SessionStatistics` stub; persists during pause, clears on restart
+- `hitLookup` (useMemo) — Built from `exercise.midiEvents` on exercise load; O(1) lookup: `Record<note, timestamp[]>`
+- `hitLookupRef` — Synced ref to avoid stale closures in async MIDI handler
+- `currentTimeMsRef` — Mirrors `currentTimeMs` from rAF loop; used inside MIDI handler for timing correlation
+- `lastHitTimePerNoteRef` — Debounce map: tracks last hit per note (50ms window)
+- `midiAccessRef` — Stores MIDI access object for cleanup on unmount
+
+**MIDI Message Handler (`handleMidiMessage` callback):**
+- Parses Web MIDI bytes: `status = data[0] & 0xF0`, `note = data[1]`, `velocity = data[2]`
+- Filter: only process Note-On (0x90) with velocity > 0 (velocity=0 is semantically Note-Off)
+- Debounce: ignore repeated hits on same note within 50ms
+- Calls `validateDrumHit(note, currentTimeMsRef.current, hitLookupRef.current, 150ms)` only when `playbackState === 'playing'`
+- Updates `validatedHits` with the result (if not null)
+- Attached to all MIDI input ports in `initMidi`; re-attached on device reconnect
+
+**Lifecycle:**
+- **Exercise load**: Lookup built and refs synced
+- **Play from stopped**: All hits cleared (fresh start)
+- **Play from paused**: Hits persist; debounce state reset
+- **Pause**: Hit detection stops (handler returns early)
+- **Stop/finish**: Hits remain visible (feedback persists)
+- **Exercise change**: Hits cleared, debounce reset, new lookup built
+- **MIDI disconnect**: Handler nulled on port; playback paused; re-attached on reconnect
+- **Component unmount**: All MIDI handlers nulled via `midiAccessRef` cleanup
+
+**UI Integration:**
+- Replaces `SessionStatisticsPanel` with `<DrumHitFeedback validatedHits={validatedHits} totalExpectedHits={exercise.midiEvents.length} isPlaying={playbackState === 'playing'} />`
+- Positioned immediately below `ExercisePlaybackTimeline` (as per feedback panel repositioning criterion)
+- Real-time updates: stats grid (accuracy %, hits, avg offset, violations) + live feedback banner (✓ Hit!, ✗ Violation, etc.)
+
+**Test Updates (Integration):**
+- Removed: Tests for `miss`, `early`, `late`, `weak`, `strong` classifications (architecturally not applicable or redundant with unit tests)
+- Updated: Removed `if (midiInput.onmidimessage)` guards; added `waitFor()` to wait for handler attachment
+- Rewritten assertions: Verify actual text output (`'✓ Hit!'`, `'✗ Violation'`, `'100%'`, etc.) instead of weak placeholder checks
+- Added: `addEventListener` to mock MIDI access object
