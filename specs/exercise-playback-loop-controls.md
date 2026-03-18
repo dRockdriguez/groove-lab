@@ -1,7 +1,7 @@
 # Spec: Exercise Playback Loop Controls
 
 **Status:** Implemented
-**Version:** 2.1.0
+**Version:** 2.1.1
 **Last updated:** 2026-03-18
 
 ## Quick Reference: What Needs Implementation
@@ -636,6 +636,31 @@ When timeline is focused:
 5. **Visual feedback is critical**: Users need to see the selection region clearly (green overlay).
 6. **Keyboard support is minimal**: No text input shortcuts needed anymore.
 
+## Implementation History
+
+### 2026-03-18 — Final Implementation Complete
+
+**Commits:**
+- `b98c96c` — feat(spec/exercise-playback-loop-controls): implement drag-to-select loop creation
+  - Added drag-to-select functionality to ExercisePlaybackTimeline
+  - Implemented 8 new drag interaction tests (26 existing + 8 new = 34 total)
+  - Wired loop callbacks (onLoopStartChange, onLoopEndChange, isLoopActive) from ExercisePlaybackPage to ExercisePlaybackTimeline
+  - Added blue drag preview overlay showing selected region in real-time
+  - All 673 tests passing ✅
+
+- `7245c3b` — fix(loop-playback): add tolerance for detecting loop end near metronome markers
+  - Fixed bug where loops would not restart if loop end was near metronome marker
+  - Added 50ms tolerance to loop end detection: `currentTime >= loopEndMs - 50`
+  - Added secondary check to ensure playback is within loop region
+  - All 673 tests passing ✅
+
+**Feature Status:** ✅ **FULLY IMPLEMENTED & TESTED**
+- Drag-to-select loop creation working on both MiniTimeline and ExercisePlaybackTimeline
+- Loop controls sidebar (toggle, repetitions, clear) fully functional
+- Visual feedback (blue drag preview, green loop region) on both timelines
+- Loop restart with tolerance handles edge cases near markers
+- All acceptance criteria met
+
 ---
 
-Ready to implement! This is a cleaner, more intuitive design.
+Ready to merge! This is a cleaner, more intuitive design.
