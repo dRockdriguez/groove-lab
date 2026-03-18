@@ -521,6 +521,9 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             bpm={exercise.bpm}
             metronomeEnabled={metronomeEnabled}
             {...loopMarkerProps}
+            onLoopStartChange={handleLoopStartChange}
+            onLoopEndChange={handleLoopEndChange}
+            isLoopActive={isLoopActive}
           />
         </div>
 

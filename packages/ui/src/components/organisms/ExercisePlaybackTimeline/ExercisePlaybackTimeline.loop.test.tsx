@@ -555,4 +555,238 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
       expect(duration).toBeLessThan(1600); // 100 updates < 1600ms
     });
   });
+
+  describe('Drag-to-select loop creation', () => {
+    it('should create loop by dragging left→right', async () => {
+      const onStartChange = vi.fn();
+      const onEndChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={onEndChange}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, width: 1000, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }),
+        configurable: true,
+      });
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 750 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        expect(onStartChange).toHaveBeenCalledWith(expect.any(Number));
+        expect(onEndChange).toHaveBeenCalledWith(expect.any(Number));
+      });
+
+      const startMs = onStartChange.mock.calls[0][0];
+      const endMs = onEndChange.mock.calls[0][0];
+      expect(startMs).toBeLessThan(endMs);
+    });
+
+    it('should create loop by dragging right→left (min/max swap)', async () => {
+      const onStartChange = vi.fn();
+      const onEndChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={onEndChange}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, width: 1000, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }),
+        configurable: true,
+      });
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 750 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        expect(onStartChange).toHaveBeenCalled();
+        expect(onEndChange).toHaveBeenCalled();
+      });
+
+      const startMs = onStartChange.mock.calls[0][0];
+      const endMs = onEndChange.mock.calls[0][0];
+      expect(startMs).toBeLessThan(endMs);
+    });
+
+    it('should not create loop if drag < 500ms', async () => {
+      const onStartChange = vi.fn();
+      const onEndChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={onEndChange}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      // Default zero rect makes any drag produce 0ms duration
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 100 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 101 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      // Wait briefly to ensure no callbacks fired
+      await waitFor(() => {
+        expect(onStartChange).not.toHaveBeenCalled();
+        expect(onEndChange).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should show drag preview overlay during drag', async () => {
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          onLoopStartChange={vi.fn()}
+          onLoopEndChange={vi.fn()}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, width: 1000, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }),
+        configurable: true,
+      });
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 750 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('loop-drag-preview')).toBeInTheDocument();
+      });
+    });
+
+    it('should hide drag preview overlay after mouseUp', async () => {
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          onLoopStartChange={vi.fn()}
+          onLoopEndChange={vi.fn()}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, width: 1000, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }),
+        configurable: true,
+      });
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 750 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      // Drag preview should disappear after mouseUp
+      await waitFor(() => {
+        expect(screen.queryByTestId('loop-drag-preview')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should disable drag when isLoopActive is true', async () => {
+      const onStartChange = vi.fn();
+      const onEndChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          isLoopActive={true}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={onEndChange}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, width: 1000, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }),
+        configurable: true,
+      });
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 750 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      expect(onStartChange).not.toHaveBeenCalled();
+      expect(onEndChange).not.toHaveBeenCalled();
+    });
+
+    it('should call onLoopDragStart on mouseDown', async () => {
+      const onDragStart = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          onLoopStartChange={vi.fn()}
+          onLoopEndChange={vi.fn()}
+          onLoopDragStart={onDragStart}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, width: 1000, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }),
+        configurable: true,
+      });
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+
+      expect(onDragStart).toHaveBeenCalled();
+    });
+
+    it('should call onLoopDragEnd on mouseUp', async () => {
+      const onDragEnd = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={0}
+          loopEndMs={0}
+          onLoopStartChange={vi.fn()}
+          onLoopEndChange={vi.fn()}
+          onLoopDragEnd={onDragEnd}
+          durationMs={60000}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, width: 1000, height: 100, right: 1000, bottom: 100, x: 0, y: 0 }),
+        configurable: true,
+      });
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 750 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        expect(onDragEnd).toHaveBeenCalled();
+      });
+    });
+  });
 });

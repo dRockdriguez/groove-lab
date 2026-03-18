@@ -43,6 +43,50 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
 }) => {
   const tracksRef = React.useRef<HTMLDivElement>(null);
 
+  // ─── Drag-to-create loop state ─────────────────────────────────────────────
+  const [dragStartMs, setDragStartMs] = React.useState<number | null>(null);
+  const [dragCurrentMs, setDragCurrentMs] = React.useState<number | null>(null);
+  const [isDraggingLoop, setIsDraggingLoop] = React.useState(false);
+
+  // ─── Helper: Convert mouse position to milliseconds ────────────────────────
+  const getTimeFromMouseEvent = (e: React.MouseEvent<HTMLDivElement> | MouseEvent): number => {
+    if (!tracksRef.current || durationMs <= 0) return 0;
+    const rect = tracksRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    return Math.round(ratio * durationMs);
+  };
+
+  // ─── Mouse handlers for drag-to-select ────────────────────────────────────
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isLoopActive || !onLoopStartChange || !onLoopEndChange) return;
+    const timeMs = getTimeFromMouseEvent(e);
+    setDragStartMs(timeMs);
+    setDragCurrentMs(timeMs);
+    setIsDraggingLoop(true);
+    onLoopDragStart?.();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingLoop || dragStartMs === null) return;
+    setDragCurrentMs(getTimeFromMouseEvent(e));
+  };
+
+  const handleMouseUp = () => {
+    if (!isDraggingLoop) return;
+    if (dragStartMs !== null && dragCurrentMs !== null) {
+      const start = Math.min(dragStartMs, dragCurrentMs);
+      const end = Math.max(dragStartMs, dragCurrentMs);
+      if (end - start >= 500) {
+        onLoopStartChange?.(start);
+        onLoopEndChange?.(end);
+      }
+    }
+    setDragStartMs(null);
+    setDragCurrentMs(null);
+    setIsDraggingLoop(false);
+    onLoopDragEnd?.();
+  };
+
   if (midiEvents.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
@@ -82,6 +126,13 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
     }
     return markers;
   }, [bpm, durationMs, metronomeEnabled]);
+
+  // ─── Drag preview ──────────────────────────────────────────────────────────
+  const isDragging = isDraggingLoop && dragStartMs !== null && dragCurrentMs !== null;
+  const dragPreviewStart = isDragging ? Math.min(dragStartMs!, dragCurrentMs!) : 0;
+  const dragPreviewEnd = isDragging ? Math.max(dragStartMs!, dragCurrentMs!) : 0;
+  const dragPreviewLeft = durationMs > 0 ? (dragPreviewStart / durationMs) * 100 : 0;
+  const dragPreviewWidth = durationMs > 0 ? ((dragPreviewEnd - dragPreviewStart) / durationMs) * 100 : 0;
 
   // ─── Loop marker positions ─────────────────────────────────────────────────
   const hasLoop = loopStartMs !== undefined && loopEndMs !== undefined && loopStartMs < loopEndMs;
@@ -146,7 +197,14 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
         </div>
 
         {/* Tracks with playhead (relative positioned) */}
-        <div ref={tracksRef} className="relative flex-1">
+        <div
+          ref={tracksRef}
+          className="relative flex-1"
+          onMouseDown={onLoopStartChange && onLoopEndChange ? handleMouseDown : undefined}
+          onMouseMove={onLoopStartChange && onLoopEndChange ? handleMouseMove : undefined}
+          onMouseUp={onLoopStartChange && onLoopEndChange ? handleMouseUp : undefined}
+          style={{ cursor: isDragging ? 'col-resize' : undefined }}
+        >
           {/* Metronome markers overlay */}
           {metronomeMarkers.length > 0 && (
             <div
@@ -170,6 +228,23 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                 />
               ))}
             </div>
+          )}
+
+          {/* Drag preview (blue outline while dragging) */}
+          {isDragging && dragPreviewWidth > 0 && (
+            <div
+              data-testid="loop-drag-preview"
+              aria-hidden="true"
+              className="absolute top-0 bottom-0 pointer-events-none"
+              style={{
+                left: `${dragPreviewLeft}%`,
+                width: `${dragPreviewWidth}%`,
+                backgroundColor: '#3B82F6',
+                opacity: 0.2,
+                outline: '2px solid #3B82F6',
+                zIndex: 6,
+              }}
+            />
           )}
 
           {/* Loop overlay (full height, behind notes) */}
