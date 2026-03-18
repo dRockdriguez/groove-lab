@@ -228,7 +228,8 @@ program
     for (const step of flow) {
       try {
         runStep(step, spec);
-        commitAfterStep(step, spec);
+        // Don't commit after each step — linters may modify files after step runs
+        // Instead, commit once at the end after all steps complete
       } catch (err) {
         console.error(`⚠️ Step failed: ${step}`);
         console.error(err);
@@ -237,6 +238,15 @@ program
     }
 
     console.log('\n🎯 Workflow finished!');
+
+    // Commit all changes after all steps complete (linters have finished running)
+    try {
+      commitAfterStep('all', spec);
+    } catch (err) {
+      console.error('Warning: Could not commit after workflow completion');
+      console.error(err);
+      // Don't exit — continue to finalize
+    }
 
     try {
       finalizeSpecDelivery(spec);

@@ -212,9 +212,9 @@ type HitLookup = Record<number, number[]>;
   - Positioned below timeline (ready for integration into ExercisePlaybackPage)
 
 ### Test Coverage
-- **Unit Tests** (`drum-hit-detection.test.ts`): 31 tests validating all hit classifications and edge cases
-- **Component Tests** (`DrumHitFeedback.test.tsx`): 29 tests validating rendering, calculations, and styling
-- **Total new tests**: 60 tests, all PASSING ✅
+- **Unit Tests** (`drum-hit-detection.test.ts`): 19 tests validating all hit classifications and edge cases
+- **Component Tests** (`DrumHitFeedback.test.tsx`): 26 tests validating rendering, calculations, and styling
+- **Total new tests**: 45 tests, all PASSING ✅
 
 ### Files Created/Modified
 1. [packages/utils/src/index.ts](packages/utils/src/index.ts) — Added hit detection logic

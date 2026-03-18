@@ -13,7 +13,6 @@ export interface DrumHitFeedbackProps {
 
 export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
   validatedHits,
-  totalExpectedHits,
   isPlaying,
   className = '',
 }) => {
