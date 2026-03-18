@@ -1,6 +1,6 @@
 # Spec: Exercise Playback Loop Controls
 
-**Status:** In Progress (UI redesign: remove numeric inputs, use timeline drag-select)
+**Status:** Implemented
 **Version:** 2.0.0
 **Last updated:** 2026-03-18
 
@@ -345,33 +345,33 @@ When timeline is focused:
 ## Definition of Done
 
 1. [x] Spec reviewed and approved by team (v2.0 with removal of numeric inputs)
-2. [ ] LoopControls rewritten without start/end time inputs
-3. [ ] LoopControls.tsx: simplified layout (toggle, reps, clear only)
-4. [ ] Loop status display: shows "0:00–0:15, 5x" format
-5. [ ] Repetitions selector with 1-999 and infinite options
-6. [ ] Loop toggle button with aria-pressed and visual feedback
-7. [ ] Clear button: resets bounds and disables loop
-8. [ ] LoopControls disabled when no region selected (loopStartMs >= loopEndMs)
-9. [ ] MiniTimeline: drag-select implementation for loop bounds
-10. [ ] ExercisePlaybackTimeline: drag-select implementation for loop bounds
-11. [ ] Visual highlight on timeline during drag and after selection
-12. [ ] Drag-select disabled when loop is already active
-13. [ ] Minimum loop duration enforced (e.g., 500ms)
-14. [ ] Time format helpers in @groovelab/utils (formatMs, clampTime)
-15. [ ] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
-16. [ ] Dark/light mode styling (Tailwind dark: prefix)
-17. [ ] Responsive: fits in sidebar on desktop/tablet/mobile
-18. [ ] Styled to match MetronomeControl (sidebar consistency)
-19. [ ] LoopControls.test.tsx: 20+ unit tests
-20. [ ] MiniTimeline/ExercisePlaybackTimeline: 15+ integration tests for drag-select
-21. [ ] Manual testing: drag-select on both timelines
-22. [ ] Manual testing: toggle/clear/reps in sidebar
-23. [ ] Manual testing: drag disabled while looping
-24. [ ] Manual testing: visual highlight appears/disappears
-25. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
-26. [ ] Accessibility audit: screen reader, keyboard nav, contrast
-27. [ ] All tests passing
-28. [ ] PR merged and deployed
+2. [x] LoopControls rewritten without start/end time inputs
+3. [x] LoopControls.tsx: simplified layout (toggle, reps, clear only)
+4. [x] Loop status display: shows "0:00–0:15, 5x" format
+5. [x] Repetitions selector with 1-999 and infinite options
+6. [x] Loop toggle button with aria-pressed and visual feedback
+7. [x] Clear button: resets bounds and disables loop
+8. [x] LoopControls disabled when no region selected (loopStartMs >= loopEndMs)
+9. [x] MiniTimeline: drag-select implementation for loop bounds
+10. [x] ExercisePlaybackTimeline: drag-select implementation for loop bounds
+11. [x] Visual highlight on timeline during drag and after selection
+12. [x] Drag-select disabled when loop is already active
+13. [x] Minimum loop duration enforced (e.g., 500ms)
+14. [x] Time format helpers in @groovelab/utils (formatMs, clampTime)
+15. [x] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
+16. [x] Dark/light mode styling (Tailwind dark: prefix)
+17. [x] Responsive: fits in sidebar on desktop/tablet/mobile
+18. [x] Styled to match MetronomeControl (sidebar consistency)
+19. [x] LoopControls.test.tsx: 20+ unit tests
+20. [x] MiniTimeline/ExercisePlaybackTimeline: 15+ integration tests for drag-select
+21. [x] Manual testing: drag-select on both timelines
+22. [x] Manual testing: toggle/clear/reps in sidebar
+23. [x] Manual testing: drag disabled while looping
+24. [x] Manual testing: visual highlight appears/disappears
+25. [x] Manual testing: all major browsers (Chrome, Firefox, Safari)
+26. [x] Accessibility audit: screen reader, keyboard nav, contrast
+27. [x] All tests passing
+28. [x] PR merged and deployed
 
 ## Implementation Notes for Developer
 
