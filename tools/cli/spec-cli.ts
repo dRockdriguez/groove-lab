@@ -142,9 +142,20 @@ function commitAfterStep(step: string, specPath: string) {
     console.log(`No changes after ${step} step — skipping commit`);
     return;
   }
-  // Stage only source code and spec files (avoid accidentally committing .env, node_modules, etc)
-  execSync('git add src/ packages/ apps/ specs/ .astro/ public/ 2>/dev/null || true', { stdio: 'inherit' });
-  execSync(`git commit -m "spec(${branchName}): after ${step} step"`, { stdio: 'inherit' });
+
+  try {
+    // Stage all changes (.gitignore will exclude node_modules, .env, etc)
+    execSync('git add -A', { stdio: 'inherit' });
+
+    const commitMsg = step === 'all'
+      ? `spec(${branchName}): implement + test + verify workflow complete`
+      : `spec(${branchName}): after ${step} step`;
+
+    execSync(`git commit -m "${commitMsg}"`, { stdio: 'inherit' });
+  } catch (err: any) {
+    // If commit fails, it's likely no changes to commit (all staged)
+    console.log(`⚠️ Could not commit after ${step} — ${err.message}`);
+  }
 }
 
 function pushBranch(branchName: string) {
