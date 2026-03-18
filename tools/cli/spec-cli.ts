@@ -25,8 +25,13 @@ const steps: Record<string, Step> = {
     model: 'claude-opus-4-6',
   },
   implement: {
-    label: 'Implement feature',
+    label: 'Implement feature from tests',
     prompt: 'prompts/implement-feature.md',
+    model: 'claude-sonnet-4-6',
+  },
+  'implement-first': {
+    label: 'Implement feature from spec',
+    prompt: 'prompts/implement-feature-first.md',
     model: 'claude-sonnet-4-6',
   },
   test: {
@@ -35,7 +40,7 @@ const steps: Record<string, Step> = {
     model: 'claude-haiku-4-5-20251001',
   },
   'implement-tests': {
-    label: 'Impelement tests',
+    label: 'Implement tests',
     prompt: 'prompts/implement-tests.md',
     model: 'claude-haiku-4-5-20251001',
   },
@@ -47,10 +52,10 @@ const steps: Record<string, Step> = {
 };
 
 const flows: Record<string, string[]> = {
-  default: ['implement', 'test', 'implement-tests', 'verify'],
-  plan: ['plan', 'implement', 'test', 'implement-tests', 'verify'],
+  default: ['implement-first', 'test', 'implement-tests', 'verify'],
+  plan: ['plan', 'implement-first', 'test', 'implement-tests', 'verify'],
   tdd: ['analyze', 'test', 'implement-tests', 'implement', 'verify'],
-  'no-tdd': ['analyze', 'implement', 'verify'],
+  'no-tdd': ['analyze', 'implement-first', 'verify'],
 };
 
 function runStep(stepKey: string, specPath: string) {
