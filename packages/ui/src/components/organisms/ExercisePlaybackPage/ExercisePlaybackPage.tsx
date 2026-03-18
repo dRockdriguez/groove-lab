@@ -204,11 +204,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         const currentTime = audioRef.current.currentTime * 1000;
         lastAudioTimeRef.current = currentTime;
 
-        // Loop logic
+        // Loop logic — use tolerance to catch loop end even with frame skips
+        const LOOP_END_TOLERANCE_MS = 50; // Allow 50ms tolerance for detecting loop end
         if (
           isLoopActiveRef.current &&
           loopStartMsRef.current < loopEndMsRef.current &&
-          currentTime >= loopEndMsRef.current
+          currentTime >= loopEndMsRef.current - LOOP_END_TOLERANCE_MS &&
+          currentTime >= loopStartMsRef.current // Ensure we're past loop start
         ) {
           const reps = loopRepetitionsRef.current;
           const currRep = currentLoopRepetitionRef.current;
