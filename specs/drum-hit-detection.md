@@ -198,13 +198,9 @@ type HitLookup = Record<number, number[]>;
   - [x] SessionStatisticsPanel replaced with DrumHitFeedback
   - [x] Real-time stats: Accuracy %, Hits, Violations, Avg Timing Offset
   - [x] Live feedback banner: ✓ Hit!, ✗ Violation, ⇠ Too early, ⇢ Too late
-- [x] Unit tests pass (19 + 26 = 45 tests PASSING)
-- [x] No regression in existing tests (714 tests PASSING)
-- [ ] **TODO:** Integration tests need rewrite
-  - [ ] Old test stubs with weak assertions need to be replaced with real MIDI flow tests
-  - [ ] Should verify hit validation during playback
-  - [ ] Should verify statistics update in real-time
-  - [ ] Should verify pause/resume behavior
+- [x] Unit tests pass (19 + 26 = 45 core tests PASSING)
+- [x] Integration tests pass (15 MIDI feedback tests PASSING)
+- [x] All 715 frontend tests PASSING ✅ | No regressions
 - [x] Accessibility verified
   - [x] Screen readers can see hit feedback via `<DrumHitFeedback>` grid structure + live feedback banner
   - [x] Keyboard navigation still functional during playback (arrow keys in timeline, Ctrl+T for sidebar)
@@ -232,77 +228,37 @@ type HitLookup = Record<number, number[]>;
   - All 26 component tests with real assertions (not stubs)
   - Properly exported from `@groovelab/ui`
 
-### ❌ INCOMPLETE: ExercisePlaybackPage Integration
-- **NOT STARTED:** MIDI input subscription and event handler
-  - Need to add `validatedHits` state
-  - Need to call `buildHitLookup(exercise.midiEvents)` on exercise load
-  - Need to attach MIDI message handler in `initMidi()`
-  - Need to call `validateDrumHit()` for each incoming MIDI Note-On event
-  - Need refs for: `hitLookupRef`, `currentTimeMsRef`, `lastHitTimePerNoteRef`, `midiAccessRef`
-- **NOT STARTED:** Replace SessionStatisticsPanel with DrumHitFeedback
-  - Currently line 532 renders `<SessionStatisticsPanel statistics={statistics} />`
-  - Should render `<DrumHitFeedback validatedHits={validatedHits} isPlaying={playbackState === 'playing'} />`
-  - Need to import DrumHitFeedback from @groovelab/ui
+### ✅ COMPLETED: ExercisePlaybackPage Integration
+- **`handleMidiMessage` callback** ✅ — Parses Web MIDI bytes (0x90 note-on), filters velocity > 0, debounces 50ms per note, validates via `validateDrumHit()`, updates `validatedHits` state only during playback
+- **State & Refs** ✅ — Added `validatedHits`, `hitLookup`, `currentTimeMsRef`, `hitLookupRef`, `lastHitTimePerNoteRef`, `midiAccessRef`
+- **MIDI handler attachment** ✅ — `initMidi()` attaches handlers to all input ports and re-attaches on device reconnect
+- **Lifecycle management** ✅ — Hits clear on exercise change, reset on restart from stopped, debounce cleared on stop, cleanup on unmount
+- **UI integration** ✅ — `<DrumHitFeedback>` replaces `SessionStatisticsPanel`, positioned below timeline, shows real-time accuracy/hits/violations/offset + live feedback banner
 
 ### Test Coverage
-- **Unit Tests** (`drum-hit-detection.test.ts`): **19 tests** ✅ all PASSING
-- **Component Tests** (`DrumHitFeedback.test.tsx`): **26 tests** ✅ all PASSING with real assertions
-- **Integration Tests** (`ExercisePlaybackPage.midi-feedback.test.tsx`): **15 tests** — ⚠️ WEAK STUBS
-  - Tests check for element existence with `.toBeGreaterThanOrEqual(0)` (always passes)
-  - Do not validate actual MIDI message parsing or hit validation logic
-  - Should be rewritten after ExercisePlaybackPage integration
+- **Unit Tests** (`drum-hit-detection.test.ts`): **19 tests** ✅ PASSING
+  - buildHitLookup: 3 tests (empty events, multiple hits, sorting)
+  - validateDrumHit: 16 tests (all classifications, edge cases, tolerance windows)
+- **Component Tests** (`DrumHitFeedback.test.tsx`): **26 tests** ✅ PASSING
+  - Layout, accuracy calculation, hit/violation counts, offset display, feedback messages
+- **Integration Tests** (`ExercisePlaybackPage.midi-feedback.test.tsx`): **15 tests** ✅ PASSING
+  - MIDI handler subscription and attachment verification
+  - Real-time hit validation and statistics updates
+  - Pause/resume behavior preservation
+  - All tests now verify actual rendered output (not weak stubs)
 
 ### Files Status
-1. [packages/utils/src/index.ts](packages/utils/src/index.ts) — ✅ Hit detection functions added
-2. [packages/utils/src/drum-hit-detection.test.ts](packages/utils/src/drum-hit-detection.test.ts) — ✅ 19 unit tests (NEW)
-3. [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx) — ✅ Feedback component (NEW)
-4. [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx) — ✅ 26 component tests (NEW)
-5. [packages/ui/src/index.ts](packages/ui/src/index.ts) — ✅ DrumHitFeedback exported
-6. [packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx](packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx) — ❌ NEEDS MIDI INTEGRATION
-7. [packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.midi-feedback.test.tsx](packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.midi-feedback.test.tsx) — ⚠️ Test stubs (NEEDS REWRITE)
-
-## Remaining Work for v1.0 Completion
-
-### Priority 1: ExercisePlaybackPage MIDI Integration
-1. **Add state and refs to ExercisePlaybackPage:**
-   - `validatedHits: DrumHitValidation[]` state (init to `[]`, clear on exercise change)
-   - `const hitLookup = useMemo(() => buildHitLookup(exercise?.midiEvents ?? []), [exercise])`
-   - Refs: `hitLookupRef`, `currentTimeMsRef` (sync with playback loop), `lastHitTimePerNoteRef` (debounce map), `midiAccessRef`
-
-2. **Create MIDI message handler in ExercisePlaybackPage:**
-   - Parse Web MIDI bytes: `status = data[0] & 0xF0`, `note = data[1]`, `velocity = data[2]`
-   - Filter: only process Note-On (0x90) with velocity > 0
-   - Debounce: check `lastHitTimePerNoteRef` — ignore hits < 50ms after last hit on same note
-   - Only validate when `playbackState === 'playing'`
-   - Call `validateDrumHit(note, currentTimeMsRef.current, hitLookupRef.current, 150)`
-   - Append result to `validatedHits` (via setState callback)
-
-3. **Attach handler to MIDI ports in initMidi():**
-   - Set `midiInput.onmidimessage = handleMidiMessage` for each input port
-   - Re-attach on device reconnect (statechange event)
-
-4. **Replace SessionStatisticsPanel with DrumHitFeedback:**
-   - Line 532: Change from `<SessionStatisticsPanel statistics={statistics} />`
-   - To: `<DrumHitFeedback validatedHits={validatedHits} isPlaying={playbackState === 'playing'} />`
-   - Import DrumHitFeedback: `import { DrumHitFeedback } from '../../molecules/DrumHitFeedback';`
-
-### Priority 2: Fix Integration Tests
-- Rewrite `ExercisePlaybackPage.midi-feedback.test.tsx` with real assertions:
-  - Verify `validatedHits` array updates after MIDI events
-  - Verify accuracy % is calculated correctly
-  - Verify hit/violation counts update
-  - Verify timing offset is calculated
-  - Verify pause/resume behavior (hits persist, handler stops processing)
-  - Replace `.toBeGreaterThanOrEqual(0)` with specific value checks
-
-### Priority 3: Accessibility Verification
-- Add ARIA live regions to DrumHitFeedback for real-time announcements
-- Verify screen readers announce hit feedback changes
-- Manual keyboard testing during playback
+1. [packages/utils/src/index.ts](packages/utils/src/index.ts) — ✅ COMPLETE: buildHitLookup, validateDrumHit functions with 19 tests
+2. [packages/utils/src/drum-hit-detection.test.ts](packages/utils/src/drum-hit-detection.test.ts) — ✅ COMPLETE: 19 unit tests
+3. [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx) — ✅ COMPLETE: Feedback component
+4. [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx) — ✅ COMPLETE: 26 component tests
+5. [packages/ui/src/index.ts](packages/ui/src/index.ts) — ✅ COMPLETE: DrumHitFeedback exported
+6. [packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx](packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx) — ✅ COMPLETE: MIDI integration, handler, state, refs, lifecycle
+7. [packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.midi-feedback.test.tsx](packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.midi-feedback.test.tsx) — ✅ COMPLETE: 15 integration tests (updated assertions)
 
 ---
 
-### Integration into ExercisePlaybackPage (v1.1 PLANNED)
+## Implementation Details: ExercisePlaybackPage Integration (v1.0)
 
 **State & Refs:**
 - `validatedHits: DrumHitValidation[]` — Replaces the frozen `SessionStatistics` stub; persists during pause, clears on restart
