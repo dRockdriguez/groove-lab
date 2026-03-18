@@ -87,3 +87,36 @@ export function isValidVelocity(velocity: number): boolean {
 export function isValidNote(note: number): boolean {
   return Number.isInteger(note) && note >= 0 && note <= 127;
 }
+
+/**
+ * Color palette for GM drum kit rudiments.
+ * Each MIDI note maps to a distinct hex color for visual identification.
+ */
+const DRUM_COLOR_MAP: Record<number, string> = {
+  36: '#DC2626', // Kick Drum — Deep Red
+  38: '#3B82F6', // Snare Drum — Blue
+  40: '#60A5FA', // Electric Snare — Light Blue
+  41: '#4F46E5', // Tom (Floor/Low) — Indigo
+  42: '#FBBF24', // Closed Hi-Hat — Bright Yellow
+  43: '#7C3AED', // High Floor Tom — Violet
+  44: '#FCD34D', // Pedal Hi-Hat — Pale Yellow
+  45: '#8B5CF6', // Low Tom — Purple-Light
+  46: '#F59E0B', // Open Hi-Hat — Golden Yellow
+  47: '#7C3AED', // Tom (Mid/Low-Mid) — Violet
+  48: '#A855F7', // Tom (High-Mid) — Purple
+  49: '#06B6D4', // Crash Cymbal — Cyan
+  50: '#A855F7', // Tom (High) — Purple
+  51: '#0891B2', // Ride Cymbal — Teal
+  52: '#0EA5E9', // Chinese Cymbal — Sky Blue
+  55: '#22D3EE', // Splash Cymbal — Light Cyan
+  57: '#67E8F9', // Crash Cymbal 2 — Pale Cyan
+  59: '#0E7490', // Ride Cymbal 2 — Dark Teal
+};
+
+/** Default color for drum notes not found in the color map */
+const DRUM_COLOR_DEFAULT = '#6B7280'; // Gray
+
+/** Get the display color for a drum MIDI note number */
+export function getDrumColor(midiNote: number): string {
+  return DRUM_COLOR_MAP[midiNote] ?? DRUM_COLOR_DEFAULT;
+}
