@@ -72,10 +72,10 @@ Fix any regressions before proceeding.
 
 ### `spec-writer`
 
-Creates or updates specification documents in `/specs`.
+Creates or updates decomposed specification folders in `/specs`.
 
 **Input:** A user story, feature request, or problem description
-**Output:** A complete spec document following the template in this directory
+**Output:** A feature folder with `00-overview.md` plus independently implementable mini-specs
 **Location:** `agents/spec-writer/`
 
 ### `test-writer`
@@ -118,19 +118,35 @@ Implements a feature to make a set of failing tests pass.
 
 ## Spec Template
 
-When writing a new spec, use this structure:
+When writing a new spec set, use this structure:
 
 ```markdown
-# Spec: [Feature Name]
+specs/<feature-name>/
+  00-overview.md
+  01-<mini-spec-name>.md
+  02-<mini-spec-name>.md
+```
 
-**Status:** Draft | In Progress | Implemented
-**Version:** 0.1.0
-**Last updated:** YYYY-MM-DD
+`00-overview.md` should contain:
 
-## Problem
-## User Stories
+```markdown
+# Overview: [Feature Name]
+
+## Problem Summary
+## High-Level Architecture
+## Mini-Specs
+## Execution Order
+```
+
+Each mini-spec should contain:
+
+```markdown
+# Spec: [Mini Spec Name]
+
+## Scope
+## Inputs
+## Outputs
 ## Acceptance Criteria
-## Technical Notes
-## Out of Scope
-## Definition of Done
+## Edge Cases
+## Notes
 ```
