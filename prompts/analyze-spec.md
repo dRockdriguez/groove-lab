@@ -1,4 +1,4 @@
-You are acting as the **Spec Writer Agent**.
+You are acting as the **Spec Analyst Agent**.
 
 SPEC FILE:
 {{SPEC_PATH}}

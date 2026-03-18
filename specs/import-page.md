@@ -1,6 +1,6 @@
 # Spec: Import Page
 
-**Status:** In Progress
+**Status:** Implemented
 **Version:** 0.1.0
 **Last updated:** 2026-03-11
 

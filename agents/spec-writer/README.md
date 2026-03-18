@@ -27,12 +27,13 @@ GrooveLab spec template.
 
 ## Output Location
 
+All specs are written to the `/specs/` directory at the same level (no subdirectories):
+
 ```
-specs/
-  instruments/   ← for instrument input/detection specs
-  practice/      ← for session and exercise specs
-  feedback/      ← for analysis and feedback specs
+specs/<feature-name>.md
 ```
+
+Example: `specs/exercise-playback-loops.md`, `specs/import-page.md`
 
 ## Quality Checklist
 

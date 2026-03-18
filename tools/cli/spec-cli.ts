@@ -142,7 +142,8 @@ function commitAfterStep(step: string, specPath: string) {
     console.log(`No changes after ${step} step — skipping commit`);
     return;
   }
-  execSync('git add -A', { stdio: 'inherit' });
+  // Stage only source code and spec files (avoid accidentally committing .env, node_modules, etc)
+  execSync('git add src/ packages/ apps/ specs/ .astro/ public/ 2>/dev/null || true', { stdio: 'inherit' });
   execSync(`git commit -m "spec(${branchName}): after ${step} step"`, { stdio: 'inherit' });
 }
 

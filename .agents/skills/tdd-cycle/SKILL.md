@@ -1,222 +1,211 @@
 ---
 name: tdd-cycle
-description: Execute a complete TDD cycle (RED → GREEN → REFACTOR) for one test. Orchestrates the full workflow from writing a failing test through implementation and refactoring to commit.
+description: Execute a complete TDD cycle (RED → GREEN → REFACTOR) for a spec's acceptance criteria using GrooveLab's spec-cli tooling.
 ---
 
 # Complete TDD Cycle
 
 ## Overview
 
-This skill orchestrates a complete Test-Driven Development cycle, guiding through all phases: RED (write failing test), GREEN (make it pass), REFACTOR (improve structure), and proper commits. Use this when you want to complete one full TDD iteration.
+This skill orchestrates a Test-Driven Development cycle using GrooveLab's spec-cli infrastructure. It guides you through writing failing tests, implementing code to pass them, refactoring, and verifying against acceptance criteria.
 
 ## When to Use
 
 Use this skill when:
-- Ready to implement next test from PLAN.md
-- Want to follow complete TDD workflow
-- Need guidance through all TDD phases
-- Want structured approach to one iteration
-- Following disciplined TDD practice
+- Implementing a new feature with a spec
+- Want to follow strict TDD practice (tests before implementation)
+- Need structured guidance through RED → GREEN → REFACTOR phases
+- Following the `--flow tdd` workflow in spec-cli
 
 ## Complete Workflow
 
-### Phase 1: RED - Write Failing Test
+### Phase 1: RED - Write Failing Tests
 
-**Execute tdd-red skill:**
-1. Find next unmarked test in PLAN.md
-2. Write a failing test with Korean description
-3. Run tests to confirm failure
-4. Mark test as [ ] in PLAN.md
+**Using spec-cli:**
+```bash
+pnpm spec:test <spec-file>
+```
+
+This generates test stubs (one `it.todo()` per acceptance criterion).
+
+**Your task:**
+1. Run the generated test file
+2. Confirm all tests fail with "not implemented" errors
+3. Read the spec carefully to understand what behavior each test should verify
 
 **Success Criteria:**
-- Test fails for the right reason (missing functionality)
-- Test name clearly describes behavior
-- All other tests still pass
-- No compilation errors
-
-**Use:** `/red` command or `tdd-red` skill
+- All tests are failing for the right reason (missing functionality)
+- Each test name clearly describes one observable behavior
+- No false positives (tests don't pass accidentally)
 
 ---
 
-### Phase 2: GREEN - Make It Pass
+### Phase 2: GREEN - Implement Code
 
-**Execute tdd-green skill:**
-1. Verify we have a failing test
-2. Implement MINIMUM code to make test pass
-3. Run ALL tests to confirm they pass
-4. Mark test as [x] in PLAN.md
+**Implement the feature incrementally:**
+1. Pick one failing test
+2. Write the minimum code to make that test pass
+3. Run tests after each implementation
+4. Move to the next failing test
+5. Stop when all tests pass
 
 **Success Criteria:**
-- New test now passes
-- All existing tests still pass
-- No compiler warnings
-- Used simplest possible implementation
-
-**Use:** `/green` command or `tdd-green` skill
+- All tests pass
+- Only the minimum code was added (no extra features)
+- No existing tests were broken
 
 ---
 
-### Phase 3: REFACTOR - Improve Structure
+### Phase 3: REFACTOR - Improve Code Structure
 
-**Execute tdd-refactor skill (if needed):**
-1. Verify all tests are passing
-2. Identify code smells or duplication
-3. Make structural improvements one at a time
-4. Run tests after each change
-5. Keep tests green throughout
-
-**Success Criteria:**
-- All tests still passing
-- Code quality improved
-- Duplication reduced
-- Structure is clearer
+**Only after all tests pass:**
+1. Look for code duplication, unclear names, or structural issues
+2. Make one improvement at a time
+3. Run tests after each change to stay green
+4. Stop when code is clean (avoid premature optimization)
 
 **When to Skip:**
 - Code is already clean
-- No obvious improvements needed
-- Would be premature optimization
-
-**Use:** `/refactor` command or `tdd-refactor` skill
+- No obvious improvements are needed
+- Further changes would over-engineer the solution
 
 ---
 
-### Phase 4: COMMIT - Save Progress
+### Phase 4: VERIFY - Check Against Spec
 
-**Commit Strategy:**
-
-**If Structural Changes Were Made:**
-1. First, commit structural changes separately:
-   ```
-   /commit-tidy
-   ```
-   - Use "refactor:" or "tidy:" prefix
-   - Clearly indicate structural changes only
-
-2. Then, commit behavioral changes:
-   ```
-   /commit-behavior
-   ```
-   - Use "feat:", "fix:", or appropriate prefix
-   - Describe what functionality was added
-
-**If No Structural Changes:**
-- Just commit behavioral changes:
-  ```
-  /commit-behavior
-  ```
-
-**Commit Prerequisites:**
-- ALL tests passing
-- NO compiler warnings
-- NO linter errors
-- Clear commit message
-
----
-
-### Phase 5: REPEAT - Next Test
-
-**Prepare for Next Cycle:**
-1. Verify clean state (all tests pass)
-2. Review PLAN.md for next test
-3. Start new RED phase when ready
-
----
-
-## Execution Flow
-
+**Using spec-cli:**
+```bash
+pnpm spec:verify <spec-file>
 ```
-START
-  ↓
-RED: Write failing test
-  ↓
-Confirm test fails? ──No──> Fix test
-  ↓ Yes
-GREEN: Implement minimum code
-  ↓
-All tests pass? ──No──> Debug & fix
-  ↓ Yes
-Need refactoring? ──Yes──> REFACTOR: Improve structure
-  ↓ No                        ↓
-  ←───────────────────────────┘
-COMMIT: Save changes
-  ↓
-Next test? ──Yes──> START
-  ↓ No
-DONE
+
+This checks that:
+- All acceptance criteria have passing tests
+- The spec status is accurate
+- No criteria are incomplete
+
+**Update the spec:**
+- Mark `[x]` on completed acceptance criteria
+- Mark all Definition of Done items if the feature is complete
+
+---
+
+## Complete TDD Cycle in GrooveLab
+
+```bash
+# 1. Create spec (if not already written)
+# 2. Start TDD workflow
+pnpm spec:run <spec-file> --flow tdd
+
+# This automatically runs:
+# - analyze: Review the spec
+# - test: Generate test stubs
+# - implement-tests: Convert stubs to real tests (optional step)
+# - implement: Build the feature
+# - verify: Check against acceptance criteria
 ```
+
+---
 
 ## Key Principles
 
-**RED Phase:**
-- Write smallest failing test
-- Test one thing only
-- Fail for right reason
+**RED Phase (Test Stubs):**
+- One test per acceptance criterion
+- Test observable behavior, not implementation
+- Fail for the right reason
 
-**GREEN Phase:**
-- Simplest implementation
+**GREEN Phase (Implementation):**
+- Simplest code that makes tests pass
 - No premature optimization
-- Make it work, not perfect
+- Make it work first
 
 **REFACTOR Phase:**
-- Only when green
-- One change at a time
-- Keep tests green
+- Only when all tests are green
+- One improvement at a time
+- Keep tests passing throughout
 
-**COMMIT Phase:**
-- Separate structural from behavioral
-- All tests passing
-- Clear messages
+**VERIFY Phase:**
+- All tests must pass
+- Acceptance criteria must be marked `[x]`
+- Spec status must reflect true completion
+
+---
 
 ## Important Reminders
 
-- **NEVER** skip RED - always write test first
-- **NEVER** write more code than needed in GREEN
-- **NEVER** refactor on red tests
-- **ALWAYS** run tests after each phase
-- **ALWAYS** keep commits small and focused
-- **ONE** test at a time
-- **ONE** refactoring at a time
+- **Always start with tests** — RED phase first
+- **Don't over-implement** — GREEN phase uses minimum code
+- **Don't refactor on red tests** — refactor only when all pass
+- **Run tests frequently** — after each change
+- **Keep commits small** — one feature at a time
+- **Test observable behavior** — not implementation details
 
-## Useful Commands
+---
 
-Within this cycle, you can use:
-- `/red` - Execute RED phase
-- `/green` - Execute GREEN phase
-- `/refactor` - Execute REFACTOR phase
-- `/tidy` - Make structural changes (Tidy First)
-- `/commit-tidy` - Commit structural changes
-- `/commit-behavior` - Commit behavioral changes
-- `/run-tests` - Run all tests
-- `/next-test` - View next test in PLAN.md
+## Execution Flow in GrooveLab
 
-## Example Complete Cycle
+```
+START with spec
+  ↓
+Run: pnpm spec:run <spec> --flow tdd
+  ↓
+[analyze]: Read and understand spec
+  ↓
+[test]: Generate test stubs (one per AC)
+  ↓
+RED: Confirm all tests fail
+  ↓
+GREEN: Implement code incrementally
+  ↓
+All tests pass? ──No──> Keep implementing
+  ↓ Yes
+REFACTOR: Improve code structure (optional)
+  ↓
+[implement-tests]: Real test assertions (replaced stubs)
+  ↓
+[verify]: Check all ACs are marked [x]
+  ↓
+DONE
+```
 
-1. **RED:** Write test "should calculate total price with discount"
-   - Test fails: `calculateTotalWithDiscount is not defined`
+---
 
-2. **GREEN:** Implement basic calculation
-   ```typescript
-   function calculateTotalWithDiscount(price, discount) {
-     return price - discount;
-   }
-   ```
-   - All tests pass
+## Real Example
 
-3. **REFACTOR:** Extract validation logic
-   - Add input validation
-   - Extract discount calculation
-   - All tests still pass
+**Spec Acceptance Criterion:**
+"Upload button is disabled when no files are selected"
 
-4. **COMMIT:**
-   - Commit refactoring: "refactor: extract discount calculation logic"
-   - Commit feature: "feat: add total price calculation with discount"
+**Phase 1 (RED - Test Stub):**
+```typescript
+it.todo('disables upload button when no files are selected')
+```
 
-5. **REPEAT:** Move to next test
+**Phase 2 (GREEN - Implementation):**
+```typescript
+it('disables upload button when no files are selected', () => {
+  render(<FileUpload />)
+  const button = screen.getByRole('button', { name: /upload/i })
+  expect(button).toBeDisabled()
+})
+```
 
-## Next Steps
+Then implement:
+```typescript
+<button disabled={files.length === 0}>Upload</button>
+```
 
-After completing one full cycle:
-1. Verify clean state
-2. Check PLAN.md for next test
-3. Start new cycle with RED phase
-4. Continue until feature complete
+**Phase 3 (REFACTOR - Optional):**
+Extract the disabled state logic if repeated elsewhere.
+
+**Phase 4 (VERIFY):**
+Mark this AC as `[x]` in the spec. Continue with next AC.
+
+---
+
+## Related Commands
+
+- `pnpm spec:test <spec>` — Generate test stubs
+- `pnpm spec:implement <spec>` — Scaffold implementation
+- `pnpm spec:implement:test <spec>` — Convert stubs to real tests
+- `pnpm spec:verify <spec>` — Verify completion
+- `pnpm spec:run <spec> --flow tdd` — Full TDD cycle
+- `pnpm test` — Run all tests locally

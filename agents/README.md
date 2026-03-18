@@ -86,6 +86,14 @@ Generates test skeletons directly from a spec's acceptance criteria.
 **Output:** Test files with `it.todo()` or `@pytest.mark.skip` stubs
 **Location:** `agents/test-writer/`
 
+### `test-implementer`
+
+Converts test skeletons (containing `it.todo` or `@pytest.mark.skip` placeholders) into fully working tests that verify real behavior against the spec's acceptance criteria.
+
+**Input:** Path to spec + test files with placeholders
+**Output:** Test files with real assertions, all tests passing
+**Location:** `agents/test-implementer/`
+
 ### `feature-builder`
 
 Implements a feature to make a set of failing tests pass.
