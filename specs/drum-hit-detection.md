@@ -296,3 +296,49 @@ type HitLookup = Record<number, number[]>;
 - Updated: Removed `if (midiInput.onmidimessage)` guards; added `waitFor()` to wait for handler attachment
 - Rewritten assertions: Verify actual text output (`'✓ Hit!'`, `'✗ Violation'`, `'100%'`, etc.) instead of weak placeholder checks
 - Added: `addEventListener` to mock MIDI access object
+
+---
+
+## UX v1.1 Improvements
+
+### Changes
+
+**1. Removed "✗ Violation" Live Feedback Banner**
+- Live feedback banner (below timeline) now only shows: `'✓ Hit!'`, `'⇠ Too early'`, `'⇢ Too late'`
+- No message displayed when most recent hit is a `'violation'` classification
+- Violations are still tracked and counted in the **Violations** stat in the grid
+- Rationale: The violation concept (note not in exercise) confused players; move focus to timing feedback
+
+**2. More Lenient Hit Detection Tolerance**
+- Changed from ±150ms to ±250ms default window
+- Updated `ExercisePlaybackPage.tsx`: uses explicit `HIT_TOLERANCE_MS = 250` when calling `validateDrumHit()`
+- Rationale: Real-world drummers have ~200-250ms reaction time; standard rhythm games use this window
+- Utils library `validateDrumHit()` default remains ±150ms (for unit test compatibility)
+
+**3. Real-Time Visual Feedback on Timeline Notes**
+- When a note is hit, the note bar in `ExercisePlaybackTimeline` receives a colored overlay
+- **Colors:**
+  - Green (`rgba(34,197,94, ...)`) = `'hit'` classification
+  - Yellow (`rgba(234,179,8, ...)`) = `'early'` classification
+  - Orange (`rgba(249,115,22, ...)`) = `'late'` classification
+  - Violations excluded (no `expectedTimeMs` to anchor the overlay)
+- **Fade:** Overlay opacity = `max(0, 1 - (currentTimeMs - expectedTimeMs) / 800) * 0.85`
+  - Fully visible when hit occurs (elapsed ≈ 0ms)
+  - Fades to invisible over 800ms
+  - Calculated per-frame using `currentTimeMs` (no additional state)
+- **Implementation:**
+  - New prop `validatedHits?: DrumHitValidation[]` added to `ExercisePlaybackTimeline`
+  - `useMemo` builds lookup: `Map<'${note}_${expectedTimeMs}', classification>`
+  - For each note bar, check lookup and render colored overlay if hit found
+  - Tests: 10 new tests in `ExercisePlaybackTimeline.hit-overlays.test.tsx`
+
+### Files Modified (v1.1)
+
+| File | Changes |
+|------|---------|
+| [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx) | Removed `violation` case from banner; now only shows Hit/Early/Late |
+| [packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx](packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.test.tsx) | Updated banner tests to verify no violation feedback |
+| [packages/ui/src/components/organisms/ExercisePlaybackTimeline/ExercisePlaybackTimeline.tsx](packages/ui/src/components/organisms/ExercisePlaybackTimeline/ExercisePlaybackTimeline.tsx) | Added `validatedHits` prop; added overlay rendering with fade |
+| [packages/ui/src/components/organisms/ExercisePlaybackTimeline/ExercisePlaybackTimeline.hit-overlays.test.tsx](packages/ui/src/components/organisms/ExercisePlaybackTimeline/ExercisePlaybackTimeline.hit-overlays.test.tsx) | ✨ NEW: 10 tests for overlay rendering, colors, fade, and edge cases |
+| [packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx](packages/ui/src/components/organisms/ExercisePlaybackPage/ExercisePlaybackPage.tsx) | Added `HIT_TOLERANCE_MS = 250` constant; passed to `validateDrumHit()`; passed `validatedHits` to timeline |
+| [specs/drum-hit-detection.md](specs/drum-hit-detection.md) | Updated with v1.1 changes and technical details |
