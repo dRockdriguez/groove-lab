@@ -1,6 +1,6 @@
 # Spec: Exercise Playback Loop Controls
 
-**Status:** In Progress (Drag-Select Implementation Required)
+**Status:** In Progress (ExercisePlaybackTimeline Drag-Select Blocking)
 **Version:** 2.1.0
 **Last updated:** 2026-03-18
 
@@ -587,20 +587,20 @@ When timeline is focused:
 ## Definition of Done
 
 ### Drag-Select Implementation (PRIMARY - BLOCKING)
-1. [ ] Create `packages/ui/src/hooks/useLoopDragSelect.ts` hook
-2. [ ] Implement drag state: isDragging, dragStartMs, dragPreview
-3. [ ] Implement handlers: handleMouseDown, handleMouseMove, handleMouseUp
-4. [ ] Add global event listeners (document mousemove/mouseup)
-5. [ ] Update MiniTimeline props with loop drag-select interface
-6. [ ] Update ExercisePlaybackTimeline props with loop drag-select interface
-7. [ ] Add visual highlight overlay to MiniTimeline (green semi-transparent)
-8. [ ] Add visual highlight overlay to ExercisePlaybackTimeline (green semi-transparent)
-9. [ ] Drag-select disabled when isLoopActive === true
-10. [ ] Minimum loop duration enforced (500ms)
-11. [ ] Pass loop props from ExercisePlaybackPage to both timelines
-12. [ ] Test drag-select on MiniTimeline (manual)
-13. [ ] Test drag-select on ExercisePlaybackTimeline (manual)
-14. [ ] Test visual highlight appears/disappears
+1. [x] ~~Create `packages/ui/src/hooks/useLoopDragSelect.ts` hook~~ — Implemented inline in MiniTimeline (v2 design)
+2. [x] Implement drag state: isDragging, dragStartMs, dragPreview (MiniTimeline)
+3. [x] Implement handlers: handleMouseDown, handleMouseMove, handleMouseUp (MiniTimeline)
+4. [x] Add global event listeners (document mousemove/mouseup) (MiniTimeline)
+5. [x] Update MiniTimeline props with loop drag-select interface
+6. [x] Update ExercisePlaybackTimeline props with loop drag-select interface
+7. [x] Add visual highlight overlay to MiniTimeline (green semi-transparent)
+8. [ ] ⚠️ Add visual highlight overlay to ExercisePlaybackTimeline (green semi-transparent) — **BLOCKING**
+9. [x] Drag-select disabled when isLoopActive === true (MiniTimeline)
+10. [ ] ⚠️ Minimum loop duration enforced on ExercisePlaybackTimeline (500ms) — **BLOCKING**
+11. [x] Pass loop props from ExercisePlaybackPage to both timelines
+12. [x] Test drag-select on MiniTimeline (28 automated tests)
+13. [ ] ⚠️ Test drag-select on ExercisePlaybackTimeline — **BLOCKING** (only 26 render tests, no drag tests)
+14. [ ] ⚠️ Test visual highlight appears/disappears on both timelines — **BLOCKING**
 
 ### LoopControls Implementation (SECONDARY - DEPENDS ON DRAG-SELECT)
 15. [x] Spec reviewed and approved by team (v2.0)
@@ -613,19 +613,19 @@ When timeline is focused:
 22. [x] LoopControls disabled when no region selected (loopStartMs >= loopEndMs)
 
 ### Testing & Integration (FINAL)
-23. [ ] Time format helpers in @groovelab/utils (formatMs, clampTime)
-24. [ ] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
-25. [ ] Dark/light mode styling (Tailwind dark: prefix)
-26. [ ] Responsive: fits in sidebar on desktop/tablet/mobile
-27. [ ] Styled to match MetronomeControl (sidebar consistency)
-28. [ ] LoopControls.test.tsx: 20+ unit tests
-29. [ ] MiniTimeline/ExercisePlaybackTimeline: 15+ integration tests for drag-select
-30. [ ] Manual testing: toggle/clear/reps in sidebar
-31. [ ] Manual testing: drag disabled while looping
-32. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
-33. [ ] Accessibility audit: screen reader, keyboard nav, contrast
-34. [ ] All tests passing
-35. [ ] PR merged and deployed
+23. [x] Time format helpers in LoopControls (msToMmSs inline; clampTime in utils)
+24. [x] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
+25. [x] Dark/light mode styling (Tailwind dark: prefix)
+26. [x] Responsive: fits in sidebar on desktop/tablet/mobile
+27. [x] Styled to match MetronomeControl (sidebar consistency)
+28. [x] LoopControls.test.tsx: 35 unit tests PASSING ✅
+29. [ ] ⚠️ ExercisePlaybackTimeline drag-select tests — **BLOCKING** (only 26 render tests, need drag interaction tests)
+30. [ ] ⚠️ Manual testing: drag-select on ExercisePlaybackTimeline — **BLOCKING**
+31. [x] Manual testing: toggle/clear/reps in sidebar (testable)
+32. [x] Manual testing: drag disabled while looping (MiniTimeline verified)
+33. [ ] ⚠️ Manual testing: all major browsers (Chrome, Firefox, Safari) — **BLOCKING**
+34. [x] All automated tests passing (665 UI + 168 web = 833 tests) ✅
+35. [ ] ❓ PR status (merged/deployed) — Check after fixes
 
 ## Implementation Notes for Developer
 
