@@ -49,6 +49,8 @@ export { MetronomeControl } from './components/molecules/MetronomeControl';
 export type { MetronomeControlProps } from './components/molecules/MetronomeControl';
 export { LoopRepetitionCounter } from './components/molecules/LoopRepetitionCounter';
 export type { LoopRepetitionCounterProps } from './components/molecules/LoopRepetitionCounter';
+export { LoopControls } from './components/molecules/LoopControls';
+export type { LoopControlsProps } from './components/molecules/LoopControls';
 
 // Organisms
 export { Table } from './components/organisms/Table';

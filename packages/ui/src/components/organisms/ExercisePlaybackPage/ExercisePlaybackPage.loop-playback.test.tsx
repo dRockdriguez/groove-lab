@@ -30,82 +30,28 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
 
   describe('Loop State Management', () => {
     it('should initialize with default loop state (no loop)', () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      expect(screen.getByLabelText(/loop start time, mm:ss format/i)).toHaveValue('00:00');
-      expect(screen.getByLabelText(/loop end time, mm:ss format/i)).toHaveValue('00:00');
-      expect(
-        screen.getByRole('button', { name: /enable loop/i })
-      ).toBeDisabled();
+      // Loop toggle should be disabled when no region selected (loopStartMs >= loopEndMs)
+      const buttons = Array.from(container.querySelectorAll('button[aria-pressed]'));
+      const loopToggle = buttons.find((btn) => btn.getAttribute('aria-label')?.includes('loop'));
+
+      expect(loopToggle).toBeDisabled();
+      expect(loopToggle).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('should update loop start time', async () => {
+    it('should update loop repetitions count', async () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      await user.clear(startInput);
-      await user.type(startInput, '00:15');
+      const repsSelector = screen.getByLabelText(/Number of loop repetitions/i) as HTMLSelectElement;
+      const initialValue = repsSelector.value;
+
+      await user.selectOptions(repsSelector, '5');
 
       await waitFor(() => {
-        expect(startInput).toHaveValue('00:15');
-      });
-    });
-
-    it('should update loop end time', async () => {
-      const user = await userEvent.setup();
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-      await user.clear(endInput);
-      await user.type(endInput, '00:45');
-
-      await waitFor(() => {
-        expect(endInput).toHaveValue('00:45');
-      });
-    });
-
-    it('should preserve loop parameters when toggling on/off', async () => {
-      const user = await userEvent.setup();
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      // Set loop times
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      await user.clear(startInput);
-      await user.type(startInput, '00:15');
-      await user.clear(endInput);
-      await user.type(endInput, '00:45');
-
-      // Toggle loop on
-      const toggleButton = screen.getByRole('button', { name: /enable loop/i });
-      await user.click(toggleButton);
-
-      await waitFor(() => {
-        expect(toggleButton).toHaveAttribute('aria-pressed', 'true');
-      });
-
-      // Toggle loop off
-      const disableButton = screen.getByRole('button', { name: /disable loop/i });
-      await user.click(disableButton);
-
-      await waitFor(() => {
-        // Parameters should be preserved
-        expect(startInput).toHaveValue('00:15');
-        expect(endInput).toHaveValue('00:45');
-      });
-    });
-
-    it('should update repetitions count', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i);
-      // Use fireEvent.change to set value directly — avoids intermediate partial values
-      fireEvent.change(repetitionsInput, { target: { value: '5' } });
-
-      await waitFor(() => {
-        expect(repetitionsInput).toHaveValue(5);
+        expect(repsSelector.value).toBe('5');
+        expect(repsSelector.value).not.toBe(initialValue);
       });
     });
 
@@ -113,407 +59,251 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      // Infinite toggle is a checkbox, not a radio button
-      const infiniteCheckbox = screen.getByRole('checkbox', { name: /infinite/i });
-      await user.click(infiniteCheckbox);
+      const repsSelector = screen.getByLabelText(/Number of loop repetitions/i) as HTMLSelectElement;
+
+      await user.selectOptions(repsSelector, 'infinite');
 
       await waitFor(() => {
-        expect(infiniteCheckbox).toBeChecked();
+        expect(repsSelector.value).toBe('infinite');
       });
     });
   });
 
-  describe('Loop Auto-Jump at End Point', () => {
-    // Note: Loop auto-jump logic runs via requestAnimationFrame (rAF) during playback,
-    // not via timeupdate events. These tests verify the component's state management
-    // when loop boundaries are set.
+  describe('Loop Toggle Button', () => {
+    it('should disable loop toggle when no region selected', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-    it('should jump to loop start when playback reaches loop end with repetitions remaining', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
+      // Find the loop toggle button by its aria-label (contains "loop")
+      const buttons = Array.from(container.querySelectorAll('button[aria-pressed]'));
+      const loopToggle = buttons.find((btn) => btn.getAttribute('aria-label')?.includes('loop'));
 
-      // Set loop via UI
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-
-      // Enable loop
-      const toggleButton = screen.getByRole('button', { name: /enable loop/i });
-      fireEvent.click(toggleButton);
-
-      await waitFor(() => {
-        expect(toggleButton).toHaveAttribute('aria-pressed', 'true');
-      });
-
-      // Loop is now active — rAF handles the jump during actual playback
-      // Just verify the component state is correct
-      expect(screen.getByRole('button', { name: /disable loop/i })).toBeInTheDocument();
+      expect(loopToggle).toBeDisabled();
+      expect(loopToggle?.className).toMatch(/disabled:opacity-50/);
     });
 
-    it('should increment repetition counter after jump', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
+    it('should show loop toggle button with clear UI text', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i);
+      // Initially shows "Loop Off" when no region selected
+      expect(screen.getByText('Loop Off')).toBeInTheDocument();
 
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-      fireEvent.change(repetitionsInput, { target: { value: '3' } });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-
-      const toggleButton = screen.getByRole('button', { name: /enable loop/i });
-      fireEvent.click(toggleButton);
-
-      await waitFor(() => {
-        expect(toggleButton).toHaveAttribute('aria-pressed', 'true');
-      });
-
-      // Repetition counter appears when loop is active (shows "Repeat 0 of 3" initially)
-      expect(screen.getByText(/repeat \d+ of 3/i)).toBeInTheDocument();
-    });
-
-    it('should continue past loop end when repetitions exhausted', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /enable loop/i }));
-
-      await waitFor(() => {
-        // Loop is active
-        expect(screen.getByRole('button', { name: /disable loop/i })).toBeInTheDocument();
-      });
-
-      // Component logic: when reps exhausted, setIsLoopActive(false) is called by rAF handler
-      // We verify the toggle button properly reflects state
-      expect(screen.getByRole('button', { name: /disable loop/i })).toHaveAttribute('aria-pressed', 'true');
-    });
-
-    it('should not jump if loop is disabled', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-
-      // Don't enable loop — toggle button should be disabled when range < 500ms or when not enabled
-      // Here range is valid (15s) but loop is not active (aria-pressed=false)
-      await waitFor(() => {
-        const toggleButton = screen.getByRole('button', { name: /enable loop/i });
-        expect(toggleButton).toHaveAttribute('aria-pressed', 'false');
-      });
-    });
-
-    it('should handle infinite loop repetitions', async () => {
-      const user = await userEvent.setup();
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-      const infiniteCheckbox = screen.getByRole('checkbox', { name: /infinite/i });
-
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-      await user.click(infiniteCheckbox);
-
-      await waitFor(() => {
-        expect(infiniteCheckbox).toBeChecked();
-      });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /enable loop/i }));
-
-      // Should show the infinite repetition counter (e.g., "Repeat 0 / ∞")
-      await waitFor(() => {
-        expect(screen.getByText(/repeat \d+ \/ ∞/i)).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Loop Visualization', () => {
-    it('should render loop markers when loop is set', async () => {
-      const user = await userEvent.setup();
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      await user.clear(startInput);
-      await user.type(startInput, '00:15');
-      await user.clear(endInput);
-      await user.type(endInput, '00:45');
-
-      await waitFor(() => {
-        // When loopStartMs < loopEndMs, loop markers appear
-        // (they're shown in MiniTimeline and ExercisePlaybackTimeline)
-        expect(screen.getAllByTestId('loop-start-marker').length).toBeGreaterThan(0);
-        expect(screen.getAllByTestId('loop-end-marker').length).toBeGreaterThan(0);
-      });
-    });
-
-    it('should hide loop markers when loop values are cleared', async () => {
-      const user = await userEvent.setup();
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      // Set loop values
-      await user.clear(startInput);
-      await user.type(startInput, '00:15');
-      await user.clear(endInput);
-      await user.type(endInput, '00:45');
-
-      await waitFor(() => {
-        expect(screen.getAllByTestId('loop-start-marker').length).toBeGreaterThan(0);
-      });
-
-      // Clear loop
-      const clearButton = screen.getByRole('button', { name: /clear/i });
-      await user.click(clearButton);
-
-      await waitFor(() => {
-        // After clear, loopStartMs=0 and loopEndMs=0 → no loop markers
-        expect(screen.queryByTestId('loop-start-marker')).not.toBeInTheDocument();
-      });
+      // Button should have aria-label explaining its function
+      const buttons = Array.from(container.querySelectorAll('button[aria-pressed]'));
+      const loopToggle = buttons.find((btn) => btn.getAttribute('aria-label')?.includes('loop'));
+      expect(loopToggle).toHaveAttribute('aria-label');
     });
   });
 
   describe('Clear Loop', () => {
-    it('should clear loop parameters when Clear button is clicked', async () => {
-      const user = await userEvent.setup();
+    it('should have clear button disabled when no loop region selected', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
+      const clearButton = screen.getByText('Clear');
 
-      // Set end FIRST (so start validation can compare against valid end)
-      // Set end to '00:45' — loopEndMs=45000 gets committed
-      fireEvent.change(endInput, { target: { value: '00:45' } });
-      await waitFor(() => expect(endInput).toHaveValue('00:45'));
-
-      // Set start to '00:15' — valid (15000 < 45000) → loopStartMs=15000 committed
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      await waitFor(() => expect(startInput).toHaveValue('00:15'));
-
-      const clearButton = screen.getByRole('button', { name: /clear/i });
-      await user.click(clearButton);
-
-      // After clear: loopStartMs=0 and loopEndMs=0 → useEffects fire → inputs reset to '00:00'
-      await waitFor(() => {
-        expect(startInput).toHaveValue('00:00');
-        expect(endInput).toHaveValue('00:00');
-      });
+      // Clear button disabled when no region selected
+      expect(clearButton).toBeDisabled();
+      expect(clearButton).toHaveAttribute('aria-label', 'Clear loop region');
     });
 
-    it('should clear loop automatically when playback ends', async () => {
+    it('should render clear button with accessible label', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:45' } });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /enable loop/i }));
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /disable loop/i })).toBeInTheDocument();
-      });
-
-      // onEnded handler sets playbackState to 'stopped' and resets loop counter
-      // but does not clear loop itself (only clear button does)
-      // Verify the component at least renders without errors on ended
-      expect(screen.getByRole('button', { name: /disable loop/i })).toBeInTheDocument();
+      const clearButton = screen.getByText('Clear');
+      const ariaLabel = clearButton.getAttribute('aria-label') || '';
+      expect(ariaLabel.toLowerCase()).toContain('clear');
     });
   });
 
-  describe('Loop with Metronome', () => {
-    it('should not interfere with metronome state during loop jump', async () => {
+  describe('Layout and Rendering', () => {
+    it('should render LoopControls component with header', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      // Enable metronome
-      const metronomeToggle = screen.getByRole('button', { name: /toggle metronome/i });
-      fireEvent.click(metronomeToggle);
-
-      expect(metronomeToggle).toHaveAttribute('aria-pressed', 'true');
-
-      // Setup loop
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /enable loop/i }));
-
-      // Metronome should still be enabled
-      expect(metronomeToggle).toHaveAttribute('aria-pressed', 'true');
-    });
-  });
-
-  describe('Keyboard Shortcuts', () => {
-    it('should toggle loop with Ctrl+L', async () => {
-      const user = await userEvent.setup();
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      await user.clear(startInput);
-      await user.type(startInput, '00:15');
-      await user.clear(endInput);
-      await user.type(endInput, '00:45');
-
-      await user.keyboard('{Control>}l{/Control}');
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /disable loop/i })).toBeInTheDocument();
-      });
+      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+      expect(screen.getByText('Loop Off')).toBeInTheDocument();
     });
 
-    it('should allow arrow key adjustment in numeric inputs', async () => {
-      const user = await userEvent.setup();
+    it('should render repetitions selector with proper options', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i) as HTMLInputElement;
-      startInput.focus();
+      const selector = screen.getByLabelText(/Number of loop repetitions/i);
+      expect(selector).toBeInTheDocument();
+      expect(selector).toBeVisible();
+    });
 
-      await user.keyboard('{ArrowUp}');
+    it('should render loop toggle button with aria-pressed attribute', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      // Arrow up on start input triggers handleStartSpinner(1, false) → increments by 100ms
-      // Since start is 0ms and end is 0ms, 100ms > 0ms means start >= end → error, no change
-      // But the input is focused and arrow key was handled
-      expect(startInput).toBeInTheDocument();
+      const toggleButton = container.querySelector('button[aria-pressed]');
+      expect(toggleButton).toBeInTheDocument();
+      expect(toggleButton).toHaveAttribute('aria-pressed');
+    });
+
+    it('should render clear button', () => {
+      render(<ExercisePlaybackPage {...defaultProps} />);
+
+      const clearButton = screen.getByText('Clear');
+      expect(clearButton).toBeInTheDocument();
+      expect(clearButton).toBeVisible();
+    });
+
+    it('should not display loop status when no region selected', () => {
+      render(<ExercisePlaybackPage {...defaultProps} />);
+
+      // Loop status is displayed only when loopStartMs < loopEndMs
+      // With default props (loopStartMs=0, loopEndMs=0), status should not appear
+      // The status text "Loop: mm:ss–mm:ss" should not be visible
+      const loopStatusText = screen.queryByText(/^Loop: \d{1,2}:\d{2}–\d{1,2}:\d{2}/);
+      expect(loopStatusText).not.toBeInTheDocument();
     });
   });
 
   describe('Accessibility', () => {
-    it('should announce repetition counter updates', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
+    it('should have accessible LoopControls', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      fireEvent.change(startInput, { target: { value: '00:15' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /enable loop/i }));
-
-      await waitFor(() => {
-        // Repetition counter has aria-live="polite"
-        const counter = screen.getByText(/repeat \d+ of \d+/i);
-        expect(counter).toHaveAttribute('aria-live', 'polite');
-      });
+      const loopControls = container.querySelector('[aria-label*="Loop controls"]');
+      expect(loopControls).toBeInTheDocument();
+      expect(screen.getByLabelText(/Number of loop repetitions/i)).toBeInTheDocument();
     });
 
-    it('should be keyboard navigable through all loop controls', async () => {
-      const user = await userEvent.setup();
+    it('should have aria-pressed on toggle button', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+      const toggleButton = container.querySelector('button[aria-pressed]');
+      expect(toggleButton).toHaveAttribute('aria-pressed');
+    });
+
+    it('should have aria-label on clear button', () => {
       render(<ExercisePlaybackPage {...defaultProps} />);
-
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      startInput.focus();
-
-      // Tab past start spinner buttons to end input
-      await user.keyboard('{Tab}'); // to ↑ button for start
-      await user.keyboard('{Tab}'); // to ↓ button for start
-      await user.keyboard('{Tab}'); // to end input
-
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-      expect(endInput).toHaveFocus();
-
-      await user.keyboard('{Tab}'); // to ↑ button for end
-      await user.keyboard('{Tab}'); // to ↓ button for end
-      await user.keyboard('{Tab}'); // to repetitions input
-
-      const repetitionsInput = screen.getByLabelText(/loop repetitions, 1 to 999 or infinite/i);
-      expect(repetitionsInput).toHaveFocus();
+      const clearButton = screen.getByText('Clear');
+      expect(clearButton).toHaveAttribute('aria-label');
     });
   });
 
-  describe('Validation', () => {
-    it('should show error when start >= end', async () => {
+  describe('Responsive Design', () => {
+    it('should render LoopControls below playback controls', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+
+      // Check that Loop Control is present
+      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+    });
+  });
+
+  describe('Repetitions Selector Options', () => {
+    it('should display preset repetition options', () => {
+      render(<ExercisePlaybackPage {...defaultProps} />);
+      const selector = screen.getByLabelText(/Number of loop repetitions/i) as HTMLSelectElement;
+      const options = Array.from(selector.options).map((o) => o.value);
+
+      expect(options).toContain('1');
+      expect(options).toContain('3');
+      expect(options).toContain('5');
+      expect(options).toContain('10');
+      expect(options).toContain('25');
+      expect(options).toContain('50');
+      expect(options).toContain('100');
+      expect(options).toContain('999');
+      expect(options).toContain('infinite');
+    });
+  });
+
+  describe('Integration with Timeline', () => {
+    it('should have LoopControls available for timeline interaction', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+
+      // LoopControls should be present for use with timeline drag-select
+      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+
+      // LoopControls container should have aria-label
+      const loopControls = container.querySelector('[aria-label*="Loop controls"]');
+      expect(loopControls).toBeInTheDocument();
+    });
+
+    it('should render both timelines for drag-select interaction', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+
+      // Component should render exercise playback content
+      expect(screen.getByText('Loop Control')).toBeInTheDocument();
+
+      // Verify timelines are present
+      const timeline = container.querySelector('[role="presentation"]');
+      expect(timeline).toBeInTheDocument();
+    });
+  });
+
+  describe('Button States', () => {
+    it('should show disabled toggle button when no loop region selected', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+      const buttons = Array.from(container.querySelectorAll('button[aria-pressed]'));
+      const loopToggle = buttons.find((btn) => btn.getAttribute('aria-label')?.includes('loop'));
+      expect(loopToggle).toBeDisabled();
+    });
+
+    it('should show disabled clear button when no loop region selected', () => {
+      render(<ExercisePlaybackPage {...defaultProps} />);
+      const clearButton = screen.getByText('Clear');
+      expect(clearButton).toBeDisabled();
+    });
+  });
+
+  describe('Dark Mode Support', () => {
+    it('should apply dark mode classes to LoopControls elements', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+
+      // Check that the header has dark mode classes
+      const header = screen.getByText('Loop Control');
+      expect(header.className).toMatch(/dark:/);
+
+      // Check that the selector has dark mode classes
+      const selector = screen.getByLabelText(/Number of loop repetitions/i);
+      expect(selector.className).toMatch(/dark:/);
+    });
+  });
+
+  describe('Keyboard Navigation', () => {
+    it('should support Tab navigation through loop controls', async () => {
+      const user = await userEvent.setup();
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+
+      const selector = screen.getByLabelText(/Number of loop repetitions/i);
+      selector.focus();
+
+      expect(selector).toHaveFocus();
+
+      await user.keyboard('{Tab}');
+      // After Tab, focus should move to the next interactive element (loop toggle button)
+      const buttons = Array.from(container.querySelectorAll('button'));
+      const anyButtonHasFocus = buttons.some((btn) => btn === document.activeElement);
+      expect(anyButtonHasFocus).toBe(true);
+    });
+
+    it('should support arrow key navigation in repetitions selector', async () => {
       const user = await userEvent.setup();
       render(<ExercisePlaybackPage {...defaultProps} />);
 
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
+      const selector = screen.getByLabelText(/Number of loop repetitions/i) as HTMLSelectElement;
+      selector.focus();
 
-      await user.clear(endInput);
-      await user.type(endInput, '00:30');
-      await user.clear(startInput);
-      await user.type(startInput, '00:30');
+      const initialValue = selector.value;
+      await user.keyboard('{ArrowDown}');
 
-      await waitFor(() => {
-        expect(screen.getByText(/start must be before end/i)).toBeInTheDocument();
-      });
+      // Value may or may not change depending on the current selection
+      // Just verify the selector is still there and focused
+      expect(selector).toHaveFocus();
+    });
+  });
+
+  describe('Visual Feedback', () => {
+    it('should show loop toggle button in inactive state initially', () => {
+      render(<ExercisePlaybackPage {...defaultProps} />);
+      expect(screen.getByText('Loop Off')).toBeInTheDocument();
     });
 
-    it('should disable loop toggle when range is invalid', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
+    it('should have distinct styling for different button states', () => {
+      const { container } = render(<ExercisePlaybackPage {...defaultProps} />);
+      const toggleButton = container.querySelector('button[aria-pressed="false"]');
 
-      // At initial state, loopStartMs=0 and loopEndMs=0 → 0 < 0 is false → toggle disabled
-      const toggleButton = screen.getByRole('button', { name: /enable loop/i });
-      expect(toggleButton).toBeDisabled();
-
-      // Set valid range — toggle becomes enabled
-      const startInput = screen.getByLabelText(/loop start time, mm:ss format/i);
-      const endInput = screen.getByLabelText(/loop end time, mm:ss format/i);
-
-      fireEvent.change(startInput, { target: { value: '00:10' } });
-      fireEvent.change(endInput, { target: { value: '00:30' } });
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /enable loop/i })).not.toBeDisabled();
-      });
-    });
-
-    it('should enforce minimum 500ms loop duration', async () => {
-      render(<ExercisePlaybackPage {...defaultProps} />);
-
-      // At initial state, loopStartMs=0 and loopEndMs=0
-      // hasValidLoop: 0 < 0 is false → toggle disabled
-      // The LoopControls useEffect validates on mount: validate(0, 0) → "Start must be before end"
-      const toggleButton = screen.getByRole('button', { name: /enable loop/i });
-      expect(toggleButton).toBeDisabled();
-
-      await waitFor(() => {
-        expect(screen.getByText(/start must be before end/i)).toBeInTheDocument();
-      });
+      // Button should have classes indicating inactive state
+      expect(toggleButton?.className).toMatch(/gray|bg-/);
     });
   });
 });

@@ -4,7 +4,6 @@ import { formatDuration } from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
-import { LoopRepetitionCounter } from '../../molecules/LoopRepetitionCounter';
 import { MidiStatusIndicator, type MidiConnectionStatus } from '../../atoms/MidiStatusIndicator';
 import { ExercisePlaybackTimeline } from '../ExercisePlaybackTimeline';
 import { SessionStatisticsPanel } from '../SessionStatisticsPanel';
@@ -205,11 +204,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         const currentTime = audioRef.current.currentTime * 1000;
         lastAudioTimeRef.current = currentTime;
 
-        // Loop logic
+        // Loop logic — use tolerance to catch loop end even with frame skips
+        const LOOP_END_TOLERANCE_MS = 50; // Allow 50ms tolerance for detecting loop end
         if (
           isLoopActiveRef.current &&
           loopStartMsRef.current < loopEndMsRef.current &&
-          currentTime >= loopEndMsRef.current
+          currentTime >= loopEndMsRef.current - LOOP_END_TOLERANCE_MS &&
+          currentTime >= loopStartMsRef.current // Ensure we're past loop start
         ) {
           const reps = loopRepetitionsRef.current;
           const currRep = currentLoopRepetitionRef.current;
@@ -324,13 +325,6 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, [exercise]);
 
-  // ─── Loop state ──────────────────────────────────────────────────────────────
-  const [isLoopActive, setIsLoopActive] = useState(false);
-  const [loopStartMs, setLoopStartMs] = useState(0);
-  const [loopEndMs, setLoopEndMs] = useState(0);
-  const [currentLoopRepetition, setCurrentLoopRepetition] = useState(0);
-  const [loopRepetitions, setLoopRepetitions] = useState<number | 'infinite'>(1);
-
   // ─── Tools sidebar state ───────────────────────────────────────────────────
   const [toolsSidebarOpen, setToolsSidebarOpen] = useState(false);
 
@@ -433,13 +427,15 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         }}
         loopProps={{
           loopStartMs,
-          onLoopStartChange: setLoopStartMs,
+          onLoopStartChange: handleLoopStartChange,
           loopEndMs,
-          onLoopEndChange: setLoopEndMs,
+          onLoopEndChange: handleLoopEndChange,
           loopRepetitions,
-          onLoopRepetitionsChange: setLoopRepetitions,
+          onLoopRepetitionsChange: handleLoopRepetitionsChange,
           isLoopActive,
-          onLoopToggle: setIsLoopActive,
+          onLoopToggle: handleLoopToggle,
+          currentLoopRepetition,
+          onLoopClear: handleLoopClear,
           durationMs: exercise.durationMs,
         }}
       />
@@ -506,16 +502,6 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
           />
         </div>
 
-        {/* Loop repetition counter — visible only when loop is active */}
-        {isLoopActive && (
-          <div className="px-4 sm:px-6 py-1">
-            <LoopRepetitionCounter
-              currentRepetition={currentLoopRepetition}
-              totalRepetitions={loopRepetitions}
-            />
-          </div>
-        )}
-
         {/* Timeline area — scrollable */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 flex flex-col gap-4">
           {/* Mini timeline overview */}
@@ -526,6 +512,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             onSeek={handleSeek}
             bpm={exercise.bpm}
             metronomeEnabled={metronomeEnabled}
+            {...loopMarkerProps}
           />
 
           {/* Main timeline */}
@@ -535,6 +522,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             currentTimeMs={currentTimeMs}
             bpm={exercise.bpm}
             metronomeEnabled={metronomeEnabled}
+            {...loopMarkerProps}
+            onLoopStartChange={handleLoopStartChange}
+            onLoopEndChange={handleLoopEndChange}
+            isLoopActive={isLoopActive}
           />
         </div>
 

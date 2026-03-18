@@ -1,21 +1,10 @@
 import React from 'react';
 import type { MetronomeControlProps } from '../../molecules/MetronomeControl';
 import { MetronomeControl } from '../../molecules/MetronomeControl';
+import type { LoopControlsProps } from '../../molecules/LoopControls';
+import { LoopControls } from '../../molecules/LoopControls';
 
-// LoopControls type — we define an interface here to allow the sidebar
-// to accept loop props even before LoopControls is implemented.
-// Once LoopControls exists, import and use its props interface.
-export interface LoopControlsProps {
-  loopStartMs: number;
-  onLoopStartChange: (ms: number) => void;
-  loopEndMs: number;
-  onLoopEndChange: (ms: number) => void;
-  loopRepetitions: number | 'infinite';
-  onLoopRepetitionsChange: (reps: number | 'infinite') => void;
-  isLoopActive: boolean;
-  onLoopToggle: (active: boolean) => void;
-  durationMs: number;
-}
+export type { LoopControlsProps };
 
 export interface ToolsSidebarProps {
   /** Whether the sidebar is currently visible. */
@@ -135,8 +124,7 @@ export const ToolsSidebar: React.FC<ToolsSidebarProps> = ({
         {/* Content */}
         <div className="p-4 flex flex-col gap-6">
           <MetronomeControl {...metronomeProps} />
-          {/* TODO: Uncomment when LoopControls component is created */}
-          {/* {loopProps && <LoopControls {...loopProps} />} */}
+          {loopProps && <LoopControls {...loopProps} />}
         </div>
       </aside>
     </>
