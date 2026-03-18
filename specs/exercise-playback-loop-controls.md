@@ -1,8 +1,18 @@
 # Spec: Exercise Playback Loop Controls
 
-**Status:** Implemented
-**Version:** 2.0.0
+**Status:** In Progress (Drag-Select Implementation Required)
+**Version:** 2.1.0
 **Last updated:** 2026-03-18
+
+## Quick Reference: What Needs Implementation
+
+1. **Create `useLoopDragSelect.ts` hook** — handles all drag logic
+2. **Update MiniTimeline** — add hook, pass props, render highlight
+3. **Update ExercisePlaybackTimeline** — add hook, pass props, render highlight
+4. **Update ExercisePlaybackPage** — pass loop props to both timelines
+5. **Test drag-select** — verify works on both components
+
+See **Timeline Drag-Select Implementation** section below for complete code.
 
 ## Problem
 
@@ -173,54 +183,88 @@ function clampTime(ms: number, duration: number): number {
 
 ### Timeline Drag-Select Implementation
 
-**MiniTimeline** (`packages/ui/src/components/molecules/MiniTimeline/MiniTimeline.tsx`):
+#### Step 1: Update Timeline Props
 
-```tsx
+**MiniTimeline Props** (`packages/ui/src/components/molecules/MiniTimeline/MiniTimeline.tsx`):
+
+```typescript
+export interface MiniTimelineProps {
+  // ... existing props ...
+
+  // NEW: Loop drag-select props
+  loopStartMs?: number;                    // Current loop start (for display)
+  loopEndMs?: number;                      // Current loop end (for display)
+  onLoopStartChange?: (ms: number) => void;// Called when user drags to set start
+  onLoopEndChange?: (ms: number) => void;  // Called when user drags to set end
+  isLoopActive?: boolean;                  // Disable drag while looping
+}
+```
+
+**ExercisePlaybackTimeline Props** (`packages/ui/src/components/organisms/ExercisePlaybackTimeline/ExercisePlaybackTimeline.tsx`):
+
+Same props as MiniTimeline.
+
+#### Step 2: Add State for Drag in MiniTimeline
+
+At the top of the component, add:
+
+```typescript
 const [isDragging, setIsDragging] = useState(false);
 const [dragStartMs, setDragStartMs] = useState<number | null>(null);
+const [dragPreview, setDragPreview] = useState<{ startMs: number; endMs: number } | null>(null);
+const timelineRef = useRef<HTMLDivElement>(null);
+```
 
-const handleMouseDown = (e: React.MouseEvent) => {
-  if (isLoopActive || !timelineRef.current) return; // Prevent selection while looping
+#### Step 3: Implement Drag Handlers
 
+```typescript
+// Helper: Convert mouse position to milliseconds
+const getTimeFromMouseEvent = (e: React.MouseEvent | MouseEvent): number => {
+  if (!timelineRef.current) return 0;
   const rect = timelineRef.current.getBoundingClientRect();
-  const x = e.clientX - rect.left;
+  const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
   const percentage = x / rect.width;
-  const timeMs = percentage * durationMs;
-
-  setIsDragging(true);
-  setDragStartMs(timeMs);
+  return percentage * durationMs;
 };
 
-const handleMouseMove = (e: React.MouseEvent) => {
-  if (!isDragging || dragStartMs === null || !timelineRef.current) return;
+// Start drag
+const handleMouseDown = (e: React.MouseEvent) => {
+  if (isLoopActive) return; // Prevent selection while looping
+  if (e.button !== 0) return; // Left mouse button only
 
-  const rect = timelineRef.current.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const percentage = Math.max(0, Math.min(1, x / rect.width));
-  const timeMs = percentage * durationMs;
-
-  // Visual preview: show selection region
+  const timeMs = getTimeFromMouseEvent(e);
+  setIsDragging(true);
+  setDragStartMs(timeMs);
   setDragPreview({
-    startMs: Math.min(dragStartMs, timeMs),
-    endMs: Math.max(dragStartMs, timeMs),
+    startMs: timeMs,
+    endMs: timeMs,
   });
 };
 
-const handleMouseUp = (e: React.MouseEvent) => {
-  if (!isDragging || dragStartMs === null || !timelineRef.current) return;
+// During drag: show preview
+const handleMouseMove = (e: React.MouseEvent | MouseEvent) => {
+  if (!isDragging || dragStartMs === null) return;
 
-  const rect = timelineRef.current.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const percentage = Math.max(0, Math.min(1, x / rect.width));
-  const timeMs = percentage * durationMs;
+  const currentTimeMs = getTimeFromMouseEvent(e);
+  const startMs = Math.min(dragStartMs, currentTimeMs);
+  const endMs = Math.max(dragStartMs, currentTimeMs);
 
-  const startMs = Math.min(dragStartMs, timeMs);
-  const endMs = Math.max(dragStartMs, timeMs);
+  setDragPreview({ startMs, endMs });
+};
 
-  // Enforce minimum loop duration (e.g., 500ms)
-  if (endMs - startMs >= 500) {
-    onLoopStartChange?.(startMs);
-    onLoopEndChange?.(endMs);
+// End drag: commit if region is valid
+const handleMouseUp = (e: React.MouseEvent | MouseEvent) => {
+  if (!isDragging || dragStartMs === null) return;
+
+  const currentTimeMs = getTimeFromMouseEvent(e);
+  const startMs = Math.min(dragStartMs, currentTimeMs);
+  const endMs = Math.max(dragStartMs, currentTimeMs);
+  const duration = endMs - startMs;
+
+  // Enforce minimum loop duration (500ms)
+  if (duration >= 500 && onLoopStartChange && onLoopEndChange) {
+    onLoopStartChange(startMs);
+    onLoopEndChange(endMs);
   }
 
   setIsDragging(false);
@@ -229,12 +273,210 @@ const handleMouseUp = (e: React.MouseEvent) => {
 };
 ```
 
-**ExercisePlaybackTimeline**: Same logic (or extract to shared hook)
+#### Step 4: Add Event Listeners to Container
 
-**Visual Feedback**:
-- Show a semi-transparent green overlay/highlight for selected region during drag
-- After release, keep the highlight visible if loop region is set
-- Highlight color: `bg-green-200 dark:bg-green-800 opacity-40`
+In the JSX, find the main timeline container div and add:
+
+```tsx
+<div
+  ref={timelineRef}
+  onMouseDown={handleMouseDown}
+  onMouseMove={handleMouseMove}
+  onMouseUp={handleMouseUp}
+  onMouseLeave={handleMouseUp}  // Finish drag if user leaves container
+  className="relative cursor-crosshair"  // Visual feedback: crosshair cursor during interaction
+>
+  {/* Existing timeline content */}
+
+  {/* Loop region visual highlight */}
+  {(dragPreview || (loopStartMs && loopEndMs && loopStartMs < loopEndMs)) && (
+    <div
+      className="absolute top-0 bottom-0 bg-green-200 dark:bg-green-800 opacity-40 pointer-events-none"
+      style={{
+        left: `${((dragPreview?.startMs || loopStartMs) / durationMs) * 100}%`,
+        width: `${(((dragPreview?.endMs || loopEndMs) - (dragPreview?.startMs || loopStartMs)) / durationMs) * 100}%`,
+      }}
+      aria-hidden="true"
+    />
+  )}
+</div>
+```
+
+#### Step 5: Add Global Mouse Listener
+
+Add this `useEffect` to handle mouse movement outside the timeline:
+
+```typescript
+useEffect(() => {
+  if (!isDragging) return;
+
+  // Listen to global mousemove and mouseup to handle drag outside container
+  const handleGlobalMouseMove = (e: MouseEvent) => {
+    handleMouseMove(e);
+  };
+
+  const handleGlobalMouseUp = (e: MouseEvent) => {
+    handleMouseUp(e);
+  };
+
+  document.addEventListener('mousemove', handleGlobalMouseMove);
+  document.addEventListener('mouseup', handleGlobalMouseUp);
+
+  return () => {
+    document.removeEventListener('mousemove', handleGlobalMouseMove);
+    document.removeEventListener('mouseup', handleGlobalMouseUp);
+  };
+}, [isDragging, dragStartMs, durationMs, onLoopStartChange, onLoopEndChange, isLoopActive]);
+```
+
+#### Step 6: Update ExercisePlaybackTimeline
+
+Apply the same implementation to ExercisePlaybackTimeline. Since both components need identical logic, consider extracting to a custom hook:
+
+```typescript
+// packages/ui/src/hooks/useLoopDragSelect.ts
+export function useLoopDragSelect({
+  durationMs,
+  isLoopActive,
+  onLoopStartChange,
+  onLoopEndChange,
+}: {
+  durationMs: number;
+  isLoopActive?: boolean;
+  onLoopStartChange?: (ms: number) => void;
+  onLoopEndChange?: (ms: number) => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartMs, setDragStartMs] = useState<number | null>(null);
+  const [dragPreview, setDragPreview] = useState<{ startMs: number; endMs: number } | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+
+  const getTimeFromMouseEvent = (e: React.MouseEvent | MouseEvent): number => {
+    if (!timelineRef.current) return 0;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    return (x / rect.width) * durationMs;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isLoopActive || e.button !== 0) return;
+    const timeMs = getTimeFromMouseEvent(e);
+    setIsDragging(true);
+    setDragStartMs(timeMs);
+    setDragPreview({ startMs: timeMs, endMs: timeMs });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent | MouseEvent) => {
+    if (!isDragging || dragStartMs === null) return;
+    const currentTimeMs = getTimeFromMouseEvent(e);
+    const startMs = Math.min(dragStartMs, currentTimeMs);
+    const endMs = Math.max(dragStartMs, currentTimeMs);
+    setDragPreview({ startMs, endMs });
+  };
+
+  const handleMouseUp = (e: React.MouseEvent | MouseEvent) => {
+    if (!isDragging || dragStartMs === null) return;
+    const currentTimeMs = getTimeFromMouseEvent(e);
+    const startMs = Math.min(dragStartMs, currentTimeMs);
+    const endMs = Math.max(dragStartMs, currentTimeMs);
+
+    if (endMs - startMs >= 500 && onLoopStartChange && onLoopEndChange) {
+      onLoopStartChange(startMs);
+      onLoopEndChange(endMs);
+    }
+
+    setIsDragging(false);
+    setDragStartMs(null);
+    setDragPreview(null);
+  };
+
+  // Global listener effect
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleGlobalMouseMove = (e: MouseEvent) => handleMouseMove(e);
+    const handleGlobalMouseUp = (e: MouseEvent) => handleMouseUp(e);
+
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStartMs, durationMs, onLoopStartChange, onLoopEndChange, isLoopActive]);
+
+  return {
+    timelineRef,
+    isDragging,
+    dragPreview,
+    handlers: {
+      onMouseDown: handleMouseDown,
+      onMouseMove: handleMouseMove,
+      onMouseUp: handleMouseUp,
+      onMouseLeave: handleMouseUp,
+    },
+  };
+}
+```
+
+Then use in both components:
+
+```typescript
+const { timelineRef, dragPreview, handlers } = useLoopDragSelect({
+  durationMs,
+  isLoopActive,
+  onLoopStartChange,
+  onLoopEndChange,
+});
+
+// In JSX:
+<div ref={timelineRef} {...handlers} className="relative cursor-crosshair">
+  {/* content */}
+</div>
+```
+
+#### Step 7: Integration with ExercisePlaybackPage
+
+Update the calls to MiniTimeline and ExercisePlaybackTimeline:
+
+```tsx
+<MiniTimeline
+  midiEvents={exercise.midiEvents}
+  durationMs={exercise.durationMs}
+  currentTimeMs={currentTimeMs}
+  onSeek={handleSeek}
+  bpm={exercise.bpm}
+  metronomeEnabled={metronomeEnabled}
+  // NEW: Loop drag-select props
+  loopStartMs={loopStartMs}
+  loopEndMs={loopEndMs}
+  onLoopStartChange={setLoopStartMs}
+  onLoopEndChange={setLoopEndMs}
+  isLoopActive={isLoopActive}
+/>
+
+<ExercisePlaybackTimeline
+  midiEvents={exercise.midiEvents}
+  durationMs={exercise.durationMs}
+  currentTimeMs={currentTimeMs}
+  bpm={exercise.bpm}
+  metronomeEnabled={metronomeEnabled}
+  // NEW: Loop drag-select props
+  loopStartMs={loopStartMs}
+  loopEndMs={loopEndMs}
+  onLoopStartChange={setLoopStartMs}
+  onLoopEndChange={setLoopEndMs}
+  isLoopActive={isLoopActive}
+/>
+```
+
+#### Visual Feedback Summary
+
+- **Cursor**: `cursor-crosshair` while hovering timeline (signals selectable)
+- **During drag**: Green overlay showing selected region in real-time
+- **After selection**: Green overlay persists to show current loop bounds
+- **Color**: `bg-green-200 dark:bg-green-800 opacity-40`
+- **Minimum duration**: 500ms (enforced, no selection below this)
 
 ### Integration with ExercisePlaybackPage
 
@@ -344,34 +586,46 @@ When timeline is focused:
 
 ## Definition of Done
 
-1. [x] Spec reviewed and approved by team (v2.0 with removal of numeric inputs)
-2. [x] LoopControls rewritten without start/end time inputs
-3. [x] LoopControls.tsx: simplified layout (toggle, reps, clear only)
-4. [x] Loop status display: shows "0:00–0:15, 5x" format
-5. [x] Repetitions selector with 1-999 and infinite options
-6. [x] Loop toggle button with aria-pressed and visual feedback
-7. [x] Clear button: resets bounds and disables loop
-8. [x] LoopControls disabled when no region selected (loopStartMs >= loopEndMs)
-9. [x] MiniTimeline: drag-select implementation for loop bounds
-10. [x] ExercisePlaybackTimeline: drag-select implementation for loop bounds
-11. [x] Visual highlight on timeline during drag and after selection
-12. [x] Drag-select disabled when loop is already active
-13. [x] Minimum loop duration enforced (e.g., 500ms)
-14. [x] Time format helpers in @groovelab/utils (formatMs, clampTime)
-15. [x] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
-16. [x] Dark/light mode styling (Tailwind dark: prefix)
-17. [x] Responsive: fits in sidebar on desktop/tablet/mobile
-18. [x] Styled to match MetronomeControl (sidebar consistency)
-19. [x] LoopControls.test.tsx: 20+ unit tests
-20. [x] MiniTimeline/ExercisePlaybackTimeline: 15+ integration tests for drag-select
-21. [x] Manual testing: drag-select on both timelines
-22. [x] Manual testing: toggle/clear/reps in sidebar
-23. [x] Manual testing: drag disabled while looping
-24. [x] Manual testing: visual highlight appears/disappears
-25. [x] Manual testing: all major browsers (Chrome, Firefox, Safari)
-26. [x] Accessibility audit: screen reader, keyboard nav, contrast
-27. [x] All tests passing
-28. [x] PR merged and deployed
+### Drag-Select Implementation (PRIMARY - BLOCKING)
+1. [ ] Create `packages/ui/src/hooks/useLoopDragSelect.ts` hook
+2. [ ] Implement drag state: isDragging, dragStartMs, dragPreview
+3. [ ] Implement handlers: handleMouseDown, handleMouseMove, handleMouseUp
+4. [ ] Add global event listeners (document mousemove/mouseup)
+5. [ ] Update MiniTimeline props with loop drag-select interface
+6. [ ] Update ExercisePlaybackTimeline props with loop drag-select interface
+7. [ ] Add visual highlight overlay to MiniTimeline (green semi-transparent)
+8. [ ] Add visual highlight overlay to ExercisePlaybackTimeline (green semi-transparent)
+9. [ ] Drag-select disabled when isLoopActive === true
+10. [ ] Minimum loop duration enforced (500ms)
+11. [ ] Pass loop props from ExercisePlaybackPage to both timelines
+12. [ ] Test drag-select on MiniTimeline (manual)
+13. [ ] Test drag-select on ExercisePlaybackTimeline (manual)
+14. [ ] Test visual highlight appears/disappears
+
+### LoopControls Implementation (SECONDARY - DEPENDS ON DRAG-SELECT)
+15. [x] Spec reviewed and approved by team (v2.0)
+16. [x] LoopControls rewritten without start/end time inputs
+17. [x] LoopControls.tsx: simplified layout (toggle, reps, clear only)
+18. [x] Loop status display: shows "0:00–0:15, 5x" format
+19. [x] Repetitions selector with 1-999 and infinite options
+20. [x] Loop toggle button with aria-pressed and visual feedback
+21. [x] Clear button: resets bounds and disables loop
+22. [x] LoopControls disabled when no region selected (loopStartMs >= loopEndMs)
+
+### Testing & Integration (FINAL)
+23. [ ] Time format helpers in @groovelab/utils (formatMs, clampTime)
+24. [ ] Accessibility: aria-labels, proper semantic HTML, keyboard navigation
+25. [ ] Dark/light mode styling (Tailwind dark: prefix)
+26. [ ] Responsive: fits in sidebar on desktop/tablet/mobile
+27. [ ] Styled to match MetronomeControl (sidebar consistency)
+28. [ ] LoopControls.test.tsx: 20+ unit tests
+29. [ ] MiniTimeline/ExercisePlaybackTimeline: 15+ integration tests for drag-select
+30. [ ] Manual testing: toggle/clear/reps in sidebar
+31. [ ] Manual testing: drag disabled while looping
+32. [ ] Manual testing: all major browsers (Chrome, Firefox, Safari)
+33. [ ] Accessibility audit: screen reader, keyboard nav, contrast
+34. [ ] All tests passing
+35. [ ] PR merged and deployed
 
 ## Implementation Notes for Developer
 
