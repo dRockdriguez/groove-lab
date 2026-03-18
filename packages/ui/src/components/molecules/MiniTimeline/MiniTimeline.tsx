@@ -1,5 +1,6 @@
 import React from 'react';
 import type { MidiEvent } from '@groovelab/types';
+import { getDrumColor } from '@groovelab/utils';
 
 export interface MiniTimelineProps {
   midiEvents: MidiEvent[];
@@ -354,8 +355,8 @@ export const MiniTimeline: React.FC<MiniTimelineProps> = ({
           <div
             key={index}
             data-testid="mini-note-marker"
-            className="absolute top-1 bottom-1 w-0.5 bg-green-500 opacity-70"
-            style={{ left: `${leftPercent}%` }}
+            className="absolute top-1 bottom-1 w-0.5 opacity-70"
+            style={{ left: `${leftPercent}%`, backgroundColor: getDrumColor(event.note) }}
           />
         );
       })}

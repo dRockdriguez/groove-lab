@@ -1,6 +1,6 @@
 import React from 'react';
 import type { MidiEvent } from '@groovelab/types';
-import { clamp } from '@groovelab/utils';
+import { clamp, getDrumColor } from '@groovelab/utils';
 import { TrackLabel } from '../../molecules/TrackLabel';
 
 export interface ExercisePlaybackTimelineProps {
@@ -342,10 +342,11 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                   <div
                     key={index}
                     data-testid="note-marker"
-                    className="absolute top-1 bottom-1 w-2 rounded-sm bg-green-500"
+                    className="absolute top-1 bottom-1 w-2 rounded-sm"
                     style={{
                       left: `${leftPercent}%`,
                       opacity,
+                      backgroundColor: getDrumColor(event.note),
                     }}
                     title={`t=${event.timestamp}ms v=${event.velocity}`}
                   />
