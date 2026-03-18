@@ -354,13 +354,12 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                 const opacity = Math.max(0.3, event.velocity / 127);
 
                 return (
-                  <div key={index} className="absolute top-1 bottom-1 w-2">
+                  <div key={index} className="absolute top-1 bottom-1 w-2" style={{ left: `${leftPercent}%` }}>
                     {/* Note marker bar */}
                     <div
                       data-testid="note-marker"
                       className="absolute top-0 bottom-0 w-2 rounded-sm"
                       style={{
-                        left: `${leftPercent}%`,
                         opacity,
                         backgroundColor: getDrumColor(event.note),
                       }}
@@ -391,7 +390,6 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                           data-testid="hit-overlay"
                           className="absolute top-0 bottom-0 w-2 rounded-sm pointer-events-none"
                           style={{
-                            left: `${leftPercent}%`,
                             backgroundColor: `${overlayColor}${overlayOpacity * 0.85})`,
                             zIndex: 5,
                           }}
