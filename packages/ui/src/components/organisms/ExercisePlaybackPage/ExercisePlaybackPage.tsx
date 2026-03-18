@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { ExercisePlaybackData, PlaybackState, SessionStatistics } from '@groovelab/types';
-import { formatDuration } from '@groovelab/utils';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import type { ExercisePlaybackData, PlaybackState } from '@groovelab/types';
+import { formatDuration, buildHitLookup, validateDrumHit } from '@groovelab/utils';
+import type { DrumHitValidation } from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
 import { MidiStatusIndicator, type MidiConnectionStatus } from '../../atoms/MidiStatusIndicator';
 import { ExercisePlaybackTimeline } from '../ExercisePlaybackTimeline';
-import { SessionStatisticsPanel } from '../SessionStatisticsPanel';
+import { DrumHitFeedback } from '../../molecules/DrumHitFeedback';
 import { ToolsSidebar } from '../ToolsSidebar';
 
 export interface ExercisePlaybackPageProps {
@@ -16,14 +17,6 @@ export interface ExercisePlaybackPageProps {
   exerciseId?: string;
   className?: string;
 }
-
-const DEFAULT_STATS: SessionStatistics = {
-  accuracy: 0,
-  hitCount: 0,
-  expectedNoteCount: 0,
-  averageTimingOffsetMs: 0,
-  strikeViolationCount: 0,
-};
 
 export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   exercise: exerciseProp,
@@ -83,6 +76,35 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   const [midiDeviceName, setMidiDeviceName] = useState<string | undefined>();
   const midiInitializedRef = useRef(false);
 
+  // MIDI message handler — parses Web MIDI bytes and validates drum hits
+  const handleMidiMessage = useCallback((e: any) => {
+    // Only validate during active playback
+    if (playbackStateRef.current !== 'playing') return;
+
+    const data: Uint8Array = e.data;
+    if (!data || data.length < 3) return;
+
+    const status = data[0] & 0xF0;
+    const note = data[1];
+    const velocity = data[2];
+
+    // Only process Note-On (0x90) with velocity > 0
+    // velocity=0 on 0x90 is semantically Note-Off per Web MIDI API
+    if (status !== 0x90 || velocity === 0) return;
+
+    // Debounce: ignore repeated hits on same note within 50ms
+    const now = currentTimeMsRef.current;
+    const lastHitTime = lastHitTimePerNoteRef.current[note] ?? -Infinity;
+    if (now - lastHitTime < 50) return;
+    lastHitTimePerNoteRef.current[note] = now;
+
+    // Validate hit against exercise
+    const result = validateDrumHit(note, now, hitLookupRef.current);
+    if (result !== null) {
+      setValidatedHits(prev => [...prev, result]);
+    }
+  }, []); // Empty deps — all reads come from refs
+
   const initMidi = useCallback(async () => {
     if (midiInitializedRef.current) return;
     if (typeof navigator === 'undefined' || !('requestMIDIAccess' in navigator)) return;
@@ -90,7 +112,9 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const access: any = await navigator.requestMIDIAccess();
-      const inputs = Array.from(access.inputs.values()) as Array<{ name?: string }>;
+      midiAccessRef.current = access; // Store for cleanup on unmount
+
+      const inputs = Array.from(access.inputs.values()) as Array<{ name?: string; onmidimessage?: any }>;
       if (inputs.length > 0) {
         setMidiStatus('connected');
         setMidiDeviceName(inputs[0].name);
@@ -98,11 +122,20 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         setMidiStatus('disconnected');
       }
 
+      // Attach MIDI message handlers to all input ports
+      for (const input of inputs) {
+        (input as any).onmidimessage = handleMidiMessage;
+      }
+
       // Listen for device state changes. Use optional chaining so tests that
       // don't include addEventListener on their mock don't throw.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (access as any).addEventListener?.('statechange', (e: any) => {
         if (e.port?.state === 'disconnected') {
+          // Null out handler for disconnected port
+          if (e.port?.onmidimessage !== undefined) {
+            e.port.onmidimessage = null;
+          }
           setMidiStatus('reconnect');
           // Pause playback when MIDI device disconnects during active playback
           if (playbackStateRef.current === 'playing' && audioRef.current) {
@@ -110,17 +143,21 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             setPlaybackStateSynced('paused');
           }
         } else if (e.port?.state === 'connected') {
-          const updatedInputs = Array.from(access.inputs.values()) as Array<{ name?: string }>;
+          const updatedInputs = Array.from(access.inputs.values()) as Array<{ name?: string; onmidimessage?: any }>;
           if (updatedInputs.length > 0) {
             setMidiStatus('connected');
             setMidiDeviceName(updatedInputs[0].name);
+            // Re-attach handlers to reconnected ports
+            for (const input of updatedInputs) {
+              (input as any).onmidimessage = handleMidiMessage;
+            }
           }
         }
       });
     } catch {
       setMidiStatus('denied');
     }
-  }, [setPlaybackStateSynced]);
+  }, [setPlaybackStateSynced, handleMidiMessage]);
 
   // Initialize MIDI on page load via setTimeout(0) so it does NOT run during
   // the synchronous render — tests that use vi.useFakeTimers() won't see the
@@ -220,14 +257,17 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             const newRep = currRep + 1;
             currentLoopRepetitionRef.current = newRep;
             setCurrentLoopRepetition(newRep);
+            currentTimeMsRef.current = Math.round(loopStartMsRef.current);
             setCurrentTimeMs(Math.round(loopStartMsRef.current));
           } else {
             // Repetitions exhausted — disable loop and let playback continue
             isLoopActiveRef.current = false;
             setIsLoopActive(false);
+            currentTimeMsRef.current = Math.round(currentTime);
             setCurrentTimeMs(Math.round(currentTime));
           }
         } else {
+          currentTimeMsRef.current = Math.round(currentTime);
           setCurrentTimeMs(Math.round(currentTime));
         }
 
@@ -257,6 +297,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       // Clear any previous audio error before re-attempting playback.
       setAudioError(null);
 
+      // If restarting from stopped state, reset hit tracking
+      if (playbackState === 'stopped') {
+        setValidatedHits([]);
+        lastHitTimePerNoteRef.current = {};
+      }
+
       // Ensure MIDI is initialized when Play is clicked. This is especially
       // important for tests that use vi.useFakeTimers() where the setTimeout
       // on page load never fires before play is clicked.
@@ -279,6 +325,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   }, [playbackState, initMidi, setPlaybackStateSynced]);
 
   const handleSeek = useCallback((timeMs: number) => {
+    currentTimeMsRef.current = timeMs;
     setCurrentTimeMs(timeMs);
     if (audioRef.current) {
       audioRef.current.currentTime = timeMs / 1000;
@@ -306,11 +353,25 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => window.removeEventListener('blur', handleBlur);
   }, [setPlaybackStateSynced]);
 
+  // Clean up MIDI debounce state when playback stops
+  useEffect(() => {
+    if (playbackState === 'stopped') {
+      lastHitTimePerNoteRef.current = {};
+    }
+  }, [playbackState]);
+
   // Stop audio and clean up on unmount.
   useEffect(() => {
     const audio = audioRef.current;
     return () => {
       if (audio) audio.pause();
+      // Null out any attached MIDI handlers to prevent stale state updates
+      if (midiAccessRef.current) {
+        const inputs = Array.from((midiAccessRef.current as any).inputs.values()) as any[];
+        for (const input of inputs) {
+          input.onmidimessage = null;
+        }
+      }
     };
   }, []);
 
@@ -360,8 +421,33 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleToggleToolsSidebar]);
 
-  // ─── Statistics ────────────────────────────────────────────────────────────
-  const [statistics] = useState<SessionStatistics>(DEFAULT_STATS);
+  // ─── MIDI Hit Detection ────────────────────────────────────────────────────
+  const [validatedHits, setValidatedHits] = useState<DrumHitValidation[]>([]);
+
+  // Refs for MIDI hit detection (avoid stale closures in async handler)
+  const currentTimeMsRef = useRef(0);
+  const midiAccessRef = useRef<any>(null);
+  const hitLookupRef = useRef<ReturnType<typeof buildHitLookup>>({});
+  const lastHitTimePerNoteRef = useRef<Record<number, number>>({});
+
+  // Build hit lookup from exercise MIDI events
+  const hitLookup = useMemo(
+    () => (exercise ? buildHitLookup(exercise.midiEvents) : {}),
+    [exercise]
+  );
+
+  // Sync hitLookup to ref (needed in MIDI handler)
+  useEffect(() => {
+    hitLookupRef.current = hitLookup;
+  }, [hitLookup]);
+
+  // Clear hits when exercise changes
+  useEffect(() => {
+    if (exercise) {
+      setValidatedHits([]);
+      lastHitTimePerNoteRef.current = {};
+    }
+  }, [exercise]);
 
   // ─── Loop validity ─────────────────────────────────────────────────────────
   const hasValidLoop = loopStartMs < loopEndMs && loopEndMs - loopStartMs >= 500;
@@ -528,8 +614,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             isLoopActive={isLoopActive}
           />
 
-          {/* Session statistics — directly below timeline */}
-          <SessionStatisticsPanel statistics={statistics} />
+          {/* Drum hit feedback — directly below timeline */}
+          <DrumHitFeedback
+            validatedHits={validatedHits}
+            totalExpectedHits={exercise.midiEvents.length}
+            isPlaying={playbackState === 'playing'}
+          />
         </div>
       </div>
     </div>
