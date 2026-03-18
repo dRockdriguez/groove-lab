@@ -123,6 +123,9 @@ export function getDrumColor(midiNote: number): string {
 
 // ─── Drum Hit Detection ────────────────────────────────────────────────────
 
+/** Timing offset threshold (ms) within which a hit is classified as 'hit' vs 'early'/'late' */
+export const HIT_PERFECT_THRESHOLD_MS = 20;
+
 /** Result of validating a detected drum hit against expected notes */
 export interface DrumHitValidation {
   /** Expected MIDI note from the exercise */
@@ -216,10 +219,7 @@ export function validateDrumHit(
   const offsetMs = detectedTimeMs - expectedTimeMs;
   let classification: 'hit' | 'early' | 'late';
 
-  const expectedTimes = lookup[detectedNote];
-  const hitIndex = expectedTimes ? expectedTimes.indexOf(expectedTimeMs) : 0;
-
-  if (hitIndex === 0 || offsetMs === 0) {
+  if (Math.abs(offsetMs) <= HIT_PERFECT_THRESHOLD_MS) {
     classification = 'hit';
   } else if (offsetMs < 0) {
     classification = 'early';
