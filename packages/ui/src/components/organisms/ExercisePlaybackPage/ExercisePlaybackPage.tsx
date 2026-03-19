@@ -113,7 +113,19 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     // Validate hit against exercise with lenient tolerance
     const result = validateDrumHit(note, exerciseTimeMs, hitLookupRef.current, HIT_TOLERANCE_MS);
     if (result !== null) {
-      setValidatedHits(prev => [...prev, result]);
+      let finalResult = result;
+      // Consumed-hit tracking: prevent re-validation of the same expected timestamp
+      // within a single loop iteration (extra hits counted as violation)
+      if (result.classification !== 'violation') {
+        const key = `${result.expectedNote}_${result.expectedTimeMs}`;
+        if (consumedHitTimestampsRef.current.has(key)) {
+          // This expected hit was already matched — count as violation (extra note)
+          finalResult = { ...result, classification: 'violation' };
+        } else {
+          consumedHitTimestampsRef.current.set(key, true);
+        }
+      }
+      setValidatedHits(prev => [...prev, finalResult]);
     }
   }, []); // Empty deps — all reads come from refs
 
@@ -268,6 +280,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             audioRef.current.currentTime = loopStartMsRef.current / 1000;
             const newRep = currRep + 1;
             currentLoopRepetitionRef.current = newRep;
+            setValidatedHits([]);
+            consumedHitTimestampsRef.current = new Map();
             setCurrentLoopRepetition(newRep);
             currentTimeMsRef.current = Math.round(loopStartMsRef.current);
             setCurrentTimeMs(Math.round(loopStartMsRef.current));
@@ -313,6 +327,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       if (playbackState === 'stopped') {
         setValidatedHits([]);
         lastHitTimePerNoteRef.current = {};
+        consumedHitTimestampsRef.current = new Map();
       }
 
       // Ensure MIDI is initialized when Play is clicked. This is especially
@@ -446,6 +461,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   const midiAccessRef = useRef<any>(null);
   const hitLookupRef = useRef<ReturnType<typeof buildHitLookup>>({});
   const lastHitTimePerNoteRef = useRef<Record<number, number>>({});
+  const consumedHitTimestampsRef = useRef<Map<string, true>>(new Map());
 
   // Refs for accurate MIDI timestamp conversion (performance.now()-based)
   // Set when playback starts/resumes, reset to 0 when stopped.
@@ -469,6 +485,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     if (exercise) {
       setValidatedHits([]);
       lastHitTimePerNoteRef.current = {};
+      consumedHitTimestampsRef.current = new Map();
       exerciseDurationMsRef.current = exercise.durationMs;
     }
   }, [exercise]);
