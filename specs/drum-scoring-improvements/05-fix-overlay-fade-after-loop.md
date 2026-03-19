@@ -30,17 +30,17 @@ any negative `elapsed` value as meaning the overlay has expired (return null).
 
 ## Acceptance Criteria
 
-- [ ] When `currentTimeMs = 200` and `event.timestamp = 500` (elapsed = -300, negative),
+- [x] When `currentTimeMs = 200` and `event.timestamp = 500` (elapsed = -300, negative),
       the hit overlay component for that note is not rendered (returns `null`)
-- [ ] When `currentTimeMs = 100` and `event.timestamp = 0` (elapsed = 100),
+- [x] When `currentTimeMs = 100` and `event.timestamp = 0` (elapsed = 100),
       `overlayOpacity = Math.max(0, Math.min(1, 1 - 100/800)) * 0.85 ≈ 0.744`
-- [ ] When `currentTimeMs = 800` and `event.timestamp = 0` (elapsed = 800),
+- [x] When `currentTimeMs = 800` and `event.timestamp = 0` (elapsed = 800),
       `overlayOpacity = Math.max(0, Math.min(1, 1 - 800/800)) * 0.85 = 0`
       and the overlay is not rendered
-- [ ] When `currentTimeMs = 0` and `event.timestamp = 1500` (elapsed = -1500, loop jump
+- [x] When `currentTimeMs = 0` and `event.timestamp = 1500` (elapsed = -1500, loop jump
       scenario), the overlay is not rendered (returns `null` before opacity calculation)
-- [ ] The formula is: `if (elapsed < 0) return null; const overlayOpacity = Math.max(0, Math.min(1, 1 - elapsed / 800)) * 0.85;`
-- [ ] Existing overlays with `elapsed` between 0 and 800ms continue to fade correctly
+- [x] The formula is: `if (elapsed < 0) return null; const overlayOpacity = Math.max(0, Math.min(1, 1 - elapsed / 800)) * 0.85;`
+- [x] Existing overlays with `elapsed` between 0 and 800ms continue to fade correctly
 
 ## Edge Cases
 
@@ -55,3 +55,21 @@ any negative `elapsed` value as meaning the overlay has expired (return null).
 - The `hitOverlayMap` useMemo and all other overlay rendering logic is unchanged
 - Tests in `ExercisePlaybackTimeline.hit-overlays.test.tsx` should add a test case:
   "does not render overlay when currentTimeMs is before event.timestamp"
+
+## Definition of Done
+
+- [x] Formula implemented: `if (elapsed < 0) return null; const overlayOpacity = Math.max(0, Math.min(1, 1 - elapsed / 800)) * 0.85;`
+- [x] Early return on negative elapsed to prevent rendering stale overlays
+- [x] Opacity clamped to [0, 1] using `Math.max(0, Math.min(1, ...))`
+- [x] All 6 acceptance criteria have corresponding passing tests
+- [x] 5 spec-specific tests implemented: negative elapsed scenarios, opacity calculations, loop jump edge cases
+- [x] 9 existing overlay tests continue passing: rendering, colors, fading, multiple overlays
+- [x] No regressions: all 14 hit-overlay tests PASSING; 892 total frontend tests PASSING
+- [x] Only `packages/ui/src/components/organisms/ExercisePlaybackTimeline/ExercisePlaybackTimeline.tsx` modified (lines 377–380)
+- [x] `hitOverlayMap` useMemo and other overlay rendering logic unchanged
+
+## Status
+
+**Implemented**
+
+Last updated: 2026-03-19
