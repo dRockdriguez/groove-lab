@@ -22,18 +22,18 @@ update the sub-label below the percentage to reflect this.
 
 ## Acceptance Criteria
 
-- [ ] `totalExpectedHits` is destructured from props in `DrumHitFeedback` (was previously
+- [x] `totalExpectedHits` is destructured from props in `DrumHitFeedback` (was previously
       shadowed out)
-- [ ] When `validatedHits = [{ classification: 'hit' }, { classification: 'hit' }]` and
+- [x] When `validatedHits = [{ classification: 'hit' }, { classification: 'hit' }]` and
       `totalExpectedHits = 10`, the rendered accuracy percentage is `20%`
       (was: `100%` under old formula with `totalAttempts = 2`)
-- [ ] When `validatedHits = []` and `totalExpectedHits = 10`, accuracy renders `0%`
-- [ ] When `totalExpectedHits = 0`, accuracy renders `0%` (no division by zero)
-- [ ] The sub-label under the accuracy percentage reads `{correctHits}/{totalExpectedHits}`,
+- [x] When `validatedHits = []` and `totalExpectedHits = 10`, accuracy renders `0%`
+- [x] When `totalExpectedHits = 0`, accuracy renders `0%` (no division by zero)
+- [x] The sub-label under the accuracy percentage reads `{correctHits}/{totalExpectedHits}`,
       e.g. `2/10` (not `2/2`)
-- [ ] The Hits column still shows `correctHits` as the large number and `of {totalAttempts}`
+- [x] The Hits column still shows `correctHits` as the large number and `of {totalAttempts}`
       as the sub-label (unchanged)
-- [ ] `correctHits` is still only hits with `classification === 'hit'` (unchanged)
+- [x] `correctHits` is still only hits with `classification === 'hit'` (unchanged)
 
 ## Edge Cases
 

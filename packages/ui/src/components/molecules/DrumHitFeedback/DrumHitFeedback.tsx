@@ -13,6 +13,7 @@ export interface DrumHitFeedbackProps {
 
 export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
   validatedHits,
+  totalExpectedHits,
   isPlaying,
   className = '',
 }) => {
@@ -22,7 +23,9 @@ export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
   const totalAttempts = validatedHits.length;
 
   const accuracyPercent =
-    totalAttempts > 0 ? Math.round((correctHits / totalAttempts) * 100) : 0;
+    totalExpectedHits > 0
+      ? Math.min(100, Math.round((correctHits / totalExpectedHits) * 100))
+      : 0;
 
   // Average timing offset for hits only (exclude violations)
   const hitsWithOffset = validatedHits.filter(
@@ -73,7 +76,7 @@ export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
             {accuracyPercent}%
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
-            {correctHits}/{totalAttempts}
+            {correctHits}/{totalExpectedHits}
           </div>
         </div>
 
