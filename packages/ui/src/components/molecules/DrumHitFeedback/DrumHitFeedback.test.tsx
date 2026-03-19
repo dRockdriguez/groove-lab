@@ -102,8 +102,8 @@ describe('DrumHitFeedback', () => {
           isPlaying={true}
         />
       );
-      // 2 correct hits out of 3 attempts = 67%
-      expect(getByText('67%')).toBeTruthy();
+      // 2 correct hits out of 10 expected = 20%
+      expect(getByText('20%')).toBeTruthy();
     });
 
     it('shows 0% accuracy when no hits', () => {
@@ -125,11 +125,65 @@ describe('DrumHitFeedback', () => {
       const { getByText } = render(
         <DrumHitFeedback
           validatedHits={allHits}
-          totalExpectedHits={10}
+          totalExpectedHits={2}
           isPlaying={true}
         />
       );
       expect(getByText('100%')).toBeTruthy();
+    });
+
+    it('renders 0% accuracy when totalExpectedHits is 0 (guards division by zero)', () => {
+      const { getByText } = render(
+        <DrumHitFeedback
+          validatedHits={mockValidations}
+          totalExpectedHits={0}
+          isPlaying={true}
+        />
+      );
+      expect(getByText('0%')).toBeTruthy();
+    });
+
+    it('clamps accuracy to 100% when correctHits exceeds totalExpectedHits', () => {
+      const twoHits: DrumHitValidation[] = [
+        { expectedNote: 36, expectedTimeMs: 0, detectedTimeMs: 10, offsetMs: 10, classification: 'hit' },
+        { expectedNote: 42, expectedTimeMs: 250, detectedTimeMs: 255, offsetMs: 5, classification: 'hit' },
+      ];
+      const { getByText } = render(
+        <DrumHitFeedback
+          validatedHits={twoHits}
+          totalExpectedHits={1}
+          isPlaying={true}
+        />
+      );
+      // 2 correct hits out of 1 expected = 200%, but clamped to 100%
+      expect(getByText('100%')).toBeTruthy();
+    });
+
+    it('uses totalExpectedHits as denominator in sub-label (not totalAttempts)', () => {
+      const { getByText } = render(
+        <DrumHitFeedback
+          validatedHits={mockValidations} // 3 total attempts (2 hits, 1 violation)
+          totalExpectedHits={10}
+          isPlaying={true}
+        />
+      );
+      // Sub-label should show 2/10 (not 2/3)
+      expect(getByText('2/10')).toBeTruthy();
+    });
+
+    it('displays accuracy sub-label with correct format when totalExpectedHits varies', () => {
+      const singleHit: DrumHitValidation[] = [
+        { expectedNote: 36, expectedTimeMs: 0, detectedTimeMs: 10, offsetMs: 10, classification: 'hit' },
+      ];
+      const { getByText } = render(
+        <DrumHitFeedback
+          validatedHits={singleHit}
+          totalExpectedHits={20}
+          isPlaying={true}
+        />
+      );
+      // 1 hit out of 20 expected should show "1/20" sub-label
+      expect(getByText('1/20')).toBeTruthy();
     });
   });
 
