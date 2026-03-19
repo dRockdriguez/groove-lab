@@ -95,14 +95,23 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     // velocity=0 on 0x90 is semantically Note-Off per Web MIDI API
     if (status !== 0x90 || velocity === 0) return;
 
+    // Compute exercise timeline position from the MIDI event's own timestamp
+    // (DOMHighResTimeStamp in performance.now() units) rather than the stale
+    // requestAnimationFrame tick stored in currentTimeMsRef.
+    const rawTimeMs =
+      (e.timeStamp - playbackStartPerfTimeRef.current) + playbackStartAudioOffsetRef.current;
+    const exerciseTimeMs = Math.min(
+      Math.max(0, rawTimeMs),
+      exerciseDurationMsRef.current,
+    );
+
     // Debounce: ignore repeated hits on same note within 50ms
-    const now = currentTimeMsRef.current;
     const lastHitTime = lastHitTimePerNoteRef.current[note] ?? -Infinity;
-    if (now - lastHitTime < 50) return;
-    lastHitTimePerNoteRef.current[note] = now;
+    if (exerciseTimeMs - lastHitTime < 50) return;
+    lastHitTimePerNoteRef.current[note] = exerciseTimeMs;
 
     // Validate hit against exercise with lenient tolerance
-    const result = validateDrumHit(note, now, hitLookupRef.current, HIT_TOLERANCE_MS);
+    const result = validateDrumHit(note, exerciseTimeMs, hitLookupRef.current, HIT_TOLERANCE_MS);
     if (result !== null) {
       setValidatedHits(prev => [...prev, result]);
     }
@@ -319,7 +328,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
       try {
         await audioRef.current.play();
-        // Play succeeded — state was already set to 'playing' above.
+        // Play succeeded — capture the performance.now() anchor so that
+        // MIDI event timestamps can be converted to exercise timeline positions.
+        playbackStartPerfTimeRef.current = performance.now();
+        playbackStartAudioOffsetRef.current = audioRef.current.currentTime * 1000;
       } catch {
         setAudioError('Could not load audio file. Please try again later.');
         setPlaybackStateSynced('stopped');
@@ -356,10 +368,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => window.removeEventListener('blur', handleBlur);
   }, [setPlaybackStateSynced]);
 
-  // Clean up MIDI debounce state when playback stops
+  // Clean up MIDI state when playback stops
   useEffect(() => {
     if (playbackState === 'stopped') {
       lastHitTimePerNoteRef.current = {};
+      playbackStartPerfTimeRef.current = 0;
+      playbackStartAudioOffsetRef.current = 0;
     }
   }, [playbackState]);
 
@@ -433,6 +447,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   const hitLookupRef = useRef<ReturnType<typeof buildHitLookup>>({});
   const lastHitTimePerNoteRef = useRef<Record<number, number>>({});
 
+  // Refs for accurate MIDI timestamp conversion (performance.now()-based)
+  // Set when playback starts/resumes, reset to 0 when stopped.
+  const playbackStartPerfTimeRef = useRef(0);
+  const playbackStartAudioOffsetRef = useRef(0);
+  const exerciseDurationMsRef = useRef(0);
+
   // Build hit lookup from exercise MIDI events
   const hitLookup = useMemo(
     () => (exercise ? buildHitLookup(exercise.midiEvents) : {}),
@@ -444,11 +464,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     hitLookupRef.current = hitLookup;
   }, [hitLookup]);
 
-  // Clear hits when exercise changes
+  // Clear hits when exercise changes; also update duration ref for MIDI clamping
   useEffect(() => {
     if (exercise) {
       setValidatedHits([]);
       lastHitTimePerNoteRef.current = {};
+      exerciseDurationMsRef.current = exercise.durationMs;
     }
   }, [exercise]);
 
