@@ -337,51 +337,51 @@ describe('DrumHitFeedback', () => {
       expect(violationSymbol).toBeFalsy();
     });
 
-    it('shows "✓ Hit!" for successful hit', () => {
+    it('does not show "✓ Hit!" banner (banner removed)', () => {
       const successHit: DrumHitValidation[] = [
         { expectedNote: 36, expectedTimeMs: 0, detectedTimeMs: 25, offsetMs: 25, classification: 'hit' },
       ];
-      const { getByText } = render(
+      const { queryByText } = render(
         <DrumHitFeedback
           validatedHits={successHit}
           totalExpectedHits={10}
           isPlaying={true}
         />
       );
-      expect(getByText('✓ Hit!')).toBeTruthy();
+      expect(queryByText('✓ Hit!')).toBeFalsy();
     });
 
-    it('shows "⇠ Too early" for early hits', () => {
+    it('does not show "⇠ Too early" banner (banner removed)', () => {
       const earlyHit: DrumHitValidation[] = [
         { expectedNote: 36, expectedTimeMs: 100, detectedTimeMs: 50, offsetMs: -50, classification: 'early' },
       ];
-      const { getByText } = render(
+      const { queryByText } = render(
         <DrumHitFeedback
           validatedHits={earlyHit}
           totalExpectedHits={10}
           isPlaying={true}
         />
       );
-      expect(getByText('⇠ Too early')).toBeTruthy();
+      expect(queryByText('⇠ Too early')).toBeFalsy();
     });
 
-    it('shows "⇢ Too late" for late hits', () => {
+    it('does not show "⇢ Too late" banner (banner removed)', () => {
       const lateHit: DrumHitValidation[] = [
         { expectedNote: 36, expectedTimeMs: 0, detectedTimeMs: 100, offsetMs: 100, classification: 'late' },
       ];
-      const { getByText } = render(
+      const { queryByText } = render(
         <DrumHitFeedback
           validatedHits={lateHit}
           totalExpectedHits={10}
           isPlaying={true}
         />
       );
-      expect(getByText('⇢ Too late')).toBeTruthy();
+      expect(queryByText('⇢ Too late')).toBeFalsy();
     });
   });
 
   describe('Visual Styling', () => {
-    it('applies green styling to correct hits feedback', () => {
+    it('applies green styling to hits stat in stats grid', () => {
       const successHit: DrumHitValidation[] = [
         { expectedNote: 36, expectedTimeMs: 0, detectedTimeMs: 25, offsetMs: 25, classification: 'hit' },
       ];
@@ -392,7 +392,8 @@ describe('DrumHitFeedback', () => {
           isPlaying={true}
         />
       );
-      const feedback = container.querySelector('[class*="bg-green"]');
+      // Hits count uses text-green styling in the stats grid
+      const feedback = container.querySelector('[class*="text-green"]');
       expect(feedback).toBeTruthy();
     });
 
