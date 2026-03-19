@@ -52,3 +52,22 @@ update the sub-label below the percentage to reflect this.
   no change needed there
 - Spec 06 (UX) modifies `DrumHitFeedback` to remove the banner; implement spec 04 before
   spec 06 to avoid merge conflicts
+
+## Definition of Done
+
+- [x] `totalExpectedHits` is destructured from props in `DrumHitFeedback` (no longer shadowed)
+- [x] Accuracy formula uses `totalExpectedHits` as denominator with zero-guard: `totalExpectedHits > 0 ? Math.round(...) : 0`
+- [x] Accuracy is clamped to 100% using `Math.min(100, ...)` to prevent over-100% display
+- [x] Sub-label below accuracy percentage shows `{correctHits}/{totalExpectedHits}` format
+- [x] Hits column sub-label still shows `of {totalAttempts}` (unchanged)
+- [x] All 7 acceptance criteria have corresponding passing tests
+- [x] Edge cases tested: zero denominator, correct hits exceeding expected, various denominators
+- [x] No regressions: 30 tests PASSING in DrumHitFeedback.test.tsx; 762 total UI tests PASSING
+- [x] Only `packages/ui/src/components/molecules/DrumHitFeedback/DrumHitFeedback.tsx` modified
+- [x] `ExercisePlaybackPage` already passes `exercise.midiEvents.length` as `totalExpectedHits`
+
+## Status
+
+**Implemented**
+
+Last updated: 2026-03-19
