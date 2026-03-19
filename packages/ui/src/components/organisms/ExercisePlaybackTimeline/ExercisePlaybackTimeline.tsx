@@ -58,6 +58,17 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
     return map;
   }, [validatedHits]);
 
+  // ─── Row glow map (most recent hit per note) ──────────────────────────────
+  // Map: note → { classification, expectedTimeMs }
+  const rowGlowMap = React.useMemo(() => {
+    const map = new Map<number, { classification: DrumHitValidation['classification']; expectedTimeMs: number }>();
+    for (const hit of validatedHits ?? []) {
+      // last-wins: always overwrite with most recent hit for the note
+      map.set(hit.expectedNote, { classification: hit.classification, expectedTimeMs: hit.expectedTimeMs });
+    }
+    return map;
+  }, [validatedHits]);
+
   // ─── Drag-to-create loop state ─────────────────────────────────────────────
   const [dragStartMs, setDragStartMs] = React.useState<number | null>(null);
   const [dragCurrentMs, setDragCurrentMs] = React.useState<number | null>(null);
@@ -345,8 +356,43 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
           />
 
           {/* Tracks */}
-          {uniqueNotes.map((note) => (
+          {uniqueNotes.map((note) => {
+            // ─── Row glow ───────────────────────────────────────────────────
+            const rowGlow = rowGlowMap.get(note);
+            let rowGlowElement: React.ReactNode = null;
+            if (rowGlow) {
+              const elapsed = currentTimeMs - rowGlow.expectedTimeMs;
+              if (elapsed >= 0 && elapsed <= 800) {
+                const glowOpacity = Math.max(0, Math.min(1, 1 - elapsed / 800)) * 0.4;
+                if (glowOpacity > 0) {
+                  const glowColor =
+                    rowGlow.classification === 'hit'
+                      ? `rgba(34, 197, 94, ${glowOpacity})`
+                      : rowGlow.classification === 'early'
+                        ? `rgba(234, 179, 8, ${glowOpacity})`
+                        : rowGlow.classification === 'late'
+                          ? `rgba(249, 115, 22, ${glowOpacity})`
+                          : `rgba(239, 68, 68, ${glowOpacity})`; // violation
+                  rowGlowElement = (
+                    <div
+                      data-testid="track-glow-overlay"
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        pointerEvents: 'none',
+                        zIndex: 1,
+                        backgroundColor: glowColor,
+                      }}
+                    />
+                  );
+                }
+              }
+            }
+
+            return (
             <div key={note} className="border-b border-gray-200 dark:border-gray-700 h-10 relative">
+              {rowGlowElement}
               {/* Track lane */}
               {eventsByNote[note].map((event, index) => {
                 const leftPercent =
@@ -402,7 +448,8 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                 );
               })}
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
     </div>

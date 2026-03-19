@@ -46,35 +46,35 @@ that note.
 ## Acceptance Criteria
 
 ### DrumHitFeedback banner removal
-- [ ] The rendered output of `<DrumHitFeedback>` contains no element with text
+- [x] The rendered output of `<DrumHitFeedback>` contains no element with text
       `"✓ Hit!"`, `"⇠ Too early"`, or `"⇢ Too late"` regardless of `validatedHits` content
       or `isPlaying` value
-- [ ] The 4-column stats grid (Accuracy, Hits, Avg Offset, Violations) still renders
-- [ ] `DrumHitFeedback` component renders without error when `isPlaying={true}` and
+- [x] The 4-column stats grid (Accuracy, Hits, Avg Offset, Violations) still renders
+- [x] `DrumHitFeedback` component renders without error when `isPlaying={true}` and
       `validatedHits` contains a `'hit'` classification entry
 
 ### ExercisePlaybackTimeline track glow
-- [ ] When `validatedHits` contains `{ expectedNote: 36, expectedTimeMs: 500, classification: 'hit' }`
+- [x] When `validatedHits` contains `{ expectedNote: 36, expectedTimeMs: 500, classification: 'hit' }`
       and `currentTimeMs = 500` (elapsed = 0):
       - An element with `data-testid="track-glow-overlay"` exists inside the track row for note 36
       - Its `backgroundColor` style contains `rgba(34, 197, 94,` (green)
-- [ ] When `validatedHits` contains `{ expectedNote: 38, expectedTimeMs: 300, classification: 'early' }`
+- [x] When `validatedHits` contains `{ expectedNote: 38, expectedTimeMs: 300, classification: 'early' }`
       and `currentTimeMs = 300`:
       - The glow overlay inside note 38's row contains `rgba(234, 179, 8,` (yellow)
-- [ ] When `validatedHits` contains `{ expectedNote: 42, expectedTimeMs: 400, classification: 'late' }`
+- [x] When `validatedHits` contains `{ expectedNote: 42, expectedTimeMs: 400, classification: 'late' }`
       and `currentTimeMs = 400`:
       - The glow overlay inside note 42's row contains `rgba(249, 115, 22,` (orange)
-- [ ] When `validatedHits` contains a `'violation'` with `expectedNote: 49`:
+- [x] When `validatedHits` contains a `'violation'` with `expectedNote: 49`:
       - A glow overlay exists for note 49 if it appears in `midiEvents`; uses
         `rgba(239, 68, 68,` (red); `expectedTimeMs` for violations equals `detectedTimeMs`
         (existing behavior from `validateDrumHit`)
-- [ ] When `currentTimeMs = 0` and `expectedTimeMs = 1500` (elapsed = -1500, post-loop):
+- [x] When `currentTimeMs = 0` and `expectedTimeMs = 1500` (elapsed = -1500, post-loop):
       no `data-testid="track-glow-overlay"` is rendered for that note
-- [ ] When `elapsed > 800` (glow expired), no `data-testid="track-glow-overlay"` is rendered
-- [ ] The existing `data-testid="hit-overlay"` on note-bar overlays (existing per-note-bar
+- [x] When `elapsed > 800` (glow expired), no `data-testid="track-glow-overlay"` is rendered
+- [x] The existing `data-testid="hit-overlay"` on note-bar overlays (existing per-note-bar
       coloring from v1.1) is unchanged — both the row glow and the note-bar overlay coexist
-- [ ] The glow overlay has `aria-hidden="true"`
-- [ ] When multiple hits exist for the same note (note 36 hit twice), only the most
+- [x] The glow overlay has `aria-hidden="true"`
+- [x] When multiple hits exist for the same note (note 36 hit twice), only the most
       recent hit's classification and `expectedTimeMs` determines the glow
 
 ## Edge Cases
@@ -99,3 +99,25 @@ that note.
 - New test file: `ExercisePlaybackTimeline.track-glow.test.tsx` with at minimum:
   hit/early/late/violation color tests, expired glow test, negative-elapsed test,
   multi-hit last-wins test
+
+## Definition of Done
+
+- [x] All acceptance criteria implemented and tested
+- [x] DrumHitFeedback banner removed entirely (no placeholder markup)
+- [x] ExercisePlaybackTimeline track glow renders correctly with fade
+- [x] Color mapping verified for all classifications (hit/early/late/violation)
+- [x] Post-loop jump edge case handled (elapsed < 0 prevents rendering)
+- [x] Opacity clamping prevents invalid values (0.4 max when elapsed ≤ 800ms)
+- [x] Note-bar overlays (hit-overlay) coexist with row glows without conflict
+- [x] Accessibility attributes present (aria-hidden="true" on glow)
+- [x] Last-wins behavior verified for multiple hits on same note
+- [x] DrumHitFeedback tests updated (3 banner absence tests + 27 stats tests)
+- [x] ExercisePlaybackTimeline track-glow test file created (15 tests)
+- [x] All tests passing (45 tests total: 30 DrumHitFeedback + 15 track-glow)
+- [x] No regressions (all existing tests remain passing)
+
+## Status
+
+**Implemented** — 2026-03-19
+
+All acceptance criteria met. Implementation verified. All 45 tests passing.

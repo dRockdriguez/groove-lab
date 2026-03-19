@@ -14,7 +14,7 @@ export interface DrumHitFeedbackProps {
 export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
   validatedHits,
   totalExpectedHits,
-  isPlaying,
+  // isPlaying retained in interface for future use
   className = '',
 }) => {
   // Calculate statistics
@@ -36,10 +36,6 @@ export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
       ? Math.round(hitsWithOffset.reduce((sum, h) => sum + h.offsetMs, 0) / hitsWithOffset.length)
       : 0;
 
-  // Most recent hit for visual feedback
-  const mostRecentHit = validatedHits[validatedHits.length - 1];
-  const mostRecentClassification = mostRecentHit?.classification ?? null;
-
   return (
     <div
       className={[
@@ -47,24 +43,6 @@ export const DrumHitFeedback: React.FC<DrumHitFeedbackProps> = ({
         className,
       ].join(' ')}
     >
-      {/* Most recent hit visual feedback (violation excluded) */}
-      {isPlaying && mostRecentClassification && mostRecentClassification !== 'violation' && (
-        <div
-          className={[
-            'mb-4 px-3 py-2 rounded text-center text-sm font-medium transition-colors',
-            mostRecentClassification === 'hit'
-              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100'
-              : mostRecentClassification === 'early'
-                ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100'
-                : 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-100',
-          ].join(' ')}
-        >
-          {mostRecentClassification === 'hit' && '✓ Hit!'}
-          {mostRecentClassification === 'early' && '⇠ Too early'}
-          {mostRecentClassification === 'late' && '⇢ Too late'}
-        </div>
-      )}
-
       {/* Statistics grid */}
       <div className="grid grid-cols-4 gap-4">
         {/* Accuracy */}
