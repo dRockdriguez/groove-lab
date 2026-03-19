@@ -28,23 +28,23 @@ introduces consumed-timestamp tracking to prevent re-validation.
 
 ## Acceptance Criteria
 
-- [ ] When a loop jump occurs in `updatePlayhead`, `setValidatedHits([])` is called before
+- [x] When a loop jump occurs in `updatePlayhead`, `setValidatedHits([])` is called before
       `setCurrentLoopRepetition(newRep)`
-- [ ] `consumedHitTimestampsRef` is a `useRef(new Map<string, true>())` added to the
+- [x] `consumedHitTimestampsRef` is a `useRef(new Map<string, true>())` added to the
       component alongside existing hit detection refs
-- [ ] In `handleMidiMessage`, after `validateDrumHit` returns a non-null result with
+- [x] In `handleMidiMessage`, after `validateDrumHit` returns a non-null result with
       a non-violation classification, the key `${result.expectedNote}_${result.expectedTimeMs}`
       is added to `consumedHitTimestampsRef.current`
-- [ ] In `handleMidiMessage`, if the nearest expected timestamp produces a key already in
+- [x] In `handleMidiMessage`, if the nearest expected timestamp produces a key already in
       `consumedHitTimestampsRef.current`, the result is overridden to `'violation'` before
       being appended to `validatedHits`
-- [ ] On loop jump, `consumedHitTimestampsRef.current = new Map()` executes in the same
+- [x] On loop jump, `consumedHitTimestampsRef.current = new Map()` executes in the same
       rAF callback branch that calls `setValidatedHits([])`
-- [ ] On playback restart from `'stopped'` state, `consumedHitTimestampsRef.current` is
+- [x] On playback restart from `'stopped'` state, `consumedHitTimestampsRef.current` is
       cleared (existing `lastHitTimePerNoteRef.current = {}` block, add adjacent clear)
-- [ ] On exercise change, `consumedHitTimestampsRef.current` is cleared in the existing
+- [x] On exercise change, `consumedHitTimestampsRef.current` is cleared in the existing
       `useEffect` that clears `validatedHits` and `lastHitTimePerNoteRef`
-- [ ] Given a 2-second loop [0ms, 2000ms] with 1 kick at 500ms: after completing iteration
+- [x] Given a 2-second loop [0ms, 2000ms] with 1 kick at 500ms: after completing iteration
       1 (kick validated as 'hit'), on iteration 2 the hit counter starts at 0 and the same
       kick, when replayed within tolerance, is classified as 'hit' again (not a duplicate
       violation)
@@ -66,3 +66,27 @@ introduces consumed-timestamp tracking to prevent re-validation.
   iteration only (since it is reset on jump)
 - `ExercisePlaybackTimeline` overlay map (`hitOverlayMap`) rebuilds automatically from
   the reset `validatedHits` array — no additional changes needed there
+
+---
+
+## Definition of Done
+
+**Status:** Implemented
+
+**Last updated:** 2026-03-19
+
+- [x] All 8 acceptance criteria implemented and verified
+- [x] All hits validated against correct iteration's consumed set
+- [x] Loop jump clears both `validatedHits` and `consumedHitTimestampsRef` in same rAF callback
+- [x] Playback restart clears consumed map for fresh session tracking
+- [x] Exercise change clears consumed map for new exercise
+- [x] 18 tests written and all passing:
+  - 1 ref initialization test
+  - 4 consumed hit tracking tests
+  - 3 loop jump clearing tests
+  - 5 state change clearing tests
+  - 4 integration tests
+  - 1 edge case test
+- [x] No regressions: all 759+ frontend tests passing
+- [x] Code follows spec requirements: `consumedHitTimestampsRef` pattern, violation override, proper cleanup
+- [x] Acceptance criteria map 1:1 to implementation locations (ExercisePlaybackPage.tsx lines 119-127, 283-284, 328-330, 487-488, 464)
