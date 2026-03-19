@@ -257,4 +257,148 @@ describe('ExercisePlaybackTimeline — Hit Overlays', () => {
     expect(noteMarker).toBeTruthy();
     expect(overlay).toBeTruthy();
   });
+
+  it('does not render overlay when currentTimeMs is before event.timestamp (negative elapsed)', () => {
+    // Spec 05: After a loop jump, currentTimeMs resets to loopStartMs (e.g., 0ms)
+    // If a hit was validated at expectedTimeMs = 1500ms,
+    // elapsed = 0 - 1500 = -1500 (negative)
+    // The overlay should NOT render because elapsed < 0
+    const validatedHits: DrumHitValidation[] = [
+      {
+        expectedNote: 36,
+        expectedTimeMs: 1500,
+        detectedTimeMs: 1550,
+        offsetMs: 50,
+        classification: 'hit',
+      },
+    ];
+
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={3500} // Extended for this test
+        currentTimeMs={0} // Loop jumped back to start
+        validatedHits={validatedHits}
+      />
+    );
+
+    const overlay = container.querySelector('[data-testid="hit-overlay"]');
+    expect(overlay).toBeFalsy();
+  });
+
+  it('does not render overlay when currentTimeMs = 200 and event.timestamp = 500 (elapsed = -300)', () => {
+    // Spec 05 acceptance criterion: negative elapsed scenario
+    const validatedHits: DrumHitValidation[] = [
+      {
+        expectedNote: 36,
+        expectedTimeMs: 500,
+        detectedTimeMs: 550,
+        offsetMs: 50,
+        classification: 'hit',
+      },
+    ];
+
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={2000}
+        currentTimeMs={200}
+        validatedHits={validatedHits}
+      />
+    );
+
+    const overlay = container.querySelector('[data-testid="hit-overlay"]');
+    expect(overlay).toBeFalsy(); // elapsed = -300, should not render
+  });
+
+  it('renders overlay with correct opacity when elapsed = 100 (overlayOpacity ≈ 0.744)', () => {
+    // Spec 05 acceptance criterion:
+    // currentTimeMs = 100, event.timestamp = 0
+    // overlayOpacity = max(0, min(1, 1 - 100/800)) * 0.85 ≈ 0.744
+    const validatedHits: DrumHitValidation[] = [
+      {
+        expectedNote: 36,
+        expectedTimeMs: 0,
+        detectedTimeMs: 50,
+        offsetMs: 50,
+        classification: 'hit',
+      },
+    ];
+
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={durationMs}
+        currentTimeMs={100}
+        validatedHits={validatedHits}
+      />
+    );
+
+    const overlay = container.querySelector('[data-testid="hit-overlay"]');
+    expect(overlay).toBeTruthy();
+
+    // Verify opacity is approximately 0.744 (or within reasonable floating-point range)
+    // 1 - 100/800 = 0.875, 0.875 * 0.85 = 0.74375 ≈ 0.744
+    const styleAttr = overlay?.getAttribute('style');
+    // The style should contain rgba with opacity around 0.74
+    expect(styleAttr).toMatch(/rgba\(34,\s*197,\s*94,\s*0\.74/);
+  });
+
+  it('does not render overlay when elapsed = 800 (opacity becomes 0)', () => {
+    // Spec 05 acceptance criterion:
+    // currentTimeMs = 800, event.timestamp = 0
+    // overlayOpacity = max(0, min(1, 1 - 800/800)) * 0.85 = 0
+    const validatedHits: DrumHitValidation[] = [
+      {
+        expectedNote: 36,
+        expectedTimeMs: 0,
+        detectedTimeMs: 50,
+        offsetMs: 50,
+        classification: 'hit',
+      },
+    ];
+
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={durationMs}
+        currentTimeMs={800}
+        validatedHits={validatedHits}
+      />
+    );
+
+    const overlay = container.querySelector('[data-testid="hit-overlay"]');
+    // When opacity is 0, overlay should not render (handled by overlayOpacity <= 0 check)
+    expect(overlay).toBeFalsy();
+  });
+
+  it('renders overlay with full opacity when elapsed = 0 (hit just occurred)', () => {
+    // Edge case from spec 05:
+    // elapsed === 0 (hit just occurred): overlayOpacity = 1 * 0.85 = 0.85
+    const validatedHits: DrumHitValidation[] = [
+      {
+        expectedNote: 36,
+        expectedTimeMs: 0,
+        detectedTimeMs: 0,
+        offsetMs: 0,
+        classification: 'hit',
+      },
+    ];
+
+    const { container } = render(
+      <ExercisePlaybackTimeline
+        midiEvents={mockEvents}
+        durationMs={durationMs}
+        currentTimeMs={0}
+        validatedHits={validatedHits}
+      />
+    );
+
+    const overlay = container.querySelector('[data-testid="hit-overlay"]');
+    expect(overlay).toBeTruthy();
+
+    // Opacity should be 0.85 (1 * 0.85)
+    const styleAttr = overlay?.getAttribute('style');
+    expect(styleAttr).toMatch(/rgba\(34,\s*197,\s*94,\s*0\.85/);
+  });
 });

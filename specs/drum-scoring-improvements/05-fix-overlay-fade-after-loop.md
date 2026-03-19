@@ -30,17 +30,17 @@ any negative `elapsed` value as meaning the overlay has expired (return null).
 
 ## Acceptance Criteria
 
-- [ ] When `currentTimeMs = 200` and `event.timestamp = 500` (elapsed = -300, negative),
+- [x] When `currentTimeMs = 200` and `event.timestamp = 500` (elapsed = -300, negative),
       the hit overlay component for that note is not rendered (returns `null`)
-- [ ] When `currentTimeMs = 100` and `event.timestamp = 0` (elapsed = 100),
+- [x] When `currentTimeMs = 100` and `event.timestamp = 0` (elapsed = 100),
       `overlayOpacity = Math.max(0, Math.min(1, 1 - 100/800)) * 0.85 ≈ 0.744`
-- [ ] When `currentTimeMs = 800` and `event.timestamp = 0` (elapsed = 800),
+- [x] When `currentTimeMs = 800` and `event.timestamp = 0` (elapsed = 800),
       `overlayOpacity = Math.max(0, Math.min(1, 1 - 800/800)) * 0.85 = 0`
       and the overlay is not rendered
-- [ ] When `currentTimeMs = 0` and `event.timestamp = 1500` (elapsed = -1500, loop jump
+- [x] When `currentTimeMs = 0` and `event.timestamp = 1500` (elapsed = -1500, loop jump
       scenario), the overlay is not rendered (returns `null` before opacity calculation)
-- [ ] The formula is: `if (elapsed < 0) return null; const overlayOpacity = Math.max(0, Math.min(1, 1 - elapsed / 800)) * 0.85;`
-- [ ] Existing overlays with `elapsed` between 0 and 800ms continue to fade correctly
+- [x] The formula is: `if (elapsed < 0) return null; const overlayOpacity = Math.max(0, Math.min(1, 1 - elapsed / 800)) * 0.85;`
+- [x] Existing overlays with `elapsed` between 0 and 800ms continue to fade correctly
 
 ## Edge Cases
 

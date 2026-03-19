@@ -375,7 +375,8 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
 
                       // Fade over 800ms using currentTimeMs vs expectedTimeMs
                       const elapsed = currentTimeMs - event.timestamp;
-                      const overlayOpacity = Math.max(0, 1 - elapsed / 800);
+                      if (elapsed < 0) return null;
+                      const overlayOpacity = Math.max(0, Math.min(1, 1 - elapsed / 800)) * 0.85;
                       if (overlayOpacity <= 0) return null;
 
                       const overlayColor =
@@ -390,7 +391,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                           data-testid="hit-overlay"
                           className="absolute top-0 bottom-0 w-2 rounded-sm pointer-events-none"
                           style={{
-                            backgroundColor: `${overlayColor}${overlayOpacity * 0.85})`,
+                            backgroundColor: `${overlayColor}${overlayOpacity})`,
                             zIndex: 5,
                           }}
                           aria-hidden="true"
