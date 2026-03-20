@@ -20,18 +20,18 @@ Add a volume slider and mute toggle for drum sounds to the `ToolsSidebar` compon
 
 ## Acceptance Criteria
 
-- [ ] ToolsSidebar renders a "Drum Volume" section below the metronome controls when `drumVolumeProps` is provided
-- [ ] Volume slider is a range input with `min=0`, `max=100`, `aria-label="Drum volume"`
-- [ ] Slider default value is 70 (maps to engine volume 0.7)
-- [ ] Moving the slider calls `onVolumeChange(newValue)` with the numeric value
-- [ ] `ExercisePlaybackPage` calls `drumSoundEngineRef.current.setVolume(volume / 100)` when volume changes
-- [ ] Mute button renders with `aria-pressed="false"` by default
-- [ ] Clicking mute button toggles `aria-pressed` and calls `onToggleMute()`
-- [ ] When muted, `DrumSoundEngine.setVolume(0)` is called; when unmuted, previous volume is restored
-- [ ] Volume value persists to `sessionStorage` key `exerciseTools_drumVolume` on change
-- [ ] Muted state persists to `sessionStorage` key `exerciseTools_drumMuted` on change
-- [ ] On page load, volume and muted state are restored from `sessionStorage` (defaults: volume=70, muted=false)
-- [ ] When `drumVolumeProps` is not provided (undefined), the volume section is not rendered
+- [x] ToolsSidebar renders a "Drum Volume" section below the metronome controls when `drumVolumeProps` is provided
+- [x] Volume slider is a range input with `min=0`, `max=100`, `aria-label="Drum volume"`
+- [x] Slider default value is 70 (maps to engine volume 0.7)
+- [x] Moving the slider calls `onVolumeChange(newValue)` with the numeric value
+- [x] `ExercisePlaybackPage` calls `drumSoundEngineRef.current.setVolume(volume / 100)` when volume changes
+- [x] Mute button renders with `aria-pressed="false"` by default
+- [x] Clicking mute button toggles `aria-pressed` and calls `onToggleMute()`
+- [x] When muted, `DrumSoundEngine.setVolume(0)` is called; when unmuted, previous volume is restored
+- [x] Volume value persists to `sessionStorage` key `exerciseTools_drumVolume` on change
+- [x] Muted state persists to `sessionStorage` key `exerciseTools_drumMuted` on change
+- [x] On page load, volume and muted state are restored from `sessionStorage` (defaults: volume=70, muted=false)
+- [x] When `drumVolumeProps` is not provided (undefined), the volume section is not rendered
 
 ## Edge Cases
 
@@ -49,13 +49,13 @@ Add a volume slider and mute toggle for drum sounds to the `ToolsSidebar` compon
 
 ## Definition of Done
 
-- [ ] Volume slider + mute toggle rendered in ToolsSidebar
-- [ ] Volume wired to `DrumSoundEngine.setVolume()`
-- [ ] Persistence to/from `sessionStorage`
+- [x] Volume slider + mute toggle rendered in ToolsSidebar
+- [x] Volume wired to `DrumSoundEngine.setVolume()`
+- [x] Persistence to/from `sessionStorage`
 - [ ] All 12 acceptance criteria have corresponding passing tests
-- [ ] No regressions in existing ToolsSidebar tests (39 tests)
-- [ ] No regressions in existing ExercisePlaybackPage tests
+- [x] No regressions in existing ToolsSidebar tests (39 tests)
+- [x] No regressions in existing ExercisePlaybackPage tests
 
 ## Status
 
-**Not started**
+**Implemented** (2026-03-20) — Tests to be generated separately.

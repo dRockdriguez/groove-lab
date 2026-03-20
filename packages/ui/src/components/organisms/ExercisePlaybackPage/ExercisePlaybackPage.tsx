@@ -79,6 +79,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   // ─── Audio context + drum sound engine ────────────────────────────────────
   const sharedAudioContextRef = useRef<AudioContext | null>(null);
   const drumSoundEngineRef = useRef<DrumSoundEngine | null>(null);
+  // Drum volume refs — allow callbacks and ensureAudioContext to read current
+  // values without stale closure issues.
+  const drumVolumeSliderRef = useRef(70); // raw slider value 0–100
+  const drumMutedRef = useRef(false);
 
   // Lazily creates (or resumes) a shared AudioContext and DrumSoundEngine.
   // Must be called from a user-gesture callback (MIDI event) to satisfy
@@ -93,6 +97,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       const ctx = new AudioContextClass();
       sharedAudioContextRef.current = ctx;
       drumSoundEngineRef.current = new DrumSoundEngine(ctx);
+      // Apply pending volume preference (stored before engine was created)
+      drumSoundEngineRef.current.setVolume(
+        drumMutedRef.current ? 0 : drumVolumeSliderRef.current / 100,
+      );
     }
 
     if (sharedAudioContextRef.current.state === 'suspended') {
@@ -267,6 +275,61 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     setIsLoopActive(false);
     setLoopRepetitions(1);
     setCurrentLoopRepetition(0);
+  }, []);
+
+  // ─── Drum volume state ─────────────────────────────────────────────────────
+  const [drumVolume, setDrumVolume] = useState(70);
+  const [drumMuted, setDrumMuted] = useState(false);
+
+  // Restore drum volume preferences from sessionStorage on mount.
+  useEffect(() => {
+    try {
+      const storedVolume = sessionStorage.getItem('exerciseTools_drumVolume');
+      const storedMuted = sessionStorage.getItem('exerciseTools_drumMuted');
+      if (storedVolume !== null) {
+        const v = Number(storedVolume);
+        // Only use the parsed value if it's a valid finite number
+        if (Number.isFinite(v)) {
+          setDrumVolume(v);
+          drumVolumeSliderRef.current = v;
+        }
+      }
+      if (storedMuted !== null) {
+        const m = JSON.parse(storedMuted) as boolean;
+        setDrumMuted(m);
+        drumMutedRef.current = m;
+      }
+    } catch {
+      // sessionStorage unavailable — use defaults
+    }
+  }, []);
+
+  const handleDrumVolumeChange = useCallback((v: number) => {
+    setDrumVolume(v);
+    drumVolumeSliderRef.current = v;
+    try {
+      sessionStorage.setItem('exerciseTools_drumVolume', String(v));
+    } catch { /* ignore */ }
+    // Only update engine if not muted
+    if (!drumMutedRef.current) {
+      drumSoundEngineRef.current?.setVolume(v / 100);
+    }
+  }, []);
+
+  const handleToggleDrumMute = useCallback(() => {
+    setDrumMuted(prev => {
+      const next = !prev;
+      drumMutedRef.current = next;
+      try {
+        sessionStorage.setItem('exerciseTools_drumMuted', JSON.stringify(next));
+      } catch { /* ignore */ }
+      if (next) {
+        drumSoundEngineRef.current?.setVolume(0);
+      } else {
+        drumSoundEngineRef.current?.setVolume(drumVolumeSliderRef.current / 100);
+      }
+      return next;
+    });
   }, []);
 
   // ─── Ctrl+L keyboard shortcut to toggle loop ──────────────────────────────
@@ -458,20 +521,24 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
   // Restore sidebar state from sessionStorage on mount.
   useEffect(() => {
-    const stored = sessionStorage.getItem('exerciseTools_sidebarOpen');
-    if (stored !== null) {
-      try {
+    try {
+      const stored = sessionStorage.getItem('exerciseTools_sidebarOpen');
+      if (stored !== null) {
         setToolsSidebarOpen(JSON.parse(stored) as boolean);
-      } catch {
-        // ignore malformed sessionStorage value
       }
+    } catch {
+      // sessionStorage unavailable or malformed value — use default
     }
   }, []);
 
   const handleToggleToolsSidebar = useCallback(() => {
     setToolsSidebarOpen(prev => {
       const next = !prev;
-      sessionStorage.setItem('exerciseTools_sidebarOpen', JSON.stringify(next));
+      try {
+        sessionStorage.setItem('exerciseTools_sidebarOpen', JSON.stringify(next));
+      } catch {
+        // sessionStorage unavailable — ignore
+      }
       return next;
     });
   }, []);
@@ -599,6 +666,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
           currentLoopRepetition,
           onLoopClear: handleLoopClear,
           durationMs: exercise.durationMs,
+        }}
+        drumVolumeProps={{
+          volume: drumVolume,
+          onVolumeChange: handleDrumVolumeChange,
+          isMuted: drumMuted,
+          onToggleMute: handleToggleDrumMute,
         }}
       />
 

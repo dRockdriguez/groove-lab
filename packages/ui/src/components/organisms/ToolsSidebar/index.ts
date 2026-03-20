@@ -1,2 +1,2 @@
 export { ToolsSidebar } from './ToolsSidebar';
-export type { ToolsSidebarProps } from './ToolsSidebar';
+export type { ToolsSidebarProps, DrumVolumeProps } from './ToolsSidebar';
