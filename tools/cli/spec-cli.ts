@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import os from 'os';
 import readline from 'readline';
 
@@ -13,6 +13,48 @@ type Step = {
   prompt: string;
   model: string;
 };
+
+type WorkflowStepRecord = {
+  stepKey: string;
+  label: string;
+  model: string;
+  startedAt: string;
+  completedAt: string;
+  status: 'completed' | 'failed';
+  outputSummary: string;
+  handoff?: StepHandoff;
+};
+
+type WorkflowContext = {
+  specPath: string;
+  branchName: string;
+  flow?: string;
+  startedAt: string;
+  updatedAt: string;
+  steps: WorkflowStepRecord[];
+};
+
+type HandoffCriterion = {
+  id: string;
+  status: 'pending' | 'completed' | 'blocked';
+  notes: string;
+};
+
+type StepHandoff = {
+  version: 1;
+  stepKey: string;
+  status: 'completed' | 'failed' | 'partial';
+  summary: string;
+  acceptanceCriteria: HandoffCriterion[];
+  filesChanged: string[];
+  testsAdded: string[];
+  verification: string[];
+  openIssues: string[];
+  nextStepGuidance: string[];
+};
+
+const HANDOFF_START = '--- HANDOFF JSON START ---';
+const HANDOFF_END = '--- HANDOFF JSON END ---';
 
 const steps: Record<string, Step> = {
   analyze: {
@@ -106,15 +148,238 @@ function formatElapsed(ms: number): string {
   return `${seconds}s`;
 }
 
+function slugifySpecPath(specPath: string): string {
+  return specPath.replace(/[\\/]/g, '__').replace(/[^a-zA-Z0-9._-]/g, '-');
+}
+
+function getWorkflowContextPath(specPath: string): string {
+  return path.join('.spec-workflow', `${slugifySpecPath(specPath)}.json`);
+}
+
+function getWorkflowContext(specPath: string, flow?: string): WorkflowContext {
+  const contextPath = getWorkflowContextPath(specPath);
+  const branchName = getSpecBranchName(specPath);
+
+  if (fs.existsSync(contextPath)) {
+    const raw = fs.readFileSync(contextPath, 'utf-8');
+    const parsed = JSON.parse(raw) as WorkflowContext;
+    if (!parsed.flow && flow) {
+      parsed.flow = flow;
+    }
+    if (!parsed.branchName) {
+      parsed.branchName = branchName;
+    }
+    return parsed;
+  }
+
+  const now = new Date().toISOString();
+  return {
+    specPath,
+    branchName,
+    flow,
+    startedAt: now,
+    updatedAt: now,
+    steps: [],
+  };
+}
+
+function saveWorkflowContext(context: WorkflowContext): void {
+  const contextPath = getWorkflowContextPath(context.specPath);
+  fs.mkdirSync(path.dirname(contextPath), { recursive: true });
+  context.updatedAt = new Date().toISOString();
+  fs.writeFileSync(contextPath, JSON.stringify(context, null, 2) + '\n', 'utf-8');
+}
+
+function summarizeOutput(output: string): string {
+  const normalized = output
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (normalized.length === 0) {
+    return 'No output captured from the step.';
+  }
+
+  return normalized.slice(-12).join('\n').slice(0, 4000);
+}
+
+function sanitizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function sanitizeAcceptanceCriteria(value: unknown): HandoffCriterion[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') {
+      return [];
+    }
+
+    const candidate = item as Record<string, unknown>;
+    const id = typeof candidate.id === 'string' ? candidate.id.trim() : '';
+    const notes = typeof candidate.notes === 'string' ? candidate.notes.trim() : '';
+    const status = candidate.status;
+
+    if (!id || !notes) {
+      return [];
+    }
+
+    if (status !== 'pending' && status !== 'completed' && status !== 'blocked') {
+      return [];
+    }
+
+    return [{ id, status, notes }];
+  });
+}
+
+function normalizeStepHandoff(stepKey: string, value: unknown): StepHandoff | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const version = candidate.version;
+  const status = candidate.status;
+  const summary = typeof candidate.summary === 'string' ? candidate.summary.trim() : '';
+
+  if (version !== 1 || !summary) {
+    return null;
+  }
+
+  if (status !== 'completed' && status !== 'failed' && status !== 'partial') {
+    return null;
+  }
+
+  return {
+    version: 1,
+    stepKey: typeof candidate.stepKey === 'string' && candidate.stepKey.trim() ? candidate.stepKey.trim() : stepKey,
+    status,
+    summary,
+    acceptanceCriteria: sanitizeAcceptanceCriteria(candidate.acceptanceCriteria),
+    filesChanged: sanitizeStringArray(candidate.filesChanged),
+    testsAdded: sanitizeStringArray(candidate.testsAdded),
+    verification: sanitizeStringArray(candidate.verification),
+    openIssues: sanitizeStringArray(candidate.openIssues),
+    nextStepGuidance: sanitizeStringArray(candidate.nextStepGuidance),
+  };
+}
+
+function parseHandoffFromOutput(stepKey: string, output: string): StepHandoff | null {
+  const startIndex = output.lastIndexOf(HANDOFF_START);
+  const endIndex = output.lastIndexOf(HANDOFF_END);
+
+  if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+    return null;
+  }
+
+  const jsonText = output
+    .slice(startIndex + HANDOFF_START.length, endIndex)
+    .trim();
+
+  if (!jsonText) {
+    return null;
+  }
+
+  try {
+    return normalizeStepHandoff(stepKey, JSON.parse(jsonText));
+  } catch {
+    return null;
+  }
+}
+
+function buildFallbackHandoff(stepKey: string, status: 'completed' | 'failed', output: string): StepHandoff {
+  return {
+    version: 1,
+    stepKey,
+    status,
+    summary: summarizeOutput(output),
+    acceptanceCriteria: [],
+    filesChanged: [],
+    testsAdded: [],
+    verification: [],
+    openIssues: status === 'failed' ? ['Step failed before emitting structured handoff JSON.'] : [],
+    nextStepGuidance: [],
+  };
+}
+
+function buildStepContextBlock(context: WorkflowContext): string {
+  if (context.steps.length === 0) {
+    return '';
+  }
+
+  const recentSteps = context.steps.slice(-3);
+  const lines = recentSteps.flatMap((step) => [
+    `- ${step.label} (${step.stepKey})`,
+    `  model: ${step.model}`,
+    `  status: ${step.status}`,
+    `  completedAt: ${step.completedAt}`,
+    `  handoff:`,
+    ...JSON.stringify(
+      step.handoff ?? buildFallbackHandoff(step.stepKey, step.status, step.outputSummary),
+      null,
+      2
+    )
+      .split('\n')
+      .map((line) => `    ${line}`),
+  ]);
+
+  return [
+    '',
+    'WORKFLOW CONTEXT',
+    'Use this as handoff context from previous steps. Re-check the repository before acting if anything seems stale.',
+    `If present, always prefer the structured JSON handoff over any prose output.`,
+    `Workflow state file: ${getWorkflowContextPath(context.specPath)}`,
+    `Branch: ${context.branchName}`,
+    `Flow: ${context.flow ?? 'single-step'}`,
+    'Recent completed steps:',
+    ...lines,
+  ].join('\n');
+}
+
+function recordStepResult(
+  context: WorkflowContext,
+  stepKey: string,
+  model: string,
+  startedAt: string,
+  status: 'completed' | 'failed',
+  output: string
+): void {
+  const handoff = parseHandoffFromOutput(stepKey, output) ?? buildFallbackHandoff(stepKey, status, output);
+  context.steps.push({
+    stepKey,
+    label: steps[stepKey]?.label ?? stepKey,
+    model,
+    startedAt,
+    completedAt: new Date().toISOString(),
+    status,
+    outputSummary: summarizeOutput(output),
+    handoff,
+  });
+  saveWorkflowContext(context);
+}
+
 async function runStep(
   stepKey: string,
   specPath: string,
+  flow?: string,
   modelOverride?: string,
   stepIndex?: number,
   totalSteps?: number
 ): Promise<void> {
   const step = steps[stepKey];
   const model = modelOverride || step.model;
+  const context = getWorkflowContext(specPath, flow);
+  const startedAt = new Date().toISOString();
 
   // Show step progress
   const progress = stepIndex !== undefined && totalSteps !== undefined
@@ -123,7 +388,7 @@ async function runStep(
   console.log(`\n⏩ STEP: ${step.label}${progress} using ${model}`);
 
   const template = fs.readFileSync(step.prompt, 'utf-8');
-  const prompt = template.replace('{{SPEC_PATH}}', specPath);
+  const prompt = template.replace('{{SPEC_PATH}}', specPath) + buildStepContextBlock(context);
 
   // Escape single quotes in prompt for shell
   const escapedPrompt = prompt.replace(/'/g, "'\\''");
@@ -143,18 +408,37 @@ async function runStep(
     }
   }
 
-  try {
-    execSync(command, {
-      stdio: 'inherit',
-    });
-  } catch (err: any) {
-    // Ignore timeout errors - they're expected behavior
-    if (err.killed || err.signal === 'SIGTERM') {
-      // Process was killed by timeout - this is OK
-    } else {
-      throw err;
-    }
+  const result = spawnSync(command, {
+    shell: true,
+    encoding: 'utf8',
+    stdio: ['inherit', 'pipe', 'pipe'],
+  });
+
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
   }
+  if (result.stderr) {
+    process.stderr.write(result.stderr);
+  }
+
+  if (result.error) {
+    recordStepResult(context, stepKey, model, startedAt, 'failed', String(result.error));
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    recordStepResult(
+      context,
+      stepKey,
+      model,
+      startedAt,
+      'failed',
+      `${result.stdout ?? ''}\n${result.stderr ?? ''}`
+    );
+    throw new Error(`Step command exited with code ${result.status}`);
+  }
+
+  recordStepResult(context, stepKey, model, startedAt, 'completed', `${result.stdout ?? ''}\n${result.stderr ?? ''}`);
 
   console.log(`✅ ${step.label} complete`);
 }
@@ -292,7 +576,7 @@ program
       validateSpecFile(spec);
       createSpecBranch(spec);
       const startTime = Date.now();
-      await runStep(step, spec, options.model);
+      await runStep(step, spec, undefined, options.model);
       const elapsed = formatElapsed(Date.now() - startTime);
       console.log(`\n🎯 Step complete (${elapsed})`);
     } catch (err) {
@@ -335,7 +619,7 @@ program
       const stepStart = Date.now();
 
       try {
-        await runStep(stepKey, spec, options.model, i + 1, flow.length);
+        await runStep(stepKey, spec, options.flow, options.model, i + 1, flow.length);
         const stepElapsed = formatElapsed(Date.now() - stepStart);
         console.log(`⏱️  Step took ${stepElapsed}`);
         completedSteps++;

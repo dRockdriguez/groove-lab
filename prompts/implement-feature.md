@@ -188,3 +188,42 @@ Test results:
 - No linting errors (`pnpm lint`)
 - Spec acceptance criteria are verified by tests
 - Feature is ready for verification step
+
+If a `WORKFLOW CONTEXT` section is present, use it as advisory handoff from previous steps and verify it against the current repository/spec before relying on it.
+
+At the very end of your response, emit a structured handoff block using these exact delimiters:
+
+--- HANDOFF JSON START ---
+{
+  "version": 1,
+  "stepKey": "implement",
+  "status": "completed",
+  "summary": "Short summary of the implementation done to satisfy tests.",
+  "acceptanceCriteria": [
+    {
+      "id": "AC1",
+      "status": "completed",
+      "notes": "Implementation now satisfies the tested requirement."
+    }
+  ],
+  "filesChanged": [
+    "path/to/file.ts"
+  ],
+  "testsAdded": [],
+  "verification": [
+    "List test/lint commands or checks you ran."
+  ],
+  "openIssues": [
+    "List any remaining risks."
+  ],
+  "nextStepGuidance": [
+    "Describe what verify should confirm."
+  ]
+}
+--- HANDOFF JSON END ---
+
+Rules for the handoff block:
+- It must be valid JSON
+- Use the exact `stepKey` for this prompt
+- Keep arrays empty when nothing applies
+- Do not include markdown fences around the JSON

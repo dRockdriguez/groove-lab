@@ -113,3 +113,44 @@ Provide:
 2. Updated test file paths
 3. Summary of tests implemented
 4. Test results after execution
+
+If a `WORKFLOW CONTEXT` section is present, use it as advisory handoff from previous steps and verify it against the current repository/spec before relying on it.
+
+At the very end of your response, emit a structured handoff block using these exact delimiters:
+
+--- HANDOFF JSON START ---
+{
+  "version": 1,
+  "stepKey": "implement-tests",
+  "status": "completed",
+  "summary": "Short summary of completed test implementation and results.",
+  "acceptanceCriteria": [
+    {
+      "id": "AC1",
+      "status": "completed",
+      "notes": "Real test assertions now cover this criterion."
+    }
+  ],
+  "filesChanged": [
+    "path/to/test-file.test.ts"
+  ],
+  "testsAdded": [
+    "path/to/test-file.test.ts"
+  ],
+  "verification": [
+    "List test commands or checks you ran."
+  ],
+  "openIssues": [
+    "List any failing tests or unresolved assumptions."
+  ],
+  "nextStepGuidance": [
+    "Describe what the next implementation or verify step should confirm."
+  ]
+}
+--- HANDOFF JSON END ---
+
+Rules for the handoff block:
+- It must be valid JSON
+- Use the exact `stepKey` for this prompt
+- Keep arrays empty when nothing applies
+- Do not include markdown fences around the JSON

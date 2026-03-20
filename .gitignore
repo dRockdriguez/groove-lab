@@ -10,6 +10,7 @@ coverage/
 .pytest_cache/
 storybook-static/
 .env
+.spec-workflow/
 
 # Editor/IDE
 .vscode/

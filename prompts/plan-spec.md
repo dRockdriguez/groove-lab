@@ -29,3 +29,40 @@ Provide the plan in structured JSON with the following keys:
 3. `mocks` — array of objects: `{ name, description }`
 4. `userFlows` — array of objects: `{ flow, steps: [] }`
 5. `implementationOrder` — array of strings representing step-by-step build order
+
+If a `WORKFLOW CONTEXT` section is present, use it as advisory handoff from previous steps and verify it against the current repository/spec before relying on it.
+
+At the very end of your response, emit a structured handoff block using these exact delimiters:
+
+--- HANDOFF JSON START ---
+{
+  "version": 1,
+  "stepKey": "plan",
+  "status": "completed",
+  "summary": "Short summary of the implementation/testing plan.",
+  "acceptanceCriteria": [
+    {
+      "id": "AC1",
+      "status": "pending",
+      "notes": "Planned component and test coverage identified."
+    }
+  ],
+  "filesChanged": [],
+  "testsAdded": [],
+  "verification": [
+    "Mapped acceptance criteria to components and test types."
+  ],
+  "openIssues": [
+    "List planning gaps or unresolved dependencies."
+  ],
+  "nextStepGuidance": [
+    "Implementation should follow the listed build order."
+  ]
+}
+--- HANDOFF JSON END ---
+
+Rules for the handoff block:
+- It must be valid JSON
+- Use the exact `stepKey` for this prompt
+- Keep arrays empty when nothing applies
+- Do not include markdown fences around the JSON
