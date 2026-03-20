@@ -52,10 +52,12 @@ Add a volume slider and mute toggle for drum sounds to the `ToolsSidebar` compon
 - [x] Volume slider + mute toggle rendered in ToolsSidebar
 - [x] Volume wired to `DrumSoundEngine.setVolume()`
 - [x] Persistence to/from `sessionStorage`
-- [ ] All 12 acceptance criteria have corresponding passing tests
+- [x] All 12 acceptance criteria have corresponding passing tests
 - [x] No regressions in existing ToolsSidebar tests (39 tests)
 - [x] No regressions in existing ExercisePlaybackPage tests
 
 ## Status
 
-**Implemented** (2026-03-20) — Tests to be generated separately.
+**Implemented** (2026-03-20)
+
+**Last updated:** 2026-03-20
