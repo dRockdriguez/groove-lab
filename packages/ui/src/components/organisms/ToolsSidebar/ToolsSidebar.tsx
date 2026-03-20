@@ -3,8 +3,11 @@ import type { MetronomeControlProps } from '../../molecules/MetronomeControl';
 import { MetronomeControl } from '../../molecules/MetronomeControl';
 import type { LoopControlsProps } from '../../molecules/LoopControls';
 import { LoopControls } from '../../molecules/LoopControls';
+import type { ToleranceSelectorProps } from '../../atoms/ToleranceSelector';
+import { ToleranceSelector } from '../../atoms/ToleranceSelector';
 
 export type { LoopControlsProps };
+export type { ToleranceSelectorProps };
 
 export interface DrumVolumeProps {
   volume: number;
@@ -24,6 +27,8 @@ export interface ToolsSidebarProps {
   loopProps?: LoopControlsProps;
   /** Props for the drum volume section; section is hidden when not provided. */
   drumVolumeProps?: DrumVolumeProps;
+  /** Props for the tolerance selector; section is hidden when not provided. */
+  toleranceProps?: ToleranceSelectorProps;
   className?: string;
 }
 
@@ -33,6 +38,7 @@ export const ToolsSidebar: React.FC<ToolsSidebarProps> = ({
   metronomeProps,
   loopProps,
   drumVolumeProps,
+  toleranceProps,
   className = '',
 }) => {
   return (
@@ -171,6 +177,14 @@ export const ToolsSidebar: React.FC<ToolsSidebarProps> = ({
               >
                 {drumVolumeProps.isMuted ? 'Unmute' : 'Mute'}
               </button>
+            </div>
+          )}
+          {toleranceProps && (
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Tolerance
+              </span>
+              <ToleranceSelector {...toleranceProps} />
             </div>
           )}
         </div>

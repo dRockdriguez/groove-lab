@@ -23,6 +23,8 @@ export { MidiStatusIndicator } from './components/atoms/MidiStatusIndicator';
 export type { MidiStatusIndicatorProps, MidiConnectionStatus } from './components/atoms/MidiStatusIndicator';
 export { FeedbackBadge } from './components/atoms/FeedbackBadge';
 export type { FeedbackBadgeProps } from './components/atoms/FeedbackBadge';
+export { ToleranceSelector } from './components/atoms/ToleranceSelector';
+export type { ToleranceSelectorProps } from './components/atoms/ToleranceSelector';
 
 // Molecules
 export { Header } from './components/molecules/Header';
