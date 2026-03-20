@@ -1,0 +1,178 @@
+
+> @groovelab/utils@ test /Users/davidrodriguez/Desktop/groove-lab/packages/utils
+> vitest run
+
+
+ RUN  v1.6.1 /Users/davidrodriguez/Desktop/groove-lab/packages/utils
+
+ ✓ src/drum-hit-detection.test.ts  (35 tests) 7ms
+ ❯ src/drum-sound-engine.test.ts  (39 tests | 10 failed) 38ms
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > play(36, 100) — Kick drum > creates a sine oscillator with frequency sweep 160Hz → 40Hz over 200ms
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > play(36, 100) — Kick drum > starts oscillator immediately and stops after decay
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > Velocity scaling > scales output gain linearly: gain = (velocity / 127) * masterVolume
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > Velocity scaling > applies velocity 127 as maximum gain
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > Velocity scaling > applies velocity 50 as half gain
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > setVolume(0.5) > affects subsequent play() calls with scaled gain
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > setVolume(0.0) > prevents sound output even with high velocity
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > Edge Cases > handles rapid repeated calls with overlapping sounds
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > Integration > handles complete workflow: create, play, setVolume, dispose
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+   ❯ src/drum-sound-engine.test.ts > DrumSoundEngine > Integration > maintains volume state across multiple play() calls
+     → osc.frequency.exponentialRampToValueAtTime is not a function
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > play(36, 100) — Kick drum > creates a sine oscillator with frequency sweep 160Hz → 40Hz over 200ms
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:104:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > play(36, 100) — Kick drum > starts oscillator immediately and stops after decay
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:117:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > Velocity scaling > scales output gain linearly: gain = (velocity / 127) * masterVolume
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:315:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > Velocity scaling > applies velocity 127 as maximum gain
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:327:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > Velocity scaling > applies velocity 50 as half gain
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:339:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > setVolume(0.5) > affects subsequent play() calls with scaled gain
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:392:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > setVolume(0.0) > prevents sound output even with high velocity
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:419:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > Edge Cases > handles rapid repeated calls with overlapping sounds
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:487:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > Integration > handles complete workflow: create, play, setVolume, dispose
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:550:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  src/drum-sound-engine.test.ts > DrumSoundEngine > Integration > maintains volume state across multiple play() calls
+TypeError: osc.frequency.exponentialRampToValueAtTime is not a function
+ ❯ DrumSoundEngine._playKick src/index.ts:312:19
+    310|     osc.type = 'sine';
+    311|     osc.frequency.setValueAtTime(160, now);
+    312|     osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+       |                   ^
+    313|     gainNode.gain.setValueAtTime(gain, now);
+    314|     gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+ ❯ DrumSoundEngine.play src/index.ts:289:12
+ ❯ src/drum-sound-engine.test.ts:563:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  10 failed | 64 passed (74)
+   Start at  17:38:30
+   Duration  278ms (transform 76ms, setup 0ms, collect 100ms, tests 45ms, environment 0ms, prepare 128ms)
+
+ ELIFECYCLE  Test failed. See above for more details.

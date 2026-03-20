@@ -20,22 +20,22 @@ Create a `DrumSoundEngine` class in `packages/utils/src/index.ts` that synthesiz
 
 ## Acceptance Criteria
 
-- [ ] `DrumSoundEngine` is exported from `packages/utils/src/index.ts`
-- [ ] Constructor accepts an `AudioContext` and creates a master `GainNode` connected to `ctx.destination`
-- [ ] `play(36, 100)` creates a sine oscillator with frequency sweep from 160Hz to 40Hz over 200ms (kick drum)
-- [ ] `play(38, 100)` creates a noise buffer source with bandpass filter at 3000Hz plus a triangle oscillator at 200Hz, both with 150ms decay (snare)
-- [ ] `play(42, 100)` creates a noise buffer source with bandpass filter at 8000Hz and 50ms decay (closed hi-hat)
-- [ ] `play(46, 100)` creates a noise buffer source with bandpass filter at 8000Hz and 300ms decay (open hi-hat)
-- [ ] `play(45, 100)` creates a sine oscillator at a frequency between 80Hz–200Hz mapped to the tom pitch, with 200ms decay (tom)
-- [ ] `play(49, 100)` creates a wideband noise source with highpass filter and 500ms decay (crash cymbal)
-- [ ] `play(51, 100)` creates a narrow-band noise source at high frequency with 400ms decay (ride cymbal)
-- [ ] `play(99, 100)` (unmapped note) creates a short sine oscillator at 440Hz with 100ms decay (fallback)
-- [ ] Velocity scales output gain linearly: `gain = (velocity / 127) * masterVolume`
-- [ ] `play(36, 0)` produces no sound (velocity 0 is ignored)
-- [ ] `setVolume(0.5)` changes master gain node value to 0.5
-- [ ] `setVolume(0.0)` mutes all output
-- [ ] `dispose()` disconnects the master gain node from destination
-- [ ] After `dispose()`, calling `play()` does not throw
+- [x] `DrumSoundEngine` is exported from `packages/utils/src/index.ts`
+- [x] Constructor accepts an `AudioContext` and creates a master `GainNode` connected to `ctx.destination`
+- [x] `play(36, 100)` creates a sine oscillator with frequency sweep from 160Hz to 40Hz over 200ms (kick drum)
+- [x] `play(38, 100)` creates a noise buffer source with bandpass filter at 3000Hz plus a triangle oscillator at 200Hz, both with 150ms decay (snare)
+- [x] `play(42, 100)` creates a noise buffer source with bandpass filter at 8000Hz and 50ms decay (closed hi-hat)
+- [x] `play(46, 100)` creates a noise buffer source with bandpass filter at 8000Hz and 300ms decay (open hi-hat)
+- [x] `play(45, 100)` creates a sine oscillator at a frequency between 80Hz–200Hz mapped to the tom pitch, with 200ms decay (tom)
+- [x] `play(49, 100)` creates a wideband noise source with highpass filter and 500ms decay (crash cymbal)
+- [x] `play(51, 100)` creates a narrow-band noise source at high frequency with 400ms decay (ride cymbal)
+- [x] `play(99, 100)` (unmapped note) creates a short sine oscillator at 440Hz with 100ms decay (fallback)
+- [x] Velocity scales output gain linearly: `gain = (velocity / 127) * masterVolume`
+- [x] `play(36, 0)` produces no sound (velocity 0 is ignored)
+- [x] `setVolume(0.5)` changes master gain node value to 0.5
+- [x] `setVolume(0.0)` mutes all output
+- [x] `dispose()` disconnects the master gain node from destination
+- [x] After `dispose()`, calling `play()` does not throw
 
 ## Edge Cases
 
@@ -56,11 +56,11 @@ Create a `DrumSoundEngine` class in `packages/utils/src/index.ts` that synthesiz
 
 ## Definition of Done
 
-- [ ] `DrumSoundEngine` class exported from `packages/utils/src/index.ts`
-- [ ] All 16 acceptance criteria have corresponding passing tests
-- [ ] No regressions in existing `packages/utils` tests (19 tests)
-- [ ] Only `packages/utils/src/index.ts` modified; no component changes
+- [x] `DrumSoundEngine` class exported from `packages/utils/src/index.ts`
+- [x] All 16 acceptance criteria have corresponding passing tests
+- [x] No regressions in existing `packages/utils` tests (35 drum-hit-detection tests still passing)
+- [x] Only `packages/utils/src/index.ts` modified; no component changes
 
 ## Status
 
-**Not started**
+**Implemented** (2026-03-20)
