@@ -42,34 +42,34 @@ export class ScoringTracker {
 ## Acceptance Criteria
 
 ### processHit
-- [ ] Delegates to `matchNote()` with internal `consumedKeys` set
-- [ ] On `correct`/`early`/`late`: adds the matched key (`"note_timeMs"`) to `consumedKeys`
-- [ ] Returns a `ScoringEvent` with `timestamp = performance.now()`
-- [ ] Appends the event to `events` array
-- [ ] `wrong_note` result: does NOT add to consumedKeys
+- [x] Delegates to `matchNote()` with internal `consumedKeys` set
+- [x] On `correct`/`early`/`late`: adds the matched key (`"note_timeMs"`) to `consumedKeys`
+- [x] Returns a `ScoringEvent` with `timestamp = performance.now()`
+- [x] Appends the event to `events` array
+- [x] `wrong_note` result: does NOT add to consumedKeys
 
 ### advancePlayhead — miss detection
-- [ ] For each expected note in `lookup`: if `expectedTimeMs + toleranceMs < currentTimeMs` AND that note was not consumed → emit `ScoringEvent` with `classification: 'missed'`
-- [ ] Missed events have `detectedTimeMs: undefined`, `offsetMs: 0`
-- [ ] Does NOT re-emit misses for notes already marked missed
-- [ ] Returns array of newly detected missed events (can be empty)
-- [ ] Appends missed events to `events` array
+- [x] For each expected note in `lookup`: if `expectedTimeMs + toleranceMs < currentTimeMs` AND that note was not consumed → emit `ScoringEvent` with `classification: 'missed'`
+- [x] Missed events have `detectedTimeMs: undefined`, `offsetMs: 0`
+- [x] Does NOT re-emit misses for notes already marked missed
+- [x] Returns array of newly detected missed events (can be empty)
+- [x] Appends missed events to `events` array
 
 ### getActiveGlows
-- [ ] Returns `Map<number, ScoringEvent>` — keyed by MIDI note number
-- [ ] Only includes events where `now - event.timestamp < glowDurationMs` (default 800ms)
-- [ ] If multiple events exist for the same note within the glow window, returns the most recent one
-- [ ] Expired events (older than glowDurationMs) are excluded
+- [x] Returns `Map<number, ScoringEvent>` — keyed by MIDI note number
+- [x] Only includes events where `now - event.timestamp < glowDurationMs` (default 800ms)
+- [x] If multiple events exist for the same note within the glow window, returns the most recent one
+- [x] Expired events (older than glowDurationMs) are excluded
 
 ### reset
-- [ ] Clears `events` array
-- [ ] Clears `consumedKeys` set
-- [ ] Clears internal miss-tracking state
-- [ ] After reset, the tracker behaves as if freshly constructed
+- [x] Clears `events` array
+- [x] Clears `consumedKeys` set
+- [x] Clears internal miss-tracking state
+- [x] After reset, the tracker behaves as if freshly constructed
 
 ### events
-- [ ] Read-only array — cannot be mutated externally
-- [ ] Preserves insertion order
+- [x] Read-only array — cannot be mutated externally
+- [x] Preserves insertion order
 
 ## Edge Cases
 
@@ -89,3 +89,24 @@ export class ScoringTracker {
   - Gating `processHit()` to only during active playback
   - Debouncing MIDI hits (50ms per note)
 - `getActiveGlows` uses `now` parameter (not `Date.now()`) so tests can control time
+
+## Status
+
+**Status:** Implemented
+
+**Last updated:** 2026-03-20
+
+## Definition of Done
+
+- [x] All 20 acceptance criteria implemented in `packages/utils/src/index.ts`
+- [x] `ScoringTracker` class properly exported with all methods
+- [x] `ScoringEvent` interface and `ScoringClassification` type defined
+- [x] Types align with spec signature (lines 233-342)
+- [x] `processHit` delegates to `matchNote` with consumedKeys tracking
+- [x] `advancePlayhead` emits misses and prevents re-emission
+- [x] `getActiveGlows` returns filtered, last-wins map with 800ms default
+- [x] `reset` clears all state (events, consumedKeys, missedKeys)
+- [x] `events` getter returns ReadonlyArray preserving insertion order
+- [x] No React dependencies — plain TypeScript class
+- [x] Architecture rules respected (lives in packages/utils)
+- [x] Test generation completed (80+ tests covering all criteria)
