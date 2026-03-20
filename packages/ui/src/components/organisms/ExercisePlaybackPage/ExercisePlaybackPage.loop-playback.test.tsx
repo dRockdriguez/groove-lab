@@ -270,10 +270,14 @@ describe('ExercisePlaybackPage - Loop Playback Logic', () => {
       expect(selector).toHaveFocus();
 
       await user.keyboard('{Tab}');
-      // After Tab, focus should move to the next interactive element (loop toggle button)
-      const buttons = Array.from(container.querySelectorAll('button'));
-      const anyButtonHasFocus = buttons.some((btn) => btn === document.activeElement);
-      expect(anyButtonHasFocus).toBe(true);
+      // After Tab, focus should move to the next interactive element.
+      // Note: the loop toggle/clear buttons are disabled (no loop region set), so Tab
+      // skips them and moves to the next focusable element (e.g. drum volume slider).
+      const interactiveElements = Array.from(
+        container.querySelectorAll<HTMLElement>('button, input, select'),
+      );
+      const anyHasFocus = interactiveElements.some(el => el === document.activeElement);
+      expect(anyHasFocus).toBe(true);
     });
 
     it('should support arrow key navigation in repetitions selector', async () => {

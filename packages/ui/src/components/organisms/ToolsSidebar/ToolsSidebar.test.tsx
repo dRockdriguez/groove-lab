@@ -602,4 +602,229 @@ describe('ToolsSidebar', () => {
     const backdrop = screen.getByTestId('tools-sidebar-backdrop');
     expect(backdrop).toHaveAttribute('aria-hidden', 'true');
   });
+
+  // ── Spec 03: Drum Sound Volume Control ─────────────────────────────────
+
+  // ── AC1: Drum Volume section renders when drumVolumeProps provided
+
+  it('renders "Drum Volume" section when drumVolumeProps is provided', () => {
+    const onToggle = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    expect(screen.getByText(/drum volume/i)).toBeInTheDocument();
+  });
+
+  it('does not render drum volume section when drumVolumeProps is undefined', () => {
+    const onToggle = vi.fn();
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={undefined}
+      />
+    );
+    expect(screen.queryByText(/drum volume/i)).not.toBeInTheDocument();
+  });
+
+  // ── AC2: Volume slider attributes
+
+  it('renders volume slider with correct min, max, and aria-label', () => {
+    const onToggle = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
+    expect(slider).toHaveAttribute('type', 'range');
+    expect(slider).toHaveAttribute('min', '0');
+    expect(slider).toHaveAttribute('max', '100');
+    expect(slider).toHaveAttribute('aria-label', 'Drum volume');
+  });
+
+  // ── AC3: Slider default value is 70
+
+  it('volume slider shows value of 70 when volume prop is 70', () => {
+    const onToggle = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
+    expect(slider.value).toBe('70');
+  });
+
+  // ── AC4: Moving slider calls onVolumeChange with numeric value
+
+  it('calls onVolumeChange when slider is moved', () => {
+    const onToggle = vi.fn();
+    const onVolumeChange = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange,
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
+    fireEvent.change(slider, { target: { value: '50' } });
+    expect(onVolumeChange).toHaveBeenCalledWith(50);
+  });
+
+  it('onVolumeChange receives numeric value, not string', () => {
+    const onToggle = vi.fn();
+    const onVolumeChange = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange,
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
+    fireEvent.change(slider, { target: { value: '30' } });
+    expect(onVolumeChange).toHaveBeenCalledWith(expect.any(Number));
+    expect(onVolumeChange).toHaveBeenCalledWith(30);
+  });
+
+  // ── AC6: Mute button renders and toggles
+
+  it('renders mute button with aria-pressed="false" by default', () => {
+    const onToggle = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    const muteButton = screen.getByRole('button', { name: /mute drums/i });
+    expect(muteButton).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('mute button shows aria-pressed="true" when isMuted is true', () => {
+    const onToggle = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: true,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    const muteButton = screen.getByRole('button', { name: /unmute drums/i });
+    expect(muteButton).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('calls onToggleMute when mute button is clicked', () => {
+    const onToggle = vi.fn();
+    const onToggleMute = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: false,
+      onToggleMute,
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    const muteButton = screen.getByRole('button', { name: /mute drums/i });
+    fireEvent.click(muteButton);
+    expect(onToggleMute).toHaveBeenCalledTimes(1);
+  });
+
+  it('volume section appears below metronome section', () => {
+    const onToggle = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+      />
+    );
+    // Both sections should exist
+    const metronomeButton = screen.getByRole('button', { name: /toggle metronome/i });
+    const muteButton = screen.getByRole('button', { name: /mute drums/i });
+    expect(metronomeButton).toBeInTheDocument();
+    expect(muteButton).toBeInTheDocument();
+    // Mute button should come after metronome button in DOM
+    const metronomeIndex = Array.from(document.querySelectorAll('button')).indexOf(
+      metronomeButton as HTMLButtonElement
+    );
+    const muteIndex = Array.from(document.querySelectorAll('button')).indexOf(
+      muteButton as HTMLButtonElement
+    );
+    expect(muteIndex).toBeGreaterThan(metronomeIndex);
+  });
 });
