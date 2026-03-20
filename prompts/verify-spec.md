@@ -36,3 +36,42 @@ OUTPUT
    - ✅ Auto-updated (if passing) or ❌ Issues found (if failing)
 
 3. **Violations & Missing Tests** (if any)
+
+If a `WORKFLOW CONTEXT` section is present, use it as advisory handoff from previous steps and verify it against the current repository/spec before relying on it.
+
+At the very end of your response, emit a structured handoff block using these exact delimiters:
+
+--- HANDOFF JSON START ---
+{
+  "version": 1,
+  "stepKey": "verify",
+  "status": "completed",
+  "summary": "Short summary of spec verification outcome.",
+  "acceptanceCriteria": [
+    {
+      "id": "AC1",
+      "status": "completed",
+      "notes": "Verified by implementation and tests."
+    }
+  ],
+  "filesChanged": [
+    "path/to/spec.md"
+  ],
+  "testsAdded": [],
+  "verification": [
+    "List checks run during verification."
+  ],
+  "openIssues": [
+    "List any compliance failures or missing coverage."
+  ],
+  "nextStepGuidance": [
+    "Leave empty when the workflow is complete."
+  ]
+}
+--- HANDOFF JSON END ---
+
+Rules for the handoff block:
+- It must be valid JSON
+- Use the exact `stepKey` for this prompt
+- Keep arrays empty when nothing applies
+- Do not include markdown fences around the JSON

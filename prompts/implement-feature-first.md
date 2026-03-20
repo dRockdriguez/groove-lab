@@ -123,3 +123,42 @@ When finished:
 - No speculative features
 - Follow existing patterns
 - Leave the codebase ready for subsequent test generation and verification
+
+If a `WORKFLOW CONTEXT` section is present, use it as advisory handoff from previous steps and verify it against the current repository/spec before relying on it.
+
+At the very end of your response, emit a structured handoff block using these exact delimiters:
+
+--- HANDOFF JSON START ---
+{
+  "version": 1,
+  "stepKey": "implement-first",
+  "status": "completed",
+  "summary": "Short summary of what was implemented from the spec.",
+  "acceptanceCriteria": [
+    {
+      "id": "AC1",
+      "status": "completed",
+      "notes": "Criterion implemented in the current codebase."
+    }
+  ],
+  "filesChanged": [
+    "path/to/file.ts"
+  ],
+  "testsAdded": [],
+  "verification": [
+    "List commands or checks you ran."
+  ],
+  "openIssues": [
+    "List remaining risks or unknowns."
+  ],
+  "nextStepGuidance": [
+    "Describe what the test-generation step should focus on next."
+  ]
+}
+--- HANDOFF JSON END ---
+
+Rules for the handoff block:
+- It must be valid JSON
+- Use the exact `stepKey` for this prompt
+- Keep arrays empty when nothing applies
+- Do not include markdown fences around the JSON
