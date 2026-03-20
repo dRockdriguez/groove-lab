@@ -57,39 +57,39 @@ export function matchNote(
 ## Acceptance Criteria
 
 ### buildExpectedNoteLookup
-- [ ] Groups events by MIDI note number
-- [ ] Each note's timestamp array is sorted ascending
-- [ ] Ignores duplicate timestamps for the same note
+- [x] Groups events by MIDI note number
+- [x] Each note's timestamp array is sorted ascending
+- [x] Ignores duplicate timestamps for the same note
 
 ### matchNote — correct hit
-- [ ] `matchNote(36, 500, {36:[500]}, 200)` → `{ classification: 'correct', offsetMs: 0 }`
-- [ ] `matchNote(36, 520, {36:[500]}, 200)` → `{ classification: 'correct', offsetMs: 20 }` (within ±30ms threshold)
-- [ ] `matchNote(36, 480, {36:[500]}, 200)` → `{ classification: 'correct', offsetMs: -20 }` (within ±30ms threshold)
+- [x] `matchNote(36, 500, {36:[500]}, 200)` → `{ classification: 'correct', offsetMs: 0 }`
+- [x] `matchNote(36, 520, {36:[500]}, 200)` → `{ classification: 'correct', offsetMs: 20 }` (within ±30ms threshold)
+- [x] `matchNote(36, 480, {36:[500]}, 200)` → `{ classification: 'correct', offsetMs: -20 }` (within ±30ms threshold)
 
 ### matchNote — early hit
-- [ ] `matchNote(36, 440, {36:[500]}, 200)` → `{ classification: 'early', offsetMs: -60 }` (beyond 30ms, within tolerance)
+- [x] `matchNote(36, 440, {36:[500]}, 200)` → `{ classification: 'early', offsetMs: -60 }` (beyond 30ms, within tolerance)
 
 ### matchNote — late hit
-- [ ] `matchNote(36, 560, {36:[500]}, 200)` → `{ classification: 'late', offsetMs: 60 }` (beyond 30ms, within tolerance)
+- [x] `matchNote(36, 560, {36:[500]}, 200)` → `{ classification: 'late', offsetMs: 60 }` (beyond 30ms, within tolerance)
 
 ### matchNote — wrong note
-- [ ] `matchNote(36, 500, {42:[500]}, 200)` → `{ classification: 'wrong_note' }` (note 36 not in lookup)
-- [ ] `matchNote(36, 500, {}, 200)` → `{ classification: 'wrong_note' }` (empty lookup)
-- [ ] `matchNote(36, 900, {36:[500]}, 200)` → `{ classification: 'wrong_note' }` (outside tolerance window)
+- [x] `matchNote(36, 500, {42:[500]}, 200)` → `{ classification: 'wrong_note' }` (note 36 not in lookup)
+- [x] `matchNote(36, 500, {}, 200)` → `{ classification: 'wrong_note' }` (empty lookup)
+- [x] `matchNote(36, 900, {36:[500]}, 200)` → `{ classification: 'wrong_note' }` (outside tolerance window)
 
 ### matchNote — consumed notes
-- [ ] With `consumedKeys` containing `"36_500"`, `matchNote(36, 500, {36:[500]}, 200)` → `{ classification: 'wrong_note' }` (already consumed, no other match available)
-- [ ] `matchNote` does NOT mutate the `consumedKeys` set (caller is responsible)
+- [x] With `consumedKeys` containing `"36_500"`, `matchNote(36, 500, {36:[500]}, 200)` → `{ classification: 'wrong_note' }` (already consumed, no other match available)
+- [x] `matchNote` does NOT mutate the `consumedKeys` set (caller is responsible)
 
 ### matchNote — nearest hit selection
-- [ ] When multiple expected timestamps exist for the same note within tolerance, matches the nearest one
-- [ ] `matchNote(36, 510, {36:[400, 500, 600]}, 200)` → matches 500 (closest), `offsetMs: 10`
+- [x] When multiple expected timestamps exist for the same note within tolerance, matches the nearest one
+- [x] `matchNote(36, 510, {36:[400, 500, 600]}, 200)` → matches 500 (closest), `offsetMs: 10`
 
 ### Tolerance presets
-- [ ] `TOLERANCE_PRESETS.easy === 300`
-- [ ] `TOLERANCE_PRESETS.medium === 200`
-- [ ] `TOLERANCE_PRESETS.hard === 100`
-- [ ] `PERFECT_THRESHOLD_MS === 30`
+- [x] `TOLERANCE_PRESETS.easy === 300`
+- [x] `TOLERANCE_PRESETS.medium === 200`
+- [x] `TOLERANCE_PRESETS.hard === 100`
+- [x] `PERFECT_THRESHOLD_MS === 30`
 
 ## Edge Cases
 
@@ -107,3 +107,30 @@ export function matchNote(
 - The `consumedKeys` set allows the caller (ScoringTracker) to prevent double-matching
 - `offsetMs = detectedTimeMs - matchedTimeMs` (negative = early, positive = late)
 - For `wrong_note`: `matchedTimeMs = detectedTimeMs`, `offsetMs = 0`
+
+## Definition of Done
+
+- [x] All acceptance criteria have corresponding tests
+- [x] All tests pass (46 tests in `packages/utils/src/note-matching-engine.test.ts`)
+- [x] Implementation in `packages/utils/src/index.ts` lines 124–229
+- [x] Types and constants properly exported
+- [x] No React dependencies (pure functions)
+- [x] Code respects architecture rules (shared utilities in `packages/utils`)
+- [x] No regressions in existing tests (99 utils tests passing)
+
+## Status
+
+**Status:** Implemented
+
+**Last updated:** 2026-03-20
+
+**Test Coverage:** 46/46 tests passing ✅
+- buildExpectedNoteLookup: 5 tests
+- matchNote — correct hit: 5 tests
+- matchNote — early hit: 3 tests
+- matchNote — late hit: 3 tests
+- matchNote — wrong note: 5 tests
+- matchNote — consumed notes: 5 tests
+- matchNote — nearest hit selection: 4 tests
+- Tolerance presets: 4 tests
+- Edge cases: 11 tests
