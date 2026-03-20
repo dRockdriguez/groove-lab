@@ -1,5 +1,8 @@
 # Spec: Page Integration
 
+**Status:** Implemented
+**Last updated:** 2026-03-21
+
 ## Scope
 
 Wire the `ScoringTracker` into `ExercisePlaybackPage` to connect MIDI input → scoring → visual feedback. Also connect the tolerance selector to the sidebar.
@@ -19,43 +22,43 @@ Wire the `ScoringTracker` into `ExercisePlaybackPage` to connect MIDI input → 
 ## Acceptance Criteria
 
 ### Tracker lifecycle
-- [ ] Create `ScoringTracker` when exercise data loads: `new ScoringTracker(buildExpectedNoteLookup(exercise.midiEvents), TOLERANCE_PRESETS[tolerancePreset])`
-- [ ] Store in `scoringTrackerRef = useRef<ScoringTracker | null>(null)`
-- [ ] Recreate tracker when `tolerancePreset` changes (resets scoring)
-- [ ] Recreate tracker when `exercise` changes
+- [x] Create `ScoringTracker` when exercise data loads: `new ScoringTracker(buildExpectedNoteLookup(exercise.midiEvents), TOLERANCE_PRESETS[tolerancePreset])`
+- [x] Store in `scoringTrackerRef = useRef<ScoringTracker | null>(null)`
+- [x] Recreate tracker when `tolerancePreset` changes (resets scoring)
+- [x] Recreate tracker when `exercise` changes
 
 ### MIDI handler integration
-- [ ] In `handleMidiMessage`, after sound playback: if `playbackState === 'playing'`, call `scoringTrackerRef.current.processHit(note, exerciseTimeMs)`
-- [ ] Update `activeGlows` state after `processHit`
-- [ ] Keep sound playback unconditional (plays regardless of playback state)
-- [ ] Keep 50ms per-note debounce for scoring hits
+- [x] In `handleMidiMessage`, after sound playback: if `playbackState === 'playing'`, call `scoringTrackerRef.current.processHit(note, exerciseTimeMs)`
+- [x] Update `activeGlows` state after `processHit`
+- [x] Keep sound playback unconditional (plays regardless of playback state)
+- [x] Keep 50ms per-note debounce for scoring hits
 
 ### Animation frame integration
-- [ ] In the rAF loop (while playing): call `scoringTrackerRef.current.advancePlayhead(currentTimeMs)`
-- [ ] Update `activeGlows` state: `setActiveGlows(scoringTrackerRef.current.getActiveGlows(performance.now()))`
-- [ ] This detects missed notes and refreshes glow fade state each frame
+- [x] In the rAF loop (while playing): call `scoringTrackerRef.current.advancePlayhead(currentTimeMs)`
+- [x] Update `activeGlows` state: `setActiveGlows(scoringTrackerRef.current.getActiveGlows(performance.now()))`
+- [x] This detects missed notes and refreshes glow fade state each frame
 
 ### Loop handling
-- [ ] When loop jumps back (currentTime >= loopEndMs → seek to loopStartMs): call `scoringTrackerRef.current.reset()`
-- [ ] This allows fresh scoring for each loop iteration
+- [x] When loop jumps back (currentTime >= loopEndMs → seek to loopStartMs): call `scoringTrackerRef.current.reset()`
+- [x] This allows fresh scoring for each loop iteration
 
 ### Playback state transitions
-- [ ] On play (from stopped): call `reset()` to start fresh
-- [ ] On stop: update `activeGlows` one final time, then stop updating
-- [ ] On pause: stop calling `advancePlayhead`, but keep existing glows visible (they'll fade naturally)
+- [x] On play (from stopped): call `reset()` to start fresh
+- [x] On stop: update `activeGlows` one final time, then stop updating
+- [x] On pause: stop calling `advancePlayhead`, but keep existing glows visible (they'll fade naturally)
 
 ### Timeline prop
-- [ ] Pass `activeGlows={activeGlows}` to `<ExercisePlaybackTimeline>`
+- [x] Pass `activeGlows={activeGlows}` to `<ExercisePlaybackTimeline>`
 
 ### Tolerance UI
-- [ ] State: `const [tolerancePreset, setTolerancePreset] = useState<TolerancePreset>('medium')`
-- [ ] Read initial value from `sessionStorage.getItem('exerciseTools_tolerancePreset')` — default `'medium'`
-- [ ] On change: save to sessionStorage, recreate tracker
-- [ ] Pass to ToolsSidebar: `toleranceProps={{ preset: tolerancePreset, onPresetChange: handleToleranceChange }}`
+- [x] State: `const [tolerancePreset, setTolerancePreset] = useState<TolerancePreset>('medium')`
+- [x] Read initial value from `sessionStorage.getItem('exerciseTools_tolerancePreset')` — default `'medium'`
+- [x] On change: save to sessionStorage, recreate tracker
+- [x] Pass to ToolsSidebar: `toleranceProps={{ preset: tolerancePreset, onPresetChange: handleToleranceChange }}`
 
 ### No stats panel
-- [ ] No `<DrumHitFeedback>` or equivalent rendered anywhere
-- [ ] Scoring feedback is ONLY via timeline row glows
+- [x] No `<DrumHitFeedback>` or equivalent rendered anywhere
+- [x] Scoring feedback is ONLY via timeline row glows
 
 ## Edge Cases
 

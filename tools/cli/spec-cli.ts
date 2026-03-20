@@ -3,7 +3,6 @@ import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
 import { execSync, spawn } from 'child_process';
-import os from 'os';
 import readline from 'readline';
 
 const program = new Command();
@@ -55,6 +54,8 @@ type StepHandoff = {
 
 const HANDOFF_START = '--- HANDOFF JSON START ---';
 const HANDOFF_END = '--- HANDOFF JSON END ---';
+const CLAUDE_PERMISSION_MODE = 'acceptEdits';
+const STEP_TIMEOUT_MS = 300_000;
 
 const steps: Record<string, Step> = {
   analyze: {
@@ -385,6 +386,24 @@ function recordStepResult(
   saveWorkflowContext(context);
 }
 
+function extractTextFromAssistantMessage(message: Record<string, unknown>): string {
+  const content = Array.isArray(message.content) ? message.content : [];
+  const fragments: string[] = [];
+
+  for (const item of content) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+
+    const candidate = item as Record<string, unknown>;
+    if (candidate.type === 'text' && typeof candidate.text === 'string') {
+      fragments.push(candidate.text);
+    }
+  }
+
+  return fragments.join('');
+}
+
 async function runStep(
   stepKey: string,
   specPath: string,
@@ -406,46 +425,54 @@ async function runStep(
 
   const template = fs.readFileSync(step.prompt, 'utf-8');
   const prompt = template.replace('{{SPEC_PATH}}', specPath) + buildStepContextBlock(context);
-
-  // Escape single quotes in prompt for shell
-  const escapedPrompt = prompt.replace(/'/g, "'\\''");
-
-  // Use (echo prompt; sleep 2) | timeout to auto-close after response
-  // This sends the prompt, waits 2s for response, then kills after 5m of inactivity
-  // On macOS, timeout doesn't exist - try gtimeout first, fall back to no timeout
-  const timeoutCmd = os.platform() === 'darwin' ? 'gtimeout' : 'timeout';
-  let command = `(echo '${escapedPrompt}'; sleep 2) | ${timeoutCmd} 300 claude --model ${model} || true`;
   const inactivityMs = 15000;
 
-  // If on macOS and gtimeout not available, run without timeout
-  if (os.platform() === 'darwin') {
-    try {
-      execSync('which gtimeout', { stdio: 'ignore' });
-    } catch {
-      command = `(echo '${escapedPrompt}'; sleep 2) | claude --model ${model}`;
-    }
-  }
-
   const result = await new Promise<{ stdout: string; stderr: string; exitCode: number }>((resolve, reject) => {
-    const child = spawn(command, {
-      shell: true,
-      stdio: ['inherit', 'pipe', 'pipe'],
-    });
+    const child = spawn(
+      'claude',
+      [
+        '-p',
+        prompt,
+        '--model',
+        model,
+        '--verbose',
+        '--permission-mode',
+        CLAUDE_PERMISSION_MODE,
+        '--output-format',
+        'stream-json',
+        '--include-partial-messages',
+      ],
+      {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: Object.fromEntries(
+          Object.entries(process.env).filter(([key]) => key !== 'CLAUDECODE')
+        ),
+      }
+    );
 
-    let stdout = '';
+    let assistantOutput = '';
     let stderr = '';
+    let stdoutBuffer = '';
     let heartbeatTimer: NodeJS.Timeout | undefined;
+    let timeoutTimer: NodeJS.Timeout | undefined;
     let waitingMessageShown = false;
+    let receivedPartialText = false;
 
-    const clearHeartbeat = () => {
+    const clearTimers = () => {
       if (heartbeatTimer) {
         clearTimeout(heartbeatTimer);
         heartbeatTimer = undefined;
       }
+      if (timeoutTimer) {
+        clearTimeout(timeoutTimer);
+        timeoutTimer = undefined;
+      }
     };
 
     const scheduleHeartbeat = () => {
-      clearHeartbeat();
+      if (heartbeatTimer) {
+        clearTimeout(heartbeatTimer);
+      }
       heartbeatTimer = setTimeout(() => {
         waitingMessageShown = true;
         console.log(`\n⏳ Still waiting for output from ${step.label}...`);
@@ -453,38 +480,103 @@ async function runStep(
       }, inactivityMs);
     };
 
-    const handleOutput = (text: string, writer: (chunk: string) => void) => {
+    const handleVisibleOutput = (text: string) => {
+      if (!text) {
+        return;
+      }
+
       if (waitingMessageShown) {
         console.log(`⏩ Output resumed for ${step.label}`);
         waitingMessageShown = false;
       }
+
       scheduleHeartbeat();
-      writer(text);
+      assistantOutput += text;
+      process.stdout.write(text);
+    };
+
+    const processJsonLine = (line: string) => {
+      try {
+        const event = JSON.parse(line) as Record<string, unknown>;
+
+        if (event.type === 'stream_event' && event.event && typeof event.event === 'object') {
+          const streamEvent = event.event as Record<string, unknown>;
+          if (
+            streamEvent.type === 'content_block_delta' &&
+            streamEvent.delta &&
+            typeof streamEvent.delta === 'object'
+          ) {
+            const delta = streamEvent.delta as Record<string, unknown>;
+            if (delta.type === 'text_delta' && typeof delta.text === 'string') {
+              receivedPartialText = true;
+              handleVisibleOutput(delta.text);
+            }
+          }
+          return;
+        }
+
+        if (
+          event.type === 'assistant' &&
+          event.message &&
+          typeof event.message === 'object' &&
+          !receivedPartialText
+        ) {
+          handleVisibleOutput(extractTextFromAssistantMessage(event.message as Record<string, unknown>));
+        }
+      } catch {
+        // Ignore non-JSON lines from stream-json mode.
+      }
     };
 
     scheduleHeartbeat();
+    timeoutTimer = setTimeout(() => {
+      stderr += `\nStep timed out after ${STEP_TIMEOUT_MS / 1000}s.`;
+      child.kill('SIGTERM');
+    }, STEP_TIMEOUT_MS);
 
     child.stdout?.on('data', (chunk: Buffer | string) => {
       const text = chunk.toString();
-      stdout += text;
-      handleOutput(text, (value) => process.stdout.write(value));
+      stdoutBuffer += text;
+
+      while (stdoutBuffer.includes('\n')) {
+        const newlineIndex = stdoutBuffer.indexOf('\n');
+        const line = stdoutBuffer.slice(0, newlineIndex).trim();
+        stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1);
+
+        if (line) {
+          processJsonLine(line);
+        }
+      }
     });
 
     child.stderr?.on('data', (chunk: Buffer | string) => {
       const text = chunk.toString();
       stderr += text;
-      handleOutput(text, (value) => process.stderr.write(value));
+
+      if (waitingMessageShown) {
+        console.log(`⏩ Output resumed for ${step.label}`);
+        waitingMessageShown = false;
+      }
+
+      scheduleHeartbeat();
+      process.stderr.write(text);
     });
 
     child.on('error', (error) => {
-      clearHeartbeat();
+      clearTimers();
       reject(error);
     });
 
     child.on('close', (exitCode) => {
-      clearHeartbeat();
+      clearTimers();
+
+      const remaining = stdoutBuffer.trim();
+      if (remaining) {
+        processJsonLine(remaining);
+      }
+
       resolve({
-        stdout,
+        stdout: assistantOutput,
         stderr,
         exitCode: exitCode ?? 0,
       });
