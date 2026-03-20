@@ -228,6 +228,120 @@ export function matchNote(
   };
 }
 
+// ─── Realtime Scoring Tracker ─────────────────────────────────────────────────
+
+export type ScoringClassification = HitClassification | 'missed';
+
+export interface ScoringEvent {
+  classification: ScoringClassification;
+  note: number;
+  expectedTimeMs: number;
+  detectedTimeMs?: number; // undefined for 'missed'
+  offsetMs: number; // 0 for 'missed' and 'wrong_note'
+  timestamp: number; // performance.now() when event was created (for glow fade)
+}
+
+export class ScoringTracker {
+  private _lookup: ExpectedNoteLookup;
+  private _toleranceMs: number;
+  private _events: ScoringEvent[] = [];
+  private _consumedKeys: Set<string> = new Set();
+  private _missedKeys: Set<string> = new Set();
+
+  constructor(lookup: ExpectedNoteLookup, toleranceMs: number) {
+    this._lookup = lookup;
+    this._toleranceMs = toleranceMs;
+  }
+
+  processHit(note: number, detectedTimeMs: number): ScoringEvent {
+    const result = matchNote(
+      note,
+      detectedTimeMs,
+      this._lookup,
+      this._toleranceMs,
+      this._consumedKeys
+    );
+
+    const event: ScoringEvent = {
+      classification: result.classification,
+      note: result.matchedNote,
+      expectedTimeMs: result.matchedTimeMs,
+      detectedTimeMs,
+      offsetMs: result.offsetMs,
+      timestamp: performance.now(),
+    };
+
+    if (
+      result.classification === 'correct' ||
+      result.classification === 'early' ||
+      result.classification === 'late'
+    ) {
+      const key = `${result.matchedNote}_${result.matchedTimeMs}`;
+      this._consumedKeys.add(key);
+    }
+
+    this._events.push(event);
+    return event;
+  }
+
+  advancePlayhead(currentTimeMs: number): ScoringEvent[] {
+    const newMisses: ScoringEvent[] = [];
+
+    for (const noteKey of Object.keys(this._lookup)) {
+      const note = Number(noteKey);
+      const timestamps = this._lookup[note];
+      for (const expectedTimeMs of timestamps) {
+        if (expectedTimeMs + this._toleranceMs >= currentTimeMs) {
+          continue;
+        }
+        const key = `${note}_${expectedTimeMs}`;
+        if (this._consumedKeys.has(key) || this._missedKeys.has(key)) {
+          continue;
+        }
+        this._missedKeys.add(key);
+        const event: ScoringEvent = {
+          classification: 'missed',
+          note,
+          expectedTimeMs,
+          detectedTimeMs: undefined,
+          offsetMs: 0,
+          timestamp: performance.now(),
+        };
+        newMisses.push(event);
+        this._events.push(event);
+      }
+    }
+
+    return newMisses;
+  }
+
+  getActiveGlows(now: number, glowDurationMs: number = 800): Map<number, ScoringEvent> {
+    const glowMap = new Map<number, ScoringEvent>();
+
+    for (const event of this._events) {
+      if (now - event.timestamp >= glowDurationMs) {
+        continue;
+      }
+      const existing = glowMap.get(event.note);
+      if (!existing || event.timestamp > existing.timestamp) {
+        glowMap.set(event.note, event);
+      }
+    }
+
+    return glowMap;
+  }
+
+  reset(): void {
+    this._events = [];
+    this._consumedKeys = new Set();
+    this._missedKeys = new Set();
+  }
+
+  get events(): ReadonlyArray<ScoringEvent> {
+    return this._events;
+  }
+}
+
 // ─── Drum Sound Engine ────────────────────────────────────────────────────────
 
 /** Tom notes in ascending pitch order for frequency mapping */

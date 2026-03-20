@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
-import { execSync, spawnSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import os from 'os';
 import readline from 'readline';
 
@@ -116,6 +116,23 @@ async function prompt(rl: readline.Interface, question: string): Promise<string>
       resolve(answer.toLowerCase().trim());
     });
   });
+}
+
+async function promptForChoice(
+  rl: readline.Interface,
+  question: string,
+  validAnswers: string[]
+): Promise<string> {
+  const accepted = new Set(validAnswers.map((answer) => answer.toLowerCase()));
+
+  while (true) {
+    const answer = await prompt(rl, question);
+    if (accepted.has(answer)) {
+      return answer;
+    }
+
+    console.log(`Please enter one of: ${validAnswers.join(', ')}`);
+  }
 }
 
 // Validate spec file exists and is readable
@@ -398,6 +415,7 @@ async function runStep(
   // On macOS, timeout doesn't exist - try gtimeout first, fall back to no timeout
   const timeoutCmd = os.platform() === 'darwin' ? 'gtimeout' : 'timeout';
   let command = `(echo '${escapedPrompt}'; sleep 2) | ${timeoutCmd} 300 claude --model ${model} || true`;
+  const inactivityMs = 15000;
 
   // If on macOS and gtimeout not available, run without timeout
   if (os.platform() === 'darwin') {
@@ -408,25 +426,72 @@ async function runStep(
     }
   }
 
-  const result = spawnSync(command, {
-    shell: true,
-    encoding: 'utf8',
-    stdio: ['inherit', 'pipe', 'pipe'],
+  const result = await new Promise<{ stdout: string; stderr: string; exitCode: number }>((resolve, reject) => {
+    const child = spawn(command, {
+      shell: true,
+      stdio: ['inherit', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let heartbeatTimer: NodeJS.Timeout | undefined;
+    let waitingMessageShown = false;
+
+    const clearHeartbeat = () => {
+      if (heartbeatTimer) {
+        clearTimeout(heartbeatTimer);
+        heartbeatTimer = undefined;
+      }
+    };
+
+    const scheduleHeartbeat = () => {
+      clearHeartbeat();
+      heartbeatTimer = setTimeout(() => {
+        waitingMessageShown = true;
+        console.log(`\n⏳ Still waiting for output from ${step.label}...`);
+        scheduleHeartbeat();
+      }, inactivityMs);
+    };
+
+    const handleOutput = (text: string, writer: (chunk: string) => void) => {
+      if (waitingMessageShown) {
+        console.log(`⏩ Output resumed for ${step.label}`);
+        waitingMessageShown = false;
+      }
+      scheduleHeartbeat();
+      writer(text);
+    };
+
+    scheduleHeartbeat();
+
+    child.stdout?.on('data', (chunk: Buffer | string) => {
+      const text = chunk.toString();
+      stdout += text;
+      handleOutput(text, (value) => process.stdout.write(value));
+    });
+
+    child.stderr?.on('data', (chunk: Buffer | string) => {
+      const text = chunk.toString();
+      stderr += text;
+      handleOutput(text, (value) => process.stderr.write(value));
+    });
+
+    child.on('error', (error) => {
+      clearHeartbeat();
+      reject(error);
+    });
+
+    child.on('close', (exitCode) => {
+      clearHeartbeat();
+      resolve({
+        stdout,
+        stderr,
+        exitCode: exitCode ?? 0,
+      });
+    });
   });
 
-  if (result.stdout) {
-    process.stdout.write(result.stdout);
-  }
-  if (result.stderr) {
-    process.stderr.write(result.stderr);
-  }
-
-  if (result.error) {
-    recordStepResult(context, stepKey, model, startedAt, 'failed', String(result.error));
-    throw result.error;
-  }
-
-  if (result.status !== 0) {
+  if (result.exitCode !== 0) {
     recordStepResult(
       context,
       stepKey,
@@ -435,7 +500,7 @@ async function runStep(
       'failed',
       `${result.stdout ?? ''}\n${result.stderr ?? ''}`
     );
-    throw new Error(`Step command exited with code ${result.status}`);
+    throw new Error(`Step command exited with code ${result.exitCode}`);
   }
 
   recordStepResult(context, stepKey, model, startedAt, 'completed', `${result.stdout ?? ''}\n${result.stderr ?? ''}`);
@@ -643,7 +708,11 @@ program
             console.log(execSync('git diff --stat', { encoding: 'utf8' }));
           }
 
-          const answer = await prompt(rl, '\n➡️  Continue? [y]es / [s]kip / [a]bort: ');
+          const answer = await promptForChoice(
+            rl,
+            '\n➡️  Continue? [y]es / [s]kip / [a]bort: ',
+            ['y', 'yes', 's', 'skip', 'a', 'abort']
+          );
           rl.close();
 
           if (answer === 'a' || answer === 'abort') {
@@ -660,9 +729,10 @@ program
 
         // Recovery: offer retry/skip/abort
         const rl = createReadlineInterface();
-        const answer = await prompt(
+        const answer = await promptForChoice(
           rl,
-          '💡 Options? [r]etry / [s]kip this step / [a]bort workflow: '
+          '💡 Options? [r]etry / [s]kip this step / [a]bort workflow: ',
+          ['r', 'retry', 's', 'skip', 'a', 'abort']
         );
         rl.close();
 
