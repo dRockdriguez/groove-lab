@@ -121,6 +121,113 @@ export function getDrumColor(midiNote: number): string {
   return DRUM_COLOR_MAP[midiNote] ?? DRUM_COLOR_DEFAULT;
 }
 
+// ─── Note Matching Engine ─────────────────────────────────────────────────────
+
+export type HitClassification = 'correct' | 'early' | 'late' | 'wrong_note';
+
+export interface NoteMatchResult {
+  classification: HitClassification;
+  matchedNote: number;
+  matchedTimeMs: number;
+  detectedTimeMs: number;
+  offsetMs: number;
+}
+
+export type TolerancePreset = 'easy' | 'medium' | 'hard';
+
+export const TOLERANCE_PRESETS: Record<TolerancePreset, number> = {
+  easy: 300,
+  medium: 200,
+  hard: 100,
+};
+
+export const PERFECT_THRESHOLD_MS = 30;
+
+export type ExpectedNoteLookup = Record<number, number[]>;
+
+/** Build a lookup table mapping MIDI note → sorted unique timestamps */
+export function buildExpectedNoteLookup(
+  midiEvents: Array<{ note: number; timestamp: number }>
+): ExpectedNoteLookup {
+  const grouped: Record<number, Set<number>> = {};
+  for (const event of midiEvents) {
+    if (!grouped[event.note]) {
+      grouped[event.note] = new Set();
+    }
+    grouped[event.note].add(event.timestamp);
+  }
+  const result: ExpectedNoteLookup = {};
+  for (const noteKey of Object.keys(grouped)) {
+    const note = Number(noteKey);
+    result[note] = Array.from(grouped[note]).sort((a, b) => a - b);
+  }
+  return result;
+}
+
+/**
+ * Match a detected MIDI hit against expected notes in the lookup.
+ * Returns a NoteMatchResult with classification and timing data.
+ * Does NOT mutate the consumedKeys set — caller is responsible for updates.
+ */
+export function matchNote(
+  detectedNote: number,
+  detectedTimeMs: number,
+  lookup: ExpectedNoteLookup,
+  toleranceMs: number,
+  consumedKeys?: Set<string>
+): NoteMatchResult {
+  const wrongNote: NoteMatchResult = {
+    classification: 'wrong_note',
+    matchedNote: detectedNote,
+    matchedTimeMs: detectedTimeMs,
+    detectedTimeMs,
+    offsetMs: 0,
+  };
+
+  const timestamps = lookup[detectedNote];
+  if (!timestamps || timestamps.length === 0) {
+    return wrongNote;
+  }
+
+  let nearestTs: number | null = null;
+  let nearestDist = Infinity;
+
+  for (const ts of timestamps) {
+    const dist = Math.abs(detectedTimeMs - ts);
+    if (dist > toleranceMs) continue;
+    const key = `${detectedNote}_${ts}`;
+    if (consumedKeys?.has(key)) continue;
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearestTs = ts;
+    }
+  }
+
+  if (nearestTs === null) {
+    return wrongNote;
+  }
+
+  const offsetMs = detectedTimeMs - nearestTs;
+  const absOffset = Math.abs(offsetMs);
+
+  let classification: HitClassification;
+  if (absOffset <= PERFECT_THRESHOLD_MS) {
+    classification = 'correct';
+  } else if (offsetMs < 0) {
+    classification = 'early';
+  } else {
+    classification = 'late';
+  }
+
+  return {
+    classification,
+    matchedNote: detectedNote,
+    matchedTimeMs: nearestTs,
+    detectedTimeMs,
+    offsetMs,
+  };
+}
+
 // ─── Drum Sound Engine ────────────────────────────────────────────────────────
 
 /** Tom notes in ascending pitch order for frequency mapping */

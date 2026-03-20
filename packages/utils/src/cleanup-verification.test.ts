@@ -3,6 +3,7 @@
  * These tests verify that old scoring system has been completely removed
  */
 
+import { describe, it, expect } from 'vitest';
 import * as utils from './index'
 
 describe('Cleanup Old Scoring — Utils Verification', () => {
@@ -38,9 +39,11 @@ describe('Cleanup Old Scoring — Utils Verification', () => {
       expect(typeof utils.getDrumColor).toBe('function')
     })
 
-    it('should export DRUM_COLOR_MAP', () => {
-      expect(utils.DRUM_COLOR_MAP).toBeDefined()
-      expect(typeof utils.DRUM_COLOR_MAP).toBe('object')
+    it('should provide getDrumColor function (which uses internal DRUM_COLOR_MAP)', () => {
+      expect(typeof utils.getDrumColor).toBe('function')
+      // DRUM_COLOR_MAP is private, but getDrumColor function exposes its functionality
+      const color = utils.getDrumColor(36) // kick
+      expect(color).toBe('#DC2626')
     })
 
     it('should export DrumSoundEngine class', () => {
