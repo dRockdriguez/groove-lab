@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ExercisePlaybackData, PlaybackState } from '@groovelab/types';
-import { formatDuration, buildHitLookup, validateDrumHit, DrumSoundEngine } from '@groovelab/utils';
-import type { DrumHitValidation } from '@groovelab/utils';
+import { formatDuration, DrumSoundEngine } from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
 import { MidiStatusIndicator, type MidiConnectionStatus } from '../../atoms/MidiStatusIndicator';
 import { ExercisePlaybackTimeline } from '../ExercisePlaybackTimeline';
-import { DrumHitFeedback } from '../../molecules/DrumHitFeedback';
 import { ToolsSidebar } from '../ToolsSidebar';
 
 export interface ExercisePlaybackPageProps {
@@ -108,10 +106,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, []);
 
-  // ±250ms tolerance window for hit detection (more forgiving for real players)
-  const HIT_TOLERANCE_MS = 250;
-
-  // MIDI message handler — sound always fires; scoring gated to active playback
+  // MIDI message handler — sound always fires
   const handleMidiMessage = useCallback((e: any) => {
     const data: Uint8Array = e.data;
     if (!data || data.length < 3) return;
@@ -127,42 +122,6 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     // ── Sound: always play regardless of playback state ────────────────────
     ensureAudioContext();
     drumSoundEngineRef.current?.play(note, velocity);
-
-    // ── Scoring: only validate during active playback ──────────────────────
-    if (playbackStateRef.current !== 'playing') return;
-
-    // Compute exercise timeline position from the MIDI event's own timestamp
-    // (DOMHighResTimeStamp in performance.now() units) rather than the stale
-    // requestAnimationFrame tick stored in currentTimeMsRef.
-    const rawTimeMs =
-      (e.timeStamp - playbackStartPerfTimeRef.current) + playbackStartAudioOffsetRef.current;
-    const exerciseTimeMs = Math.min(
-      Math.max(0, rawTimeMs),
-      exerciseDurationMsRef.current,
-    );
-
-    // Debounce: ignore repeated hits on same note within 50ms
-    const lastHitTime = lastHitTimePerNoteRef.current[note] ?? -Infinity;
-    if (exerciseTimeMs - lastHitTime < 50) return;
-    lastHitTimePerNoteRef.current[note] = exerciseTimeMs;
-
-    // Validate hit against exercise with lenient tolerance
-    const result = validateDrumHit(note, exerciseTimeMs, hitLookupRef.current, HIT_TOLERANCE_MS);
-    if (result !== null) {
-      let finalResult = result;
-      // Consumed-hit tracking: prevent re-validation of the same expected timestamp
-      // within a single loop iteration (extra hits counted as violation)
-      if (result.classification !== 'violation') {
-        const key = `${result.expectedNote}_${result.expectedTimeMs}`;
-        if (consumedHitTimestampsRef.current.has(key)) {
-          // This expected hit was already matched — count as violation (extra note)
-          finalResult = { ...result, classification: 'violation' };
-        } else {
-          consumedHitTimestampsRef.current.set(key, true);
-        }
-      }
-      setValidatedHits(prev => [...prev, finalResult]);
-    }
   }, [ensureAudioContext]); // ensureAudioContext is stable (useCallback + no deps)
 
   const initMidi = useCallback(async () => {
@@ -371,8 +330,6 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             audioRef.current.currentTime = loopStartMsRef.current / 1000;
             const newRep = currRep + 1;
             currentLoopRepetitionRef.current = newRep;
-            setValidatedHits([]);
-            consumedHitTimestampsRef.current = new Map();
             setCurrentLoopRepetition(newRep);
             currentTimeMsRef.current = Math.round(loopStartMsRef.current);
             setCurrentTimeMs(Math.round(loopStartMsRef.current));
@@ -414,13 +371,6 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       // Clear any previous audio error before re-attempting playback.
       setAudioError(null);
 
-      // If restarting from stopped state, reset hit tracking
-      if (playbackState === 'stopped') {
-        setValidatedHits([]);
-        lastHitTimePerNoteRef.current = {};
-        consumedHitTimestampsRef.current = new Map();
-      }
-
       // Ensure MIDI is initialized when Play is clicked. This is especially
       // important for tests that use vi.useFakeTimers() where the setTimeout
       // on page load never fires before play is clicked.
@@ -434,10 +384,6 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
       try {
         await audioRef.current.play();
-        // Play succeeded — capture the performance.now() anchor so that
-        // MIDI event timestamps can be converted to exercise timeline positions.
-        playbackStartPerfTimeRef.current = performance.now();
-        playbackStartAudioOffsetRef.current = audioRef.current.currentTime * 1000;
       } catch {
         setAudioError('Could not load audio file. Please try again later.');
         setPlaybackStateSynced('stopped');
@@ -473,15 +419,6 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     window.addEventListener('blur', handleBlur);
     return () => window.removeEventListener('blur', handleBlur);
   }, [setPlaybackStateSynced]);
-
-  // Clean up MIDI state when playback stops
-  useEffect(() => {
-    if (playbackState === 'stopped') {
-      lastHitTimePerNoteRef.current = {};
-      playbackStartPerfTimeRef.current = 0;
-      playbackStartAudioOffsetRef.current = 0;
-    }
-  }, [playbackState]);
 
   // Stop audio and clean up on unmount.
   useEffect(() => {
@@ -555,42 +492,9 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleToggleToolsSidebar]);
 
-  // ─── MIDI Hit Detection ────────────────────────────────────────────────────
-  const [validatedHits, setValidatedHits] = useState<DrumHitValidation[]>([]);
-
-  // Refs for MIDI hit detection (avoid stale closures in async handler)
+  // Refs for MIDI access and playhead tracking (used in rAF, handleSeek, initMidi, cleanup)
   const currentTimeMsRef = useRef(0);
   const midiAccessRef = useRef<any>(null);
-  const hitLookupRef = useRef<ReturnType<typeof buildHitLookup>>({});
-  const lastHitTimePerNoteRef = useRef<Record<number, number>>({});
-  const consumedHitTimestampsRef = useRef<Map<string, true>>(new Map());
-
-  // Refs for accurate MIDI timestamp conversion (performance.now()-based)
-  // Set when playback starts/resumes, reset to 0 when stopped.
-  const playbackStartPerfTimeRef = useRef(0);
-  const playbackStartAudioOffsetRef = useRef(0);
-  const exerciseDurationMsRef = useRef(0);
-
-  // Build hit lookup from exercise MIDI events
-  const hitLookup = useMemo(
-    () => (exercise ? buildHitLookup(exercise.midiEvents) : {}),
-    [exercise]
-  );
-
-  // Sync hitLookup to ref (needed in MIDI handler)
-  useEffect(() => {
-    hitLookupRef.current = hitLookup;
-  }, [hitLookup]);
-
-  // Clear hits when exercise changes; also update duration ref for MIDI clamping
-  useEffect(() => {
-    if (exercise) {
-      setValidatedHits([]);
-      lastHitTimePerNoteRef.current = {};
-      consumedHitTimestampsRef.current = new Map();
-      exerciseDurationMsRef.current = exercise.durationMs;
-    }
-  }, [exercise]);
 
   // ─── Loop validity ─────────────────────────────────────────────────────────
   const hasValidLoop = loopStartMs < loopEndMs && loopEndMs - loopStartMs >= 500;
@@ -757,18 +661,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             currentTimeMs={currentTimeMs}
             bpm={exercise.bpm}
             metronomeEnabled={metronomeEnabled}
-            validatedHits={validatedHits}
             {...loopMarkerProps}
             onLoopStartChange={handleLoopStartChange}
             onLoopEndChange={handleLoopEndChange}
             isLoopActive={isLoopActive}
-          />
-
-          {/* Drum hit feedback — directly below timeline */}
-          <DrumHitFeedback
-            validatedHits={validatedHits}
-            totalExpectedHits={exercise.midiEvents.length}
-            isPlaying={playbackState === 'playing'}
           />
         </div>
       </div>

@@ -1,5 +1,3 @@
-export { DrumHitFeedback } from './DrumHitFeedback';
-export type { DrumHitFeedbackProps } from './DrumHitFeedback';
 export { ExerciseCard } from './ExerciseCard';
 export { ExerciseSectionList } from './ExerciseSectionList';
 export { Header } from './Header';

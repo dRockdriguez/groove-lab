@@ -176,16 +176,6 @@ describe('ExercisePlaybackPage — Responsive Layout', () => {
     }
   });
 
-  it('maintains statistics panel visibility at all viewports', () => {
-    renderAtViewport(320, 568);
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    expect(screen.getByText(/accuracy/i)).toBeInTheDocument();
-
-    renderAtViewport(1440, 900);
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    expect(screen.getByText(/accuracy/i)).toBeInTheDocument();
-  });
-
   it('render layout components in correct order on mobile', () => {
     renderAtViewport(320, 568);
     const { container } = render(

@@ -113,11 +113,6 @@ describe('ExercisePlaybackPage', () => {
     expect(screen.getByRole('presentation')).toBeInTheDocument();
   });
 
-  it('renders the session statistics panel', () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    expect(screen.getByText(/accuracy/i)).toBeInTheDocument();
-  });
-
   it('renders the seek slider', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
     expect(screen.getByLabelText('Seek playback position')).toBeInTheDocument();
