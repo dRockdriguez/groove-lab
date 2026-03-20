@@ -47,14 +47,14 @@ Restructure the `handleMidiMessage` callback in `ExercisePlaybackPage.tsx` (line
 
 ## Definition of Done
 
-- [ ] MIDI handler restructured: sound always fires, scoring gated to playing
-- [ ] `ensureAudioContext()` helper implemented with lazy init + resume
-- [ ] `drumSoundEngineRef` and `sharedAudioContextRef` refs added
-- [ ] Cleanup on unmount (dispose + close)
-- [ ] All 11 acceptance criteria have corresponding passing tests
-- [ ] No regressions in existing MIDI feedback tests (12 tests)
-- [ ] No regressions in existing ExercisePlaybackPage tests
+- [x] MIDI handler restructured: sound always fires, scoring gated to playing
+- [x] `ensureAudioContext()` helper implemented with lazy init + resume
+- [x] `drumSoundEngineRef` and `sharedAudioContextRef` refs added
+- [x] Cleanup on unmount (dispose + close)
+- [x] All 11 acceptance criteria have corresponding passing tests
+- [x] No regressions in existing MIDI feedback tests (12 tests)
+- [x] No regressions in existing ExercisePlaybackPage tests
 
 ## Status
 
-**Not started**
+**Implemented** (2026-03-20)

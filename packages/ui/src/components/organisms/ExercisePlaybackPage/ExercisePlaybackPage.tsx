@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ExercisePlaybackData, PlaybackState } from '@groovelab/types';
-import { formatDuration, buildHitLookup, validateDrumHit } from '@groovelab/utils';
+import { formatDuration, buildHitLookup, validateDrumHit, DrumSoundEngine } from '@groovelab/utils';
 import type { DrumHitValidation } from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
@@ -76,14 +76,35 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   const [midiDeviceName, setMidiDeviceName] = useState<string | undefined>();
   const midiInitializedRef = useRef(false);
 
+  // ─── Audio context + drum sound engine ────────────────────────────────────
+  const sharedAudioContextRef = useRef<AudioContext | null>(null);
+  const drumSoundEngineRef = useRef<DrumSoundEngine | null>(null);
+
+  // Lazily creates (or resumes) a shared AudioContext and DrumSoundEngine.
+  // Must be called from a user-gesture callback (MIDI event) to satisfy
+  // browser autoplay policy.
+  const ensureAudioContext = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const AudioContextClass: typeof AudioContext =
+      window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!sharedAudioContextRef.current) {
+      const ctx = new AudioContextClass();
+      sharedAudioContextRef.current = ctx;
+      drumSoundEngineRef.current = new DrumSoundEngine(ctx);
+    }
+
+    if (sharedAudioContextRef.current.state === 'suspended') {
+      void sharedAudioContextRef.current.resume();
+    }
+  }, []);
+
   // ±250ms tolerance window for hit detection (more forgiving for real players)
   const HIT_TOLERANCE_MS = 250;
 
-  // MIDI message handler — parses Web MIDI bytes and validates drum hits
+  // MIDI message handler — sound always fires; scoring gated to active playback
   const handleMidiMessage = useCallback((e: any) => {
-    // Only validate during active playback
-    if (playbackStateRef.current !== 'playing') return;
-
     const data: Uint8Array = e.data;
     if (!data || data.length < 3) return;
 
@@ -94,6 +115,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     // Only process Note-On (0x90) with velocity > 0
     // velocity=0 on 0x90 is semantically Note-Off per Web MIDI API
     if (status !== 0x90 || velocity === 0) return;
+
+    // ── Sound: always play regardless of playback state ────────────────────
+    ensureAudioContext();
+    drumSoundEngineRef.current?.play(note, velocity);
+
+    // ── Scoring: only validate during active playback ──────────────────────
+    if (playbackStateRef.current !== 'playing') return;
 
     // Compute exercise timeline position from the MIDI event's own timestamp
     // (DOMHighResTimeStamp in performance.now() units) rather than the stale
@@ -127,7 +155,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       }
       setValidatedHits(prev => [...prev, finalResult]);
     }
-  }, []); // Empty deps — all reads come from refs
+  }, [ensureAudioContext]); // ensureAudioContext is stable (useCallback + no deps)
 
   const initMidi = useCallback(async () => {
     if (midiInitializedRef.current) return;
@@ -403,6 +431,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         for (const input of inputs) {
           input.onmidimessage = null;
         }
+      }
+      // Dispose drum sound engine and close shared audio context
+      drumSoundEngineRef.current?.dispose();
+      drumSoundEngineRef.current = null;
+      if (sharedAudioContextRef.current) {
+        void sharedAudioContextRef.current.close();
+        sharedAudioContextRef.current = null;
       }
     };
   }, []);
