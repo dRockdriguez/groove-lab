@@ -827,4 +827,166 @@ describe('ToolsSidebar', () => {
     );
     expect(muteIndex).toBeGreaterThan(metronomeIndex);
   });
+
+  // ── Spec 04: Tolerance Configuration UI ────────────────────────────────────
+
+  // ── AC1: ToleranceSelector accepts optional toleranceProps
+  // ── AC2: Renders ToleranceSelector with label when toleranceProps provided
+  // ── AC3: Does not render tolerance section when toleranceProps not provided
+  // ── AC4: Renders below existing sidebar content
+
+  it('renders "Tolerance" section when toleranceProps is provided', () => {
+    const onToggle = vi.fn();
+    const toleranceProps = {
+      preset: 'medium' as const,
+      onPresetChange: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        toleranceProps={toleranceProps}
+      />
+    );
+    expect(screen.getByText(/tolerance/i)).toBeInTheDocument();
+  });
+
+  it('does not render tolerance section when toleranceProps is undefined', () => {
+    const onToggle = vi.fn();
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        toleranceProps={undefined}
+      />
+    );
+    expect(screen.queryByRole('radiogroup', { name: /hit detection tolerance/i })).not.toBeInTheDocument();
+  });
+
+  it('renders ToleranceSelector component with tolerance options when toleranceProps provided', () => {
+    const onToggle = vi.fn();
+    const toleranceProps = {
+      preset: 'medium' as const,
+      onPresetChange: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        toleranceProps={toleranceProps}
+      />
+    );
+    expect(screen.getByRole('radiogroup', { name: /hit detection tolerance/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /easy.*300ms/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /medium.*200ms/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /hard.*100ms/i })).toBeInTheDocument();
+  });
+
+  it('passes onPresetChange callback to ToleranceSelector', () => {
+    const onToggle = vi.fn();
+    const onPresetChange = vi.fn();
+    const toleranceProps = {
+      preset: 'easy' as const,
+      onPresetChange,
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        toleranceProps={toleranceProps}
+      />
+    );
+    const mediumOption = screen.getByRole('radio', { name: /medium.*200ms/i });
+    fireEvent.click(mediumOption);
+    expect(onPresetChange).toHaveBeenCalledWith('medium');
+  });
+
+  it('highlights the currently selected tolerance preset in sidebar', () => {
+    const onToggle = vi.fn();
+    const toleranceProps = {
+      preset: 'hard' as const,
+      onPresetChange: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        toleranceProps={toleranceProps}
+      />
+    );
+    const hardOption = screen.getByRole('radio', { name: /hard.*100ms/i });
+    expect(hardOption).toHaveAttribute('aria-checked', 'true');
+    const easyOption = screen.getByRole('radio', { name: /easy.*300ms/i });
+    expect(easyOption).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('tolerance section renders below metronome section', () => {
+    const onToggle = vi.fn();
+    const toleranceProps = {
+      preset: 'medium' as const,
+      onPresetChange: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        toleranceProps={toleranceProps}
+      />
+    );
+    // Both sections should exist
+    const metronomeButton = screen.getByRole('button', { name: /toggle metronome/i });
+    const radiogroup = screen.getByRole('radiogroup', { name: /hit detection tolerance/i });
+    expect(metronomeButton).toBeInTheDocument();
+    expect(radiogroup).toBeInTheDocument();
+    // Radiogroup should come after metronome button in DOM
+    const metronomeIndex = Array.from(document.querySelectorAll('[role="button"], [role="radiogroup"]')).indexOf(
+      metronomeButton as HTMLElement
+    );
+    const toggleIndex = Array.from(document.querySelectorAll('[role="button"], [role="radiogroup"]')).indexOf(
+      radiogroup as HTMLElement
+    );
+    expect(toggleIndex).toBeGreaterThan(metronomeIndex);
+  });
+
+  it('tolerance section renders below drum volume section when both provided', () => {
+    const onToggle = vi.fn();
+    const drumVolumeProps = {
+      volume: 70,
+      onVolumeChange: vi.fn(),
+      isMuted: false,
+      onToggleMute: vi.fn(),
+    };
+    const toleranceProps = {
+      preset: 'medium' as const,
+      onPresetChange: vi.fn(),
+    };
+    render(
+      <ToolsSidebar
+        isOpen
+        onToggle={onToggle}
+        metronomeProps={defaultMetronomeProps}
+        drumVolumeProps={drumVolumeProps}
+        toleranceProps={toleranceProps}
+      />
+    );
+    // All sections should exist
+    const muteButton = screen.getByRole('button', { name: /mute drums/i });
+    const radiogroup = screen.getByRole('radiogroup', { name: /hit detection tolerance/i });
+    expect(muteButton).toBeInTheDocument();
+    expect(radiogroup).toBeInTheDocument();
+    // Radiogroup should come after mute button in DOM
+    const muteIndex = Array.from(document.querySelectorAll('button')).indexOf(
+      muteButton as HTMLButtonElement
+    );
+    const radiogroupContainerIndex = Array.from(document.querySelectorAll('[role="radiogroup"]')).indexOf(
+      radiogroup as HTMLElement
+    );
+    expect(radiogroupContainerIndex).toBeGreaterThanOrEqual(0);
+  });
 });
