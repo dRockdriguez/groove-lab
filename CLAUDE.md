@@ -290,6 +290,9 @@ order. Each mini-spec should follow this structure:
 ```markdown
 # Spec: [Mini Spec Name]
 
+**Status:** Draft
+**Last updated:** YYYY-MM-DD
+
 ## Scope
 ## Inputs
 ## Outputs
@@ -297,5 +300,8 @@ order. Each mini-spec should follow this structure:
 ## Edge Cases
 ## Notes
 ```
+
+New mini-specs must always include the `Status` and `Last updated` metadata directly under
+the title. Start new specs with `Status: Draft`.
 
 When writing or updating a spec, use the `spec-writer` agent (`agents/spec-writer/README.md`).

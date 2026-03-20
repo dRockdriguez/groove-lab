@@ -81,7 +81,30 @@ This file contains:
 
 Each mini-spec MUST follow this structure:
 
+**Metadata header (required at the top of every mini-spec):**
+
+```markdown
 # Spec: <Mini Spec Name>
+
+**Status:** Draft
+**Last updated:** YYYY-MM-DD
+```
+
+Rules:
+
+- `Status:` is mandatory on every mini-spec
+- New specs start as `Draft`
+- Valid lifecycle values are `Draft`, `In Progress`, `Implemented`, `Deprecated`
+- `Last updated:` is mandatory and must use `YYYY-MM-DD`
+- Keep the metadata directly under the title so workflow tools can update it reliably
+
+Then continue with the body:
+
+```markdown
+# Spec: <Mini Spec Name>
+
+**Status:** Draft
+**Last updated:** YYYY-MM-DD
 
 ## Scope
 
@@ -107,6 +130,17 @@ Each mini-spec MUST follow this structure:
 ## Notes
 
 - Integration points with other mini-specs (if any)
+```
+
+Optional but recommended footer for executable specs:
+
+```markdown
+## Definition of Done
+
+- [ ] Acceptance criteria implemented
+- [ ] Tests added and passing
+- [ ] Spec metadata updated (`Status`, `Last updated`)
+```
 
 ## Acceptance Criteria Rules (VERY IMPORTANT)
 

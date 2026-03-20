@@ -2,6 +2,24 @@ import React from 'react';
 import type { MidiEvent } from '@groovelab/types';
 import { clamp, getDrumColor } from '@groovelab/utils';
 import { TrackLabel } from '../../molecules/TrackLabel';
+import type { ScoringEvent, ScoringClassification } from '@groovelab/utils';
+
+// ─── Glow color mapping ────────────────────────────────────────────────────────
+
+function getGlowColor(classification: ScoringClassification, opacity: number): string {
+  switch (classification) {
+    case 'correct':
+      return `rgba(34, 197, 94, ${opacity})`;
+    case 'early':
+      return `rgba(234, 179, 8, ${opacity})`;
+    case 'late':
+      return `rgba(249, 115, 22, ${opacity})`;
+    case 'missed':
+      return `rgba(239, 68, 68, ${opacity})`;
+    case 'wrong_note':
+      return `rgba(168, 85, 247, ${opacity})`;
+  }
+}
 
 export interface ExercisePlaybackTimelineProps {
   midiEvents: MidiEvent[];
@@ -23,6 +41,8 @@ export interface ExercisePlaybackTimelineProps {
   onLoopDragStart?: () => void;
   /** Called when user finishes a loop drag interaction */
   onLoopDragEnd?: () => void;
+  /** Active glow events keyed by MIDI note number */
+  activeGlows?: Map<number, ScoringEvent>;
   className?: string;
 }
 
@@ -39,6 +59,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   onLoopEndChange,
   onLoopDragStart,
   onLoopDragEnd,
+  activeGlows,
   className = '',
 }) => {
   const tracksRef = React.useRef<HTMLDivElement>(null);
@@ -330,30 +351,56 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
           />
 
           {/* Tracks */}
-          {uniqueNotes.map((note) => (
-            <div key={note} className="border-b border-gray-200 dark:border-gray-700 h-10 relative">
-              {eventsByNote[note].map((event, index) => {
-                const leftPercent =
-                  durationMs > 0 ? (event.timestamp / durationMs) * 100 : 0;
-                const opacity = Math.max(0.3, event.velocity / 127);
+          {uniqueNotes.map((note) => {
+            const glowEvent = activeGlows?.get(note);
+            let glowOverlay: React.ReactNode = null;
 
-                return (
-                  <div key={index} className="absolute top-1 bottom-1 w-2" style={{ left: `${leftPercent}%` }}>
-                    {/* Note marker bar */}
-                    <div
-                      data-testid="note-marker"
-                      className="absolute top-0 bottom-0 w-2 rounded-sm"
-                      style={{
-                        opacity,
-                        backgroundColor: getDrumColor(event.note),
-                      }}
-                      title={`t=${event.timestamp}ms v=${event.velocity}`}
-                    />
-                  </div>
+            if (glowEvent !== undefined) {
+              const elapsed = performance.now() - glowEvent.timestamp;
+              if (elapsed >= 0 && elapsed < 800) {
+                const opacity = Math.max(0, 1 - elapsed / 800) * 0.4;
+                glowOverlay = (
+                  <div
+                    data-testid="track-glow-overlay"
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      pointerEvents: 'none',
+                      zIndex: 1,
+                      backgroundColor: getGlowColor(glowEvent.classification, opacity),
+                    }}
+                  />
                 );
-              })}
-            </div>
-          ))}
+              }
+            }
+
+            return (
+              <div key={note} className="border-b border-gray-200 dark:border-gray-700 h-10 relative">
+                {glowOverlay}
+                {eventsByNote[note].map((event, index) => {
+                  const leftPercent =
+                    durationMs > 0 ? (event.timestamp / durationMs) * 100 : 0;
+                  const opacity = Math.max(0.3, event.velocity / 127);
+
+                  return (
+                    <div key={index} className="absolute top-1 bottom-1 w-2" style={{ left: `${leftPercent}%` }}>
+                      {/* Note marker bar */}
+                      <div
+                        data-testid="note-marker"
+                        className="absolute top-0 bottom-0 w-2 rounded-sm"
+                        style={{
+                          opacity,
+                          backgroundColor: getDrumColor(event.note),
+                        }}
+                        title={`t=${event.timestamp}ms v=${event.velocity}`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
