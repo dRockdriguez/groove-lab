@@ -1,6 +1,6 @@
 # Spec: Row Glow Opacity Reduction
 
-**Status:** Draft
+**Status:** Implemented
 **Last updated:** 2026-03-22
 
 ## Scope
@@ -28,35 +28,35 @@ This spec reduces the max opacity from **0.4** to **0.15–0.2**.
 ## Acceptance Criteria
 
 ### Opacity adjustment
-- [ ] Row glow opacity formula changed from:
+- [x] Row glow opacity formula changed from:
   - `opacity = Math.max(0, 1 - elapsed / 800) * 0.4` (old)
   - To: `opacity = Math.max(0, 1 - elapsed / 800) * 0.15` (new)
-- [ ] At `elapsed = 0`: opacity = 0.15 (15% visible, very subtle)
-- [ ] At `elapsed = 400`: opacity = 0.075 (7.5% visible)
-- [ ] At `elapsed = 800`: opacity = 0 (invisible)
-- [ ] At `elapsed > 800`: overlay not rendered
+- [x] At `elapsed = 0`: opacity = 0.15 (15% visible, very subtle)
+- [x] At `elapsed = 400`: opacity = 0.075 (7.5% visible)
+- [x] At `elapsed = 800`: opacity = 0 (invisible)
+- [x] At `elapsed > 800`: overlay not rendered
 
 ### Constant definition
-- [ ] New constant defined: `const GLOW_OPACITY_FACTOR = 0.15` at top of ExercisePlaybackTimeline.tsx
+- [x] New constant defined: `const GLOW_OPACITY_FACTOR = 0.15` at top of ExercisePlaybackTimeline.tsx
   - Purpose: Make the factor easily configurable (can be tuned post-launch)
   - Can be extracted to utils if needed later
-- [ ] Opacity calculation uses the constant:
+- [x] Opacity calculation uses the constant:
   ```typescript
   const opacity = Math.max(0, 1 - elapsed / 800) * GLOW_OPACITY_FACTOR;
   ```
 
 ### Color mapping (unchanged)
-- [ ] `correct` → green rgba(34, 197, 94, opacity)
-- [ ] `early` → yellow rgba(234, 179, 8, opacity)
-- [ ] `late` → orange rgba(249, 115, 22, opacity)
-- [ ] `missed` → red rgba(239, 68, 68, opacity)
-- [ ] `wrong_note` → purple rgba(168, 85, 247, opacity)
+- [x] `correct` → green rgba(34, 197, 94, opacity)
+- [x] `early` → yellow rgba(234, 179, 8, opacity)
+- [x] `late` → orange rgba(249, 115, 22, opacity)
+- [x] `missed` → red rgba(239, 68, 68, opacity)
+- [x] `wrong_note` → purple rgba(168, 85, 247, opacity)
 
 ### Glow rendering logic (unchanged)
-- [ ] Glow overlay is still positioned with `position: absolute`, `inset: 0`, `z-index: 1`
-- [ ] Glow overlay still has `data-testid="track-glow-overlay"`
-- [ ] Glow overlay still has `aria-hidden="true"`
-- [ ] Glow overlay still has `pointer-events: none`
+- [x] Glow overlay is still positioned with `position: absolute`, `inset: 0`, `z-index: 1`
+- [x] Glow overlay still has `data-testid="track-glow-overlay"`
+- [x] Glow overlay still has `aria-hidden="true"`
+- [x] Glow overlay still has `pointer-events: none`
 
 ## Edge Cases
 
