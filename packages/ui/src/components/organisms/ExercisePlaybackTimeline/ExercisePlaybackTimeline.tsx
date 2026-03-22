@@ -21,6 +21,23 @@ function getGlowColor(classification: ScoringClassification, opacity: number): s
   }
 }
 
+// ─── Note color mapping ────────────────────────────────────────────────────────
+
+function getNoteColorFromClassification(
+  classification: ScoringClassification
+): string | null {
+  switch (classification) {
+    case 'correct':
+      return '#22C55E';
+    case 'late':
+      return '#FB923C';
+    case 'early':
+      return '#A855F7';
+    default:
+      return null; // missed, wrong_note → use rudiment color
+  }
+}
+
 export interface ExercisePlaybackTimelineProps {
   midiEvents: MidiEvent[];
   durationMs: number;
@@ -43,6 +60,8 @@ export interface ExercisePlaybackTimelineProps {
   onLoopDragEnd?: () => void;
   /** Active glow events keyed by MIDI note number */
   activeGlows?: Map<number, ScoringEvent>;
+  /** All scoring events — used to color note markers by hit classification */
+  scoringEvents?: ScoringEvent[];
   className?: string;
 }
 
@@ -60,9 +79,26 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   onLoopDragStart,
   onLoopDragEnd,
   activeGlows,
+  scoringEvents,
   className = '',
 }) => {
   const tracksRef = React.useRef<HTMLDivElement>(null);
+
+  // ─── Scoring events lookup: note → most recent ScoringEvent ───────────────
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const scoringEventsLookup = React.useMemo(() => {
+    if (!scoringEvents || scoringEvents.length === 0) return new Map<number, ScoringEvent>();
+    const map = new Map<number, ScoringEvent>();
+    for (const event of scoringEvents) {
+      const existing = map.get(event.note);
+      const existingTime = existing?.detectedTimeMs ?? existing?.timestamp ?? -Infinity;
+      const eventTime = event.detectedTimeMs ?? event.timestamp;
+      if (!existing || eventTime > existingTime) {
+        map.set(event.note, event);
+      }
+    }
+    return map;
+  }, [scoringEvents]);
 
   // ─── Drag-to-create loop state ─────────────────────────────────────────────
   const [dragStartMs, setDragStartMs] = React.useState<number | null>(null);
@@ -383,6 +419,12 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                     durationMs > 0 ? (event.timestamp / durationMs) * 100 : 0;
                   const opacity = Math.max(0.3, event.velocity / 127);
 
+                  const scoringEvent = scoringEventsLookup.get(event.note);
+                  const feedbackColor = scoringEvent
+                    ? getNoteColorFromClassification(scoringEvent.classification)
+                    : null;
+                  const noteColor = feedbackColor ?? getDrumColor(event.note);
+
                   return (
                     <div key={index} className="absolute top-1 bottom-1 w-2" style={{ left: `${leftPercent}%` }}>
                       {/* Note marker bar */}
@@ -391,7 +433,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
                         className="absolute top-0 bottom-0 w-2 rounded-sm"
                         style={{
                           opacity,
-                          backgroundColor: getDrumColor(event.note),
+                          backgroundColor: noteColor,
                         }}
                         title={`t=${event.timestamp}ms v=${event.velocity}`}
                       />

@@ -116,6 +116,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
   // ─── Scoring state ─────────────────────────────────────────────────────────
   const [activeGlows, setActiveGlows] = useState<Map<number, ScoringEvent>>(new Map());
+  const [scoringEvents, setScoringEvents] = useState<ScoringEvent[]>([]);
   const scoringTrackerRef = useRef<ScoringTracker | null>(null);
 
   // ─── Tolerance state ───────────────────────────────────────────────────────
@@ -213,6 +214,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
       scoringTrackerRef.current.processHit(note, exerciseTimeMs);
       setActiveGlows(scoringTrackerRef.current.getActiveGlows(performance.now()));
+      setScoringEvents([...scoringTrackerRef.current.events]);
     },
     [ensureAudioContext],
   );
@@ -450,6 +452,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             // Reset scoring tracker on loop jump for fresh scoring each iteration
             scoringTrackerRef.current?.reset();
             setActiveGlows(new Map());
+            setScoringEvents([]);
           } else {
             // Repetitions exhausted — disable loop and let playback continue
             isLoopActiveRef.current = false;
@@ -464,7 +467,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
         // Advance playhead in scoring tracker and refresh active glows
         if (scoringTrackerRef.current) {
-          scoringTrackerRef.current.advancePlayhead(currentTimeMsRef.current);
+          const newMisses = scoringTrackerRef.current.advancePlayhead(currentTimeMsRef.current);
+          if (newMisses.length > 0) {
+            setScoringEvents([...scoringTrackerRef.current.events]);
+          }
           setActiveGlows(scoringTrackerRef.current.getActiveGlows(performance.now()));
         }
 
@@ -504,6 +510,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       if (playbackState === 'stopped') {
         scoringTrackerRef.current?.reset();
         setActiveGlows(new Map());
+        setScoringEvents([]);
       }
 
       // Record playback start time for accurate exerciseTimeMs calculation
@@ -806,6 +813,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             onLoopEndChange={handleLoopEndChange}
             isLoopActive={isLoopActive}
             activeGlows={activeGlows}
+            scoringEvents={scoringEvents}
           />
         </div>
       </div>
