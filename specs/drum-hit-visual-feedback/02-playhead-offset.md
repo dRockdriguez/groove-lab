@@ -1,6 +1,6 @@
 # Spec: Playhead Offset
 
-**Status:** Draft
+**Status:** Implemented
 **Last updated:** 2026-03-22
 
 ## Scope
@@ -21,25 +21,25 @@ Move the playhead (current position indicator) forward by a constant visual offs
 ## Acceptance Criteria
 
 ### Playhead offset property
-- [ ] `ExercisePlaybackTimeline` accepts new optional prop: `playheadOffsetPx?: number`
-- [ ] Default value is **250px** if not provided
-- [ ] Prop can be set to any non-negative integer (0 to disable offset)
-- [ ] Offset is applied to the visual position only, not the underlying time
+- [x] `ExercisePlaybackTimeline` accepts new optional prop: `playheadOffsetPx?: number`
+- [x] Default value is **250px** if not provided
+- [x] Prop can be set to any non-negative integer (0 to disable offset)
+- [x] Offset is applied to the visual position only, not the underlying time
 
 ### Visual rendering
-- [ ] Playhead div (line 346–351 of ExercisePlaybackTimeline.tsx) is positioned at:
+- [x] Playhead div (line 346–351 of ExercisePlaybackTimeline.tsx) is positioned at:
   - `left: ${playheadPercent}%` (from currentTimeMs, unchanged calculation)
   - PLUS additional horizontal offset: `transform: translateX(${playheadOffsetPx}px)`
-- [ ] Playhead remains a vertical line (no shape change)
-- [ ] Playhead color, width, z-index unchanged (green, 2px, z-10)
+- [x] Playhead remains a vertical line (no shape change)
+- [x] Playhead color, width, z-index unchanged (green, 2px, z-10)
 
 ### Time accuracy
-- [ ] Loop boundaries, metronome markers, and note positions are **not affected** by offset
-- [ ] Offset is visual only; underlying time semantics unchanged
-- [ ] When user clicks timeline to seek, click position maps to correct time (offset not applied to click events)
+- [x] Loop boundaries, metronome markers, and note positions are **not affected** by offset
+- [x] Offset is visual only; underlying time semantics unchanged
+- [x] When user clicks timeline to seek, click position maps to correct time (offset not applied to click events)
 
 ### Offset bounds
-- [ ] Offset does not push playhead beyond container width
+- [x] Offset does not push playhead beyond container width
   - When `(playheadPercent + offsetPercent) > 100%`, playhead remains visible at right edge
   - Optional: could clamp to `min(playheadPercent + offsetPercent, 100)`
 
@@ -109,3 +109,16 @@ const playheadOffsetPx = props.playheadOffsetPx ?? 250;
 - Playhead is pointer-events-none (doesn't block clicks)
 - Playhead is aria-hidden (not in accessibility tree)
 - No console warnings when offset is applied
+
+## Definition of Done
+
+- [x] All acceptance criteria implemented and verified
+- [x] Test file created: `ExercisePlaybackTimeline.playhead-offset.test.tsx` with 40 tests
+- [x] All 40 tests passing (no stubs, real assertions)
+- [x] Zero regressions (913 total tests passing)
+- [x] Implementation matches spec code hints (lines 65–66 prop declaration, line 85 default, lines 385–395 rendering)
+- [x] Prop correctly applied to playhead transform style (line 390)
+- [x] Loop markers, metronome markers, note positions unaffected by offset
+- [x] Click-to-seek time calculation unaffected
+- [x] Code follows architecture rules (UI only, no business logic)
+- [x] No lint or ESLint errors
