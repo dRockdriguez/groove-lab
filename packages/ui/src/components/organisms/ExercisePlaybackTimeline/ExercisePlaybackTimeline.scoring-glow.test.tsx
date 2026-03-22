@@ -470,7 +470,7 @@ describe("ExercisePlaybackTimeline scoring glow rendering", () => {
     expect(glowOverlays.length).toBe(0);
   });
 
-  it("renders with 0.4 opacity when elapsed = 0", () => {
+  it("renders with 0.15 opacity when elapsed = 0", () => {
     const glowMap = new Map<number, ScoringEvent>();
     glowMap.set(36, {
       classification: "correct",
@@ -492,10 +492,10 @@ describe("ExercisePlaybackTimeline scoring glow rendering", () => {
 
     const glowOverlay = container.querySelector("[data-testid=track-glow-overlay]");
     const style = glowOverlay?.getAttribute("style");
-    expect(style).toMatch(/rgba\(\d+, \d+, \d+, 0\.4\)/);
+    expect(style).toMatch(/rgba\(\d+, \d+, \d+, 0\.15\)/);
   });
 
-  it("renders with 0.2 opacity when elapsed = 400", () => {
+  it("renders with 0.075 opacity when elapsed = 400", () => {
     const glowMap = new Map<number, ScoringEvent>();
     glowMap.set(36, {
       classification: "correct",
@@ -517,7 +517,7 @@ describe("ExercisePlaybackTimeline scoring glow rendering", () => {
 
     const glowOverlay = container.querySelector("[data-testid=track-glow-overlay]");
     const style = glowOverlay?.getAttribute("style");
-    expect(style).toMatch(/rgba\(\d+, \d+, \d+, 0\.2\)/);
+    expect(style).toMatch(/rgba\(\d+, \d+, \d+, 0\.075\)/);
   });
 
   it("does not render when elapsed = 800", () => {
@@ -779,12 +779,13 @@ describe("ExercisePlaybackTimeline scoring glow rendering", () => {
     expect(glowOverlay).toHaveStyle({ zIndex: "1" });
   });
 
-  it("glow overlay opacity transitions smoothly from 0.4 to 0", () => {
+  it("glow overlay opacity transitions smoothly from 0.15 to 0", () => {
+    // Opacity = (1 - elapsed/800) * 0.15, values may have floating point representation
     const opacitiesAtElapsed = [
-      { elapsed: 0, expectedOpacity: 0.4 },
-      { elapsed: 200, expectedOpacity: 0.3 },
-      { elapsed: 400, expectedOpacity: 0.2 },
-      { elapsed: 600, expectedOpacity: 0.1 },
+      { elapsed: 0, opacityPattern: /rgba\(34, 197, 94, 0\.15\)/ },
+      { elapsed: 200, opacityPattern: /rgba\(34, 197, 94, 0\.11\d*\)/ },
+      { elapsed: 400, opacityPattern: /rgba\(34, 197, 94, 0\.075\)/ },
+      { elapsed: 600, opacityPattern: /rgba\(34, 197, 94, 0\.037\d*\)/ },
     ];
 
     for (const item of opacitiesAtElapsed) {
@@ -809,8 +810,7 @@ describe("ExercisePlaybackTimeline scoring glow rendering", () => {
 
       const glowOverlay = container.querySelector("[data-testid=track-glow-overlay]");
       const style = glowOverlay?.getAttribute("style");
-      const regexPattern = "rgba\\(34, 197, 94, " + item.expectedOpacity + "\\)";
-      expect(style).toMatch(new RegExp(regexPattern));
+      expect(style).toMatch(item.opacityPattern);
     }
   });
 
@@ -837,7 +837,7 @@ describe("ExercisePlaybackTimeline scoring glow rendering", () => {
 
     const glowOverlay = container.querySelector("[data-testid=track-glow-overlay]");
     const style = glowOverlay?.getAttribute("style");
-    expect(style).toMatch(/rgba\(\d+, \d+, \d+, 0\.3\)/);
+    expect(style).toMatch(/rgba\(\d+, \d+, \d+, 0\.11\d*\)/);
   });
 
   it("renders no overlay elements when all glows are expired", () => {

@@ -4,6 +4,10 @@ import { clamp, getDrumColor } from '@groovelab/utils';
 import { TrackLabel } from '../../molecules/TrackLabel';
 import type { ScoringEvent, ScoringClassification } from '@groovelab/utils';
 
+// ─── Glow opacity ──────────────────────────────────────────────────────────────
+
+const GLOW_OPACITY_FACTOR = 0.15;
+
 // ─── Glow color mapping ────────────────────────────────────────────────────────
 
 function getGlowColor(classification: ScoringClassification, opacity: number): string {
@@ -402,7 +406,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
             if (glowEvent !== undefined) {
               const elapsed = performance.now() - glowEvent.timestamp;
               if (elapsed >= 0 && elapsed < 800) {
-                const opacity = Math.max(0, 1 - elapsed / 800) * 0.4;
+                const opacity = Math.max(0, 1 - elapsed / 800) * GLOW_OPACITY_FACTOR;
                 glowOverlay = (
                   <div
                     data-testid="track-glow-overlay"
