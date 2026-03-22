@@ -1,6 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ExercisePlaybackData, PlaybackState } from '@groovelab/types';
-import { formatDuration, DrumSoundEngine } from '@groovelab/utils';
+import {
+  formatDuration,
+  DrumSoundEngine,
+  ScoringTracker,
+  buildExpectedNoteLookup,
+  TOLERANCE_PRESETS,
+  type TolerancePreset,
+  type ScoringEvent,
+} from '@groovelab/utils';
 
 import { PlaybackControls } from '../../molecules/PlaybackControls';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
@@ -106,23 +114,108 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, []);
 
-  // MIDI message handler — sound always fires
-  const handleMidiMessage = useCallback((e: any) => {
-    const data: Uint8Array = e.data;
-    if (!data || data.length < 3) return;
+  // ─── Scoring state ─────────────────────────────────────────────────────────
+  const [activeGlows, setActiveGlows] = useState<Map<number, ScoringEvent>>(new Map());
+  const scoringTrackerRef = useRef<ScoringTracker | null>(null);
 
-    const status = data[0] & 0xF0;
-    const note = data[1];
-    const velocity = data[2];
+  // ─── Tolerance state ───────────────────────────────────────────────────────
+  const [tolerancePreset, setTolerancePreset] = useState<TolerancePreset>('medium');
 
-    // Only process Note-On (0x90) with velocity > 0
-    // velocity=0 on 0x90 is semantically Note-Off per Web MIDI API
-    if (status !== 0x90 || velocity === 0) return;
+  // Restore tolerance preference from sessionStorage on mount.
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('exerciseTools_tolerancePreset');
+      if (stored === 'easy' || stored === 'medium' || stored === 'hard') {
+        setTolerancePreset(stored);
+      }
+    } catch {
+      // sessionStorage unavailable — use default
+    }
+  }, []);
 
-    // ── Sound: always play regardless of playback state ────────────────────
-    ensureAudioContext();
-    drumSoundEngineRef.current?.play(note, velocity);
-  }, [ensureAudioContext]); // ensureAudioContext is stable (useCallback + no deps)
+  const handleToleranceChange = useCallback((preset: TolerancePreset) => {
+    setTolerancePreset(preset);
+    try {
+      sessionStorage.setItem('exerciseTools_tolerancePreset', preset);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // ─── Scoring tracker lifecycle ─────────────────────────────────────────────
+  // Recreate the tracker whenever exercise data or tolerance changes.
+  // Uses useMemo to build the lookup only when midiEvents changes.
+  const expectedNoteLookup = useMemo(() => {
+    if (!exercise) return {};
+    return buildExpectedNoteLookup(exercise.midiEvents);
+  }, [exercise]);
+
+  useEffect(() => {
+    scoringTrackerRef.current = new ScoringTracker(
+      expectedNoteLookup,
+      TOLERANCE_PRESETS[tolerancePreset],
+    );
+  }, [expectedNoteLookup, tolerancePreset]);
+
+  // ─── Per-note debounce for scoring hits ───────────────────────────────────
+  const lastHitTimePerNoteRef = useRef<Record<number, number>>({});
+  const HIT_DEBOUNCE_MS = 50;
+
+  // Refs for MIDI access and playhead tracking (used in rAF, handleSeek, initMidi, cleanup)
+  const currentTimeMsRef = useRef(0);
+  const midiAccessRef = useRef<any>(null);
+
+  // Ref for playback start — used to calculate exerciseTimeMs from MIDI e.timeStamp
+  const playbackStartPerfTimeRef = useRef<number>(0);
+  const playbackStartAudioOffsetRef = useRef<number>(0);
+
+  // MIDI message handler — sound always fires; scoring only during playback
+  const handleMidiMessage = useCallback(
+    (e: any) => {
+      const data: Uint8Array = e.data;
+      if (!data || data.length < 3) return;
+
+      const status = data[0] & 0xf0;
+      const note = data[1];
+      const velocity = data[2];
+
+      // Only process Note-On (0x90) with velocity > 0
+      // velocity=0 on 0x90 is semantically Note-Off per Web MIDI API
+      if (status !== 0x90 || velocity === 0) return;
+
+      // ── Sound: always play regardless of playback state ──────────────────
+      ensureAudioContext();
+      drumSoundEngineRef.current?.play(note, velocity);
+
+      // ── Scoring: only during active playback ─────────────────────────────
+      if (playbackStateRef.current !== 'playing') return;
+      if (!scoringTrackerRef.current) return;
+
+      // 50ms per-note debounce to prevent double-triggers
+      const now = performance.now();
+      const lastHitTime = lastHitTimePerNoteRef.current[note] ?? 0;
+      if (now - lastHitTime < HIT_DEBOUNCE_MS) return;
+      lastHitTimePerNoteRef.current[note] = now;
+
+      // Calculate exercise time from MIDI event timestamp when available,
+      // otherwise fall back to currentTimeMsRef
+      let exerciseTimeMs: number;
+      if (
+        typeof e.timeStamp === 'number' &&
+        e.timeStamp > 0 &&
+        playbackStartPerfTimeRef.current > 0
+      ) {
+        const elapsedSinceStart = e.timeStamp - playbackStartPerfTimeRef.current;
+        exerciseTimeMs = playbackStartAudioOffsetRef.current + elapsedSinceStart;
+      } else {
+        exerciseTimeMs = currentTimeMsRef.current;
+      }
+
+      scoringTrackerRef.current.processHit(note, exerciseTimeMs);
+      setActiveGlows(scoringTrackerRef.current.getActiveGlows(performance.now()));
+    },
+    [ensureAudioContext],
+  );
 
   const initMidi = useCallback(async () => {
     if (midiInitializedRef.current) return;
@@ -133,7 +226,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       const access: any = await navigator.requestMIDIAccess();
       midiAccessRef.current = access; // Store for cleanup on unmount
 
-      const inputs = Array.from(access.inputs.values()) as Array<{ name?: string; onmidimessage?: any }>;
+      const inputs = Array.from(access.inputs.values()) as Array<{
+        name?: string;
+        onmidimessage?: any;
+      }>;
       if (inputs.length > 0) {
         setMidiStatus('connected');
         setMidiDeviceName(inputs[0].name);
@@ -162,7 +258,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             setPlaybackStateSynced('paused');
           }
         } else if (e.port?.state === 'connected') {
-          const updatedInputs = Array.from(access.inputs.values()) as Array<{ name?: string; onmidimessage?: any }>;
+          const updatedInputs = Array.from(access.inputs.values()) as Array<{
+            name?: string;
+            onmidimessage?: any;
+          }>;
           if (updatedInputs.length > 0) {
             setMidiStatus('connected');
             setMidiDeviceName(updatedInputs[0].name);
@@ -203,11 +302,21 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   const currentLoopRepetitionRef = useRef(0);
 
   // Keep refs in sync with state
-  useEffect(() => { isLoopActiveRef.current = isLoopActive; }, [isLoopActive]);
-  useEffect(() => { loopStartMsRef.current = loopStartMs; }, [loopStartMs]);
-  useEffect(() => { loopEndMsRef.current = loopEndMs; }, [loopEndMs]);
-  useEffect(() => { loopRepetitionsRef.current = loopRepetitions; }, [loopRepetitions]);
-  useEffect(() => { currentLoopRepetitionRef.current = currentLoopRepetition; }, [currentLoopRepetition]);
+  useEffect(() => {
+    isLoopActiveRef.current = isLoopActive;
+  }, [isLoopActive]);
+  useEffect(() => {
+    loopStartMsRef.current = loopStartMs;
+  }, [loopStartMs]);
+  useEffect(() => {
+    loopEndMsRef.current = loopEndMs;
+  }, [loopEndMs]);
+  useEffect(() => {
+    loopRepetitionsRef.current = loopRepetitions;
+  }, [loopRepetitions]);
+  useEffect(() => {
+    currentLoopRepetitionRef.current = currentLoopRepetition;
+  }, [currentLoopRepetition]);
 
   const handleLoopStartChange = useCallback((ms: number) => {
     setLoopStartMs(ms);
@@ -268,7 +377,9 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     drumVolumeSliderRef.current = v;
     try {
       sessionStorage.setItem('exerciseTools_drumVolume', String(v));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     // Only update engine if not muted
     if (!drumMutedRef.current) {
       drumSoundEngineRef.current?.setVolume(v / 100);
@@ -276,12 +387,14 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   }, []);
 
   const handleToggleDrumMute = useCallback(() => {
-    setDrumMuted(prev => {
+    setDrumMuted((prev) => {
       const next = !prev;
       drumMutedRef.current = next;
       try {
         sessionStorage.setItem('exerciseTools_drumMuted', JSON.stringify(next));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       if (next) {
         drumSoundEngineRef.current?.setVolume(0);
       } else {
@@ -308,7 +421,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Smooth playhead animation using requestAnimationFrame
+  // ─── Smooth playhead animation using requestAnimationFrame ────────────────
   useEffect(() => {
     const updatePlayhead = () => {
       if (audioRef.current && playbackState === 'playing') {
@@ -333,6 +446,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             setCurrentLoopRepetition(newRep);
             currentTimeMsRef.current = Math.round(loopStartMsRef.current);
             setCurrentTimeMs(Math.round(loopStartMsRef.current));
+
+            // Reset scoring tracker on loop jump for fresh scoring each iteration
+            scoringTrackerRef.current?.reset();
+            setActiveGlows(new Map());
           } else {
             // Repetitions exhausted — disable loop and let playback continue
             isLoopActiveRef.current = false;
@@ -343,6 +460,12 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
         } else {
           currentTimeMsRef.current = Math.round(currentTime);
           setCurrentTimeMs(Math.round(currentTime));
+        }
+
+        // Advance playhead in scoring tracker and refresh active glows
+        if (scoringTrackerRef.current) {
+          scoringTrackerRef.current.advancePlayhead(currentTimeMsRef.current);
+          setActiveGlows(scoringTrackerRef.current.getActiveGlows(performance.now()));
         }
 
         animationFrameRef.current = requestAnimationFrame(updatePlayhead);
@@ -366,6 +489,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
     if (playbackState === 'playing') {
       audioRef.current.pause();
+      // On pause: keep existing glows visible (they'll fade naturally)
       setPlaybackStateSynced('paused');
     } else {
       // Clear any previous audio error before re-attempting playback.
@@ -375,6 +499,16 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       // important for tests that use vi.useFakeTimers() where the setTimeout
       // on page load never fires before play is clicked.
       void initMidi();
+
+      // On play from stopped: reset scoring to start fresh
+      if (playbackState === 'stopped') {
+        scoringTrackerRef.current?.reset();
+        setActiveGlows(new Map());
+      }
+
+      // Record playback start time for accurate exerciseTimeMs calculation
+      playbackStartPerfTimeRef.current = performance.now();
+      playbackStartAudioOffsetRef.current = audioRef.current.currentTime * 1000;
 
       // Update the ref synchronously BEFORE the await so that any synchronous
       // event handlers (window blur, MIDI statechange) that fire between now
@@ -399,14 +533,17 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     }
   }, []);
 
-  const handleBpmChange = useCallback((newBpm: number) => {
-    setCurrentBpm(newBpm);
-    if (audioRef.current && exercise) {
-      // Convert BPM to playback rate relative to exercise's original BPM
-      const playbackRate = newBpm / exercise.bpm;
-      audioRef.current.playbackRate = playbackRate;
-    }
-  }, [exercise]);
+  const handleBpmChange = useCallback(
+    (newBpm: number) => {
+      setCurrentBpm(newBpm);
+      if (audioRef.current && exercise) {
+        // Convert BPM to playback rate relative to exercise's original BPM
+        const playbackRate = newBpm / exercise.bpm;
+        audioRef.current.playbackRate = playbackRate;
+      }
+    },
+    [exercise],
+  );
 
   // Pause playback when the browser window loses focus (tab switch or reload).
   useEffect(() => {
@@ -419,6 +556,14 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     window.addEventListener('blur', handleBlur);
     return () => window.removeEventListener('blur', handleBlur);
   }, [setPlaybackStateSynced]);
+
+  // On stop (audio ended): do a final glow update then stop
+  useEffect(() => {
+    // When playback stops, update active glows one final time
+    if (playbackState === 'stopped' && scoringTrackerRef.current) {
+      setActiveGlows(scoringTrackerRef.current.getActiveGlows(performance.now()));
+    }
+  }, [playbackState]);
 
   // Stop audio and clean up on unmount.
   useEffect(() => {
@@ -469,7 +614,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
   }, []);
 
   const handleToggleToolsSidebar = useCallback(() => {
-    setToolsSidebarOpen(prev => {
+    setToolsSidebarOpen((prev) => {
       const next = !prev;
       try {
         sessionStorage.setItem('exerciseTools_sidebarOpen', JSON.stringify(next));
@@ -492,16 +637,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleToggleToolsSidebar]);
 
-  // Refs for MIDI access and playhead tracking (used in rAF, handleSeek, initMidi, cleanup)
-  const currentTimeMsRef = useRef(0);
-  const midiAccessRef = useRef<any>(null);
-
   // ─── Loop validity ─────────────────────────────────────────────────────────
   const hasValidLoop = loopStartMs < loopEndMs && loopEndMs - loopStartMs >= 500;
   // Only pass loop markers to timelines if there's a valid loop set
-  const loopMarkerProps = hasValidLoop
-    ? { loopStartMs, loopEndMs, isLoopActive }
-    : {};
+  const loopMarkerProps = hasValidLoop ? { loopStartMs, loopEndMs, isLoopActive } : {};
 
   // ─── Render ────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -538,10 +677,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
 
   return (
     <div
-      className={[
-        'flex h-screen overflow-hidden',
-        className,
-      ].join(' ')}
+      className={['flex h-screen overflow-hidden', className].join(' ')}
     >
       {/* ── Tools Sidebar ────────────────────────────────────────────────────
           Fixed left panel (desktop) or bottom drawer (mobile).
@@ -576,6 +712,10 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
           onVolumeChange: handleDrumVolumeChange,
           isMuted: drumMuted,
           onToggleMute: handleToggleDrumMute,
+        }}
+        toleranceProps={{
+          preset: tolerancePreset,
+          onPresetChange: handleToleranceChange,
         }}
       />
 
@@ -665,6 +805,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             onLoopStartChange={handleLoopStartChange}
             onLoopEndChange={handleLoopEndChange}
             isLoopActive={isLoopActive}
+            activeGlows={activeGlows}
           />
         </div>
       </div>
