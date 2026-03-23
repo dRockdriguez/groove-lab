@@ -10,7 +10,7 @@ The timeline needs richer, more granular visual feedback when the user plays dru
 
 ## Solution Architecture
 
-Four independent enhancements to the timeline visualization:
+Five independent enhancements to the timeline visualization and controls:
 
 ```
 1. Note Color Feedback (per-played note)
@@ -28,10 +28,15 @@ Four independent enhancements to the timeline visualization:
    ├─ Let note colors be primary feedback
    └─ Keep row glow as supporting visual
 
-4. Integration
+4. Integration Test
    ├─ Wire all 3 together in ExercisePlaybackPage
    ├─ Ensure no conflicts or z-index issues
    └─ Test in isolation + together
+
+5. Hit Counter Display
+   ├─ Real-time counter below PlaybackControls
+   ├─ 4 colored boxes: Hits, Early, Late, Violations
+   └─ Instant updates from validatedHits state
 ```
 
 ## Mini-Specs
@@ -42,6 +47,7 @@ Four independent enhancements to the timeline visualization:
 | 02 | playhead-offset | Add configurable playhead x-offset prop | None |
 | 03 | row-glow-opacity | Reduce activeGlows opacity in fade calculation | None |
 | 04 | integration-test | Integration test: all 3 features together | 01, 02, 03 |
+| 05 | hit-counter | Real-time hit counter below PlaybackControls | None (reads validatedHits + isPlaying) |
 
 ## Execution Order
 
@@ -49,10 +55,11 @@ Four independent enhancements to the timeline visualization:
 01 note-color-feedback (parallel)
 02 playhead-offset      (parallel)
 03 row-glow-opacity     (parallel)
-└─ 04 integration-test
+05 hit-counter          (parallel)
+└─ 04 integration-test (depends on 01, 02, 03; can also include 05)
 ```
 
-All three features are independent; can be implemented in parallel.
+Specs 01–03, 05 are independent and can be implemented in parallel. Spec 04 is the integration test that verifies all features work together.
 
 ## Data Model
 
