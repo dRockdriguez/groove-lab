@@ -1,4 +1,4 @@
-import type { FavoritesStore, TagsStore } from '@groovelab/types';
+import type { FavoritesStore, InstrumentExercises, InstrumentType, TagsStore } from '@groovelab/types';
 
 // ─── Time ─────────────────────────────────────────────────────────────────────
 
@@ -772,4 +772,49 @@ export function clearSelectedFilterTags(): void {
   } catch {
     _filterTagsMemory = [];
   }
+}
+
+// ─── Exercise Filter Logic ─────────────────────────────────────────────────────
+
+/**
+ * Filter exercises by instrument, favorites, and tags.
+ *
+ * Returns a new InstrumentExercises[] containing only the section(s) for the
+ * selected instrument. Within each section, exercises are filtered to those that:
+ *   - are favorites (when showFavoritesOnly is true)
+ *   - have ALL selectedFilterTags (AND logic; no-op when array is empty)
+ *
+ * Section structure is always preserved — sections with no matching exercises
+ * are returned with an empty exercises array. Input arguments are not mutated.
+ *
+ * Performance: O(n) where n = total exercises across all sections.
+ */
+export function filterExercises(
+  exercisesByInstrument: InstrumentExercises[],
+  selectedInstrument: InstrumentType,
+  showFavoritesOnly: boolean,
+  selectedFilterTags: string[]
+): InstrumentExercises[] {
+  const hasTags = selectedFilterTags.length > 0;
+
+  return exercisesByInstrument
+    .filter((item) => item.instrumentType === selectedInstrument)
+    .map((item) => ({
+      ...item,
+      sections: item.sections.map((section) => ({
+        ...section,
+        exercises: section.exercises.filter((exercise) => {
+          if (showFavoritesOnly && !isFavorite(exercise.id)) {
+            return false;
+          }
+          if (hasTags) {
+            const exerciseTags = getExerciseTags(exercise.id);
+            if (!selectedFilterTags.every((tag) => exerciseTags.includes(tag))) {
+              return false;
+            }
+          }
+          return true;
+        }),
+      })),
+    }));
 }
