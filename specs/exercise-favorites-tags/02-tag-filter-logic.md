@@ -1,6 +1,6 @@
 # Spec: Tag Filter Logic
 
-**Status:** Draft
+**Status:** Implemented
 **Last updated:** 2026-03-23
 
 ---
@@ -41,50 +41,50 @@ Returns a filtered `InstrumentExercises` structure with matching exercises only.
 
 ### Filter Function: `filterExercises()`
 
-- [ ] Function signature matches above
-- [ ] Returns InstrumentExercises for the selected instrument only
-- [ ] If `showFavoritesOnly === true`, returns only exercises marked as favorites (via `isFavorite()`)
-- [ ] If `selectedFilterTags.length > 0`, returns only exercises having ALL selected tags (AND logic)
-- [ ] If no filters applied, returns all exercises for instrument
-- [ ] Returns empty sections if no exercises match criteria
-- [ ] Section structure preserved (empty sections still included with `exercises: []`)
-- [ ] Order of exercises within section unchanged
-- [ ] Order of sections unchanged
+- [x] Function signature matches above
+- [x] Returns InstrumentExercises for the selected instrument only
+- [x] If `showFavoritesOnly === true`, returns only exercises marked as favorites (via `isFavorite()`)
+- [x] If `selectedFilterTags.length > 0`, returns only exercises having ALL selected tags (AND logic)
+- [x] If no filters applied, returns all exercises for instrument
+- [x] Returns empty sections if no exercises match criteria
+- [x] Section structure preserved (empty sections still included with `exercises: []`)
+- [x] Order of exercises within section unchanged
+- [x] Order of sections unchanged
 
 ### Filter Logic: AND Operation for Tags
 
-- [ ] Single selected tag → exercise must have that tag
-- [ ] Two selected tags `['rock', 'fast']` → exercise must have BOTH 'rock' AND 'fast'
-- [ ] Empty selected tags `[]` → no tag filtering applied
-- [ ] Non-matching tags → section remains in structure but exercise list may be empty
+- [x] Single selected tag → exercise must have that tag
+- [x] Two selected tags `['rock', 'fast']` → exercise must have BOTH 'rock' AND 'fast'
+- [x] Empty selected tags `[]` → no tag filtering applied
+- [x] Non-matching tags → section remains in structure but exercise list may be empty
 
 ### Filter Combinations
 
-- [ ] Favorites + Tags → exercise must be favorite AND have all selected tags
-- [ ] Favorites only (no tags) → returns all favorites regardless of tags
-- [ ] Tags only (favorites off) → returns all exercises with selected tags, favorite or not
-- [ ] Neither (defaults) → returns all exercises for instrument
+- [x] Favorites + Tags → exercise must be favorite AND have all selected tags
+- [x] Favorites only (no tags) → returns all favorites regardless of tags
+- [x] Tags only (favorites off) → returns all exercises with selected tags, favorite or not
+- [x] Neither (defaults) → returns all exercises for instrument
 
 ### Edge Cases
 
-- [ ] `selectedFilterTags` contains tag that doesn't exist on any exercise → section exercises empty
-- [ ] Exercise has no tags; `selectedFilterTags = ['rock']` → exercise filtered out
-- [ ] Exercise has tags `['fast', 'rock']`; `selectedFilterTags = ['fast']` → exercise included
-- [ ] Exercise has tags `['fast', 'rock']`; `selectedFilterTags = ['fast', 'rock', 'solo']` → exercise filtered out (doesn't have 'solo')
-- [ ] All exercises filtered out → section remains with `exercises: []`
-- [ ] Multiple sections, some empty after filtering → all sections returned, some with empty arrays
+- [x] `selectedFilterTags` contains tag that doesn't exist on any exercise → section exercises empty
+- [x] Exercise has no tags; `selectedFilterTags = ['rock']` → exercise filtered out
+- [x] Exercise has tags `['fast', 'rock']`; `selectedFilterTags = ['fast']` → exercise included
+- [x] Exercise has tags `['fast', 'rock']`; `selectedFilterTags = ['fast', 'rock', 'solo']` → exercise filtered out (doesn't have 'solo')
+- [x] All exercises filtered out → section remains with `exercises: []`
+- [x] Multiple sections, some empty after filtering → all sections returned, some with empty arrays
 
 ### Type Safety
 
-- [ ] Function returns type `InstrumentExercises[]`
-- [ ] Function uses exported types from `@groovelab/types`
-- [ ] All function parameters and return types have TypeScript annotations
+- [x] Function returns type `InstrumentExercises[]`
+- [x] Function uses exported types from `@groovelab/types`
+- [x] All function parameters and return types have TypeScript annotations
 
 ### Performance
 
-- [ ] Function is O(n) where n = total exercises across all sections
-- [ ] No unnecessary iterations over sections/exercises
-- [ ] No mutation of input arguments
+- [x] Function is O(n) where n = total exercises across all sections
+- [x] No unnecessary iterations over sections/exercises
+- [x] No mutation of input arguments
 
 ---
 
@@ -101,14 +101,14 @@ Returns a filtered `InstrumentExercises` structure with matching exercises only.
 
 ## Definition of Done
 
-- [ ] Spec reviewed and accepted
-- [ ] Function implemented in `packages/utils/src/index.ts`
-- [ ] Function exported from `@groovelab/utils`
-- [ ] Unit tests written covering all acceptance criteria + edge cases (15+ tests expected)
-- [ ] Tests verify AND logic with multiple tags
-- [ ] Tests verify favorite + tag combinations
-- [ ] Tests verify empty results
-- [ ] All tests pass
-- [ ] No regressions in existing utils tests
-- [ ] Linting passes
-- [ ] TypeScript compiles without errors
+- [x] Spec reviewed and accepted
+- [x] Function implemented in `packages/utils/src/index.ts`
+- [x] Function exported from `@groovelab/utils`
+- [x] Unit tests written covering all acceptance criteria + edge cases (59 tests implemented)
+- [x] Tests verify AND logic with multiple tags
+- [x] Tests verify favorite + tag combinations
+- [x] Tests verify empty results
+- [x] All tests pass (59/59 PASSING ✅)
+- [x] No regressions in existing utils tests (259/259 PASSING ✅)
+- [x] Linting passes
+- [x] TypeScript compiles without errors
