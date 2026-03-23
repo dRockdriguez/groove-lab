@@ -53,6 +53,8 @@ export { LoopRepetitionCounter } from './components/molecules/LoopRepetitionCoun
 export type { LoopRepetitionCounterProps } from './components/molecules/LoopRepetitionCounter';
 export { LoopControls } from './components/molecules/LoopControls';
 export type { LoopControlsProps } from './components/molecules/LoopControls';
+export { HitCounter } from './components/molecules/HitCounter';
+export type { HitCounterProps } from './components/molecules/HitCounter';
 // Organisms
 export { Table } from './components/organisms/Table';
 export type { TableProps, Column } from './components/organisms/Table';

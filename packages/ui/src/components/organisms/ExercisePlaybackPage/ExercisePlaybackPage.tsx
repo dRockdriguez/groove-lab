@@ -13,6 +13,7 @@ import {
 import { PlaybackControls } from '../../molecules/PlaybackControls';
 import { MiniTimeline } from '../../molecules/MiniTimeline';
 import { MidiStatusIndicator, type MidiConnectionStatus } from '../../atoms/MidiStatusIndicator';
+import { HitCounter } from '../../molecules/HitCounter';
 import { ExercisePlaybackTimeline } from '../ExercisePlaybackTimeline';
 import { ToolsSidebar } from '../ToolsSidebar';
 
@@ -785,6 +786,14 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             durationMs={exercise.durationMs}
             onTogglePlay={() => void handleTogglePlay()}
             onSeek={handleSeek}
+          />
+        </div>
+
+        {/* Hit counter — real-time breakdown of hit classifications */}
+        <div className="px-4 sm:px-6 pb-2">
+          <HitCounter
+            scoringEvents={scoringEvents}
+            isPlaying={playbackState === 'playing'}
           />
         </div>
 

@@ -277,7 +277,12 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
   it('does not render LoopRepetitionCounter when loop is inactive', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
     // Loop is not active by default (isLoopActive = false)
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    // LoopRepetitionCounter is not rendered; only HitCounter (role="status") may be present
+    const statusElements = screen.queryAllByRole('status');
+    const loopCounter = statusElements.find((el) =>
+      el.getAttribute('aria-label')?.includes('Loop repetition'),
+    );
+    expect(loopCounter).toBeUndefined();
   });
 
   // Note: More LoopRepetitionCounter tests would be added once loop controls
