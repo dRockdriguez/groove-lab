@@ -1,3 +1,5 @@
+import type { FavoritesStore, TagsStore } from '@groovelab/types';
+
 // ─── Time ─────────────────────────────────────────────────────────────────────
 
 /** Format milliseconds to human-readable mm:ss */
@@ -556,5 +558,218 @@ export class DrumSoundEngine {
     if (this.disposed) return;
     this.masterGain.disconnect();
     this.disposed = true;
+  }
+}
+
+// ─── Favorites & Tags Storage ─────────────────────────────────────────────────
+
+const FAVORITES_KEY = 'groovelab_favorites';
+const TAGS_KEY = 'groovelab_tags';
+const FILTER_TAGS_KEY = 'groovelab_filter_tags';
+
+// In-memory fallbacks for when localStorage/sessionStorage is unavailable
+let _favoritesMemory: FavoritesStore = {};
+let _tagsMemory: TagsStore = {};
+let _filterTagsMemory: string[] = [];
+
+function _readLocalStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function _writeLocalStorage(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // localStorage unavailable — data lives only in-memory for this session
+  }
+}
+
+function _isLocalStorageAvailable(): boolean {
+  try {
+    const testKey = '__groovelab_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Favorites ──────────────────────────────────────────────────────────────
+
+/** Read all favorites from localStorage (or in-memory fallback). Returns {} on error or empty. */
+export function getFavorites(): FavoritesStore {
+  if (!_isLocalStorageAvailable()) return _favoritesMemory;
+  return _readLocalStorage<FavoritesStore>(FAVORITES_KEY, {});
+}
+
+/** Persist a FavoritesStore. Subsequent getFavorites() returns this data. */
+export function setFavorites(favorites: FavoritesStore): void {
+  if (!_isLocalStorageAvailable()) {
+    _favoritesMemory = favorites;
+    return;
+  }
+  _writeLocalStorage(FAVORITES_KEY, favorites);
+}
+
+/** Returns true if the given exerciseId is marked as favorite. */
+export function isFavorite(exerciseId: string): boolean {
+  return getFavorites()[exerciseId] === true;
+}
+
+/**
+ * Toggle favorite status for an exercise.
+ * Returns the new state (true = now favorited, false = now unfavorited).
+ * Persists immediately to localStorage.
+ */
+export function toggleFavorite(exerciseId: string): boolean {
+  const favorites = getFavorites();
+  const next = !favorites[exerciseId];
+  if (next) {
+    favorites[exerciseId] = true;
+  } else {
+    delete favorites[exerciseId];
+  }
+  setFavorites(favorites);
+  return next;
+}
+
+// ── Tags ───────────────────────────────────────────────────────────────────
+
+/** Read all tags from localStorage (or in-memory fallback). Returns {} on error or empty. */
+export function getTags(): TagsStore {
+  if (!_isLocalStorageAvailable()) return _tagsMemory;
+  return _readLocalStorage<TagsStore>(TAGS_KEY, {});
+}
+
+/** Persist a TagsStore. Subsequent getTags() returns this data. */
+export function setTags(tags: TagsStore): void {
+  if (!_isLocalStorageAvailable()) {
+    _tagsMemory = tags;
+    return;
+  }
+  _writeLocalStorage(TAGS_KEY, tags);
+}
+
+/** Returns tags for a specific exercise. Returns [] if not found. */
+export function getExerciseTags(exerciseId: string): string[] {
+  return getTags()[exerciseId] ?? [];
+}
+
+/**
+ * Add a tag to an exercise. Idempotent — adding the same tag twice is a no-op.
+ * Trims whitespace; ignores empty strings after trimming.
+ * Persists immediately.
+ */
+export function addTag(exerciseId: string, tag: string): void {
+  const trimmed = tag.trim();
+  if (!trimmed) return;
+  const store = getTags();
+  const existing = store[exerciseId] ?? [];
+  if (existing.includes(trimmed)) return;
+  store[exerciseId] = [...existing, trimmed];
+  setTags(store);
+}
+
+/**
+ * Remove a tag from an exercise. No-op if tag not present.
+ * Persists immediately.
+ */
+export function removeTag(exerciseId: string, tag: string): void {
+  const store = getTags();
+  const existing = store[exerciseId];
+  if (!existing) return;
+  const updated = existing.filter((t) => t !== tag);
+  if (updated.length === 0) {
+    delete store[exerciseId];
+  } else {
+    store[exerciseId] = updated;
+  }
+  setTags(store);
+}
+
+/**
+ * Replace all tags for a specific exercise with the provided array.
+ * Persists immediately.
+ */
+export function setExerciseTags(exerciseId: string, tags: string[]): void {
+  const store = getTags();
+  if (tags.length === 0) {
+    delete store[exerciseId];
+  } else {
+    store[exerciseId] = tags;
+  }
+  setTags(store);
+}
+
+/**
+ * Returns all unique tags across all exercises, sorted alphabetically (case-insensitive).
+ * Returns [] if no tags exist.
+ */
+export function getDistinctTags(): string[] {
+  const store = getTags();
+  const seen = new Set<string>();
+  for (const tags of Object.values(store)) {
+    for (const tag of tags) {
+      seen.add(tag);
+    }
+  }
+  return Array.from(seen).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+// ── Session Filter State ───────────────────────────────────────────────────
+
+function _isSessionStorageAvailable(): boolean {
+  try {
+    const testKey = '__groovelab_test__';
+    sessionStorage.setItem(testKey, '1');
+    sessionStorage.removeItem(testKey);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Returns currently selected filter tags from sessionStorage. Returns [] if not set. */
+export function getSelectedFilterTags(): string[] {
+  if (!_isSessionStorageAvailable()) return _filterTagsMemory;
+  try {
+    const raw = sessionStorage.getItem(FILTER_TAGS_KEY);
+    if (raw === null) return [];
+    return JSON.parse(raw) as string[];
+  } catch {
+    return [];
+  }
+}
+
+/** Persist selected filter tags to sessionStorage. */
+export function setSelectedFilterTags(tags: string[]): void {
+  if (!_isSessionStorageAvailable()) {
+    _filterTagsMemory = tags;
+    return;
+  }
+  try {
+    sessionStorage.setItem(FILTER_TAGS_KEY, JSON.stringify(tags));
+  } catch {
+    _filterTagsMemory = tags;
+  }
+}
+
+/** Remove selected filter tags from sessionStorage. */
+export function clearSelectedFilterTags(): void {
+  if (!_isSessionStorageAvailable()) {
+    _filterTagsMemory = [];
+    return;
+  }
+  try {
+    sessionStorage.removeItem(FILTER_TAGS_KEY);
+  } catch {
+    _filterTagsMemory = [];
   }
 }

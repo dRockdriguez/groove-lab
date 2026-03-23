@@ -105,6 +105,14 @@ export interface SessionStatistics {
   strikeViolationCount: number;
 }
 
+// ─── Favorites & Tags ────────────────────────────────────────────────────────
+
+/** Record<exerciseId, true> — persisted to localStorage */
+export type FavoritesStore = Record<string, boolean>;
+
+/** Record<exerciseId, string[]> — tags for each exercise, persisted to localStorage */
+export type TagsStore = Record<string, string[]>;
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {
