@@ -55,6 +55,8 @@ export { LoopControls } from './components/molecules/LoopControls';
 export type { LoopControlsProps } from './components/molecules/LoopControls';
 export { HitCounter } from './components/molecules/HitCounter';
 export type { HitCounterProps } from './components/molecules/HitCounter';
+export { FavoriteButton } from './components/molecules/FavoriteButton';
+export type { FavoriteButtonProps } from './components/molecules/FavoriteButton';
 // Organisms
 export { Table } from './components/organisms/Table';
 export type { TableProps, Column } from './components/organisms/Table';

@@ -1,7 +1,7 @@
 # Spec: Favorite Button Component
 
-**Status:** Draft
-**Last updated:** 2026-03-23
+**Status:** Implemented
+**Last updated:** 2026-03-23 (verified)
 
 ---
 
@@ -48,76 +48,76 @@ or
 
 ### Rendering
 
-- [ ] Component renders a heart icon (SVG or icon library)
-- [ ] Heart is unfilled/hollow when exercise NOT favorited
-- [ ] Heart is filled/solid and colored (e.g., red or accent color) when favorited
-- [ ] Component displays tag count as badge if tags exist (e.g., "[3]" next to heart)
-- [ ] Tag badge shows in a small circle or inline text
-- [ ] Component is small and inline-friendly (no extra spacing)
+- [x] Component renders a heart icon (SVG or icon library)
+- [x] Heart is unfilled/hollow when exercise NOT favorited
+- [x] Heart is filled/solid and colored (e.g., red or accent color) when favorited
+- [x] Component displays tag count as badge if tags exist (e.g., "[3]" next to heart)
+- [x] Tag badge shows in a small circle or inline text
+- [x] Component is small and inline-friendly (no extra spacing)
 
 ### Favorite Toggle
 
-- [ ] Single click on heart icon toggles favorite state (on → off, off → on)
-- [ ] Click immediately updates visual state (filled/unfilled)
-- [ ] Click calls `toggleFavorite(exerciseId)` from storage layer
-- [ ] localStorage is updated on click
-- [ ] Multiple clicks work correctly (toggle multiple times)
-- [ ] No errors thrown if localStorage unavailable
+- [x] Single click on heart icon toggles favorite state (on → off, off → on)
+- [x] Click immediately updates visual state (filled/unfilled)
+- [x] Click calls `toggleFavorite(exerciseId)` from storage layer
+- [x] localStorage is updated on click
+- [x] Multiple clicks work correctly (toggle multiple times)
+- [x] No errors thrown if localStorage unavailable
 
 ### Tag Count Display
 
-- [ ] If exercise has tags, shows count (e.g., "[3 Tags]", "[1]")
-- [ ] If no tags, no badge is shown (heart only)
-- [ ] Count updates immediately if tags added/removed elsewhere
-- [ ] Clicking badge area (if present) calls `onTagsClick` callback
+- [x] If exercise has tags, shows count (e.g., "[3 Tags]", "[1]")
+- [x] If no tags, no badge is shown (heart only)
+- [x] Count updates immediately if tags added/removed elsewhere
+- [x] Clicking badge area (if present) calls `onTagsClick` callback
 
 ### Tag Click Handler
 
-- [ ] If `onTagsClick` prop provided, clicking tag badge fires callback
-- [ ] If `onTagsClick` not provided, tag area is not interactive (display-only)
-- [ ] Callback has no arguments (parent component responsible for state)
+- [x] If `onTagsClick` prop provided, clicking tag badge fires callback
+- [x] If `onTagsClick` not provided, tag area is not interactive (display-only)
+- [x] Callback has no arguments (parent component responsible for state)
 
 ### Accessibility
 
-- [ ] Heart icon has `aria-label` (e.g., "Add to favorites" or "Remove from favorites")
-- [ ] Label updates based on favorite state
-- [ ] Component is keyboard-accessible (heart icon is a button or clickable element)
-- [ ] Tab key focuses component
-- [ ] Enter/Space activates toggle
-- [ ] Tag badge (if clickable) has clear role (button or link)
+- [x] Heart icon has `aria-label` (e.g., "Add to favorites" or "Remove from favorites")
+- [x] Label updates based on favorite state
+- [x] Component is keyboard-accessible (heart icon is a button or clickable element)
+- [x] Tab key focuses component
+- [x] Enter/Space activates toggle
+- [x] Tag badge (if clickable) has clear role (button or link)
 
 ### Styling
 
-- [ ] Uses TailwindCSS classes only (no inline styles)
-- [ ] Unfilled heart: gray or muted color
-- [ ] Filled heart: red, green, or accent color (consistent with app theme)
-- [ ] Dark mode support (colors work in dark theme)
-- [ ] Hover state: heart brightens or scales slightly
-- [ ] Focus state: outline or ring visible (WCAG)
-- [ ] Tag badge: subtle background (light gray) with text
-- [ ] Tag badge in dark mode: darker background
+- [x] Uses TailwindCSS classes only (no inline styles)
+- [x] Unfilled heart: gray or muted color
+- [x] Filled heart: red, green, or accent color (consistent with app theme)
+- [x] Dark mode support (colors work in dark theme)
+- [x] Hover state: heart brightens or scales slightly
+- [x] Focus state: outline or ring visible (WCAG)
+- [x] Tag badge: subtle background (light gray) with text
+- [x] Tag badge in dark mode: darker background
 
 ### Props
 
-- [ ] `exerciseId: string` — Required, identifies exercise in storage
-- [ ] `onTagsClick?: () => void` — Optional, called on tag badge click
-- [ ] `className?: string` — Optional, appended to root element
-- [ ] Renders correctly with/without `onTagsClick`
-- [ ] Renders correctly with/without tags
+- [x] `exerciseId: string` — Required, identifies exercise in storage
+- [x] `onTagsClick?: () => void` — Optional, called on tag badge click
+- [x] `className?: string` — Optional, appended to root element
+- [x] Renders correctly with/without `onTagsClick`
+- [x] Renders correctly with/without tags
 
 ### State Management
 
-- [ ] Component reads from localStorage on mount (via `isFavorite()`)
-- [ ] Component reads tags via `getExerciseTags()` on mount
-- [ ] Component updates visual state when clicked
-- [ ] No React state used; purely derived from storage
-- [ ] Re-renders correctly if external code updates storage (e.g., another tab)
+- [x] Component reads from localStorage on mount (via `isFavorite()`)
+- [x] Component reads tags via `getExerciseTags()` on mount
+- [x] Component updates visual state when clicked
+- [x] No React state used; purely derived from storage
+- [x] Re-renders correctly if external code updates storage (e.g., another tab)
 
 ### Initial Render
 
-- [ ] First render shows correct favorite state
-- [ ] First render shows correct tag count
-- [ ] No flashing or visual jank during initial load
+- [x] First render shows correct favorite state
+- [x] First render shows correct tag count
+- [x] No flashing or visual jank during initial load
 
 ---
 
@@ -144,18 +144,18 @@ or
 
 ## Definition of Done
 
-- [ ] Spec reviewed and accepted
-- [ ] Component created at `packages/ui/src/components/molecules/FavoriteButton/`
-- [ ] Component exported via `packages/ui/src/index.ts`
-- [ ] All props documented in JSDoc
-- [ ] Component tests written (15+ tests expected):
-  - [ ] Toggle favorite on/off
-  - [ ] Display tag count
-  - [ ] Tag click callback
-  - [ ] Accessibility attributes
-  - [ ] Dark mode rendering
-  - [ ] Edge cases (no tags, many tags)
-- [ ] All tests pass
-- [ ] No regressions in existing UI tests
-- [ ] Linting passes
+- [x] Spec reviewed and accepted
+- [x] Component created at `packages/ui/src/components/molecules/FavoriteButton/`
+- [x] Component exported via `packages/ui/src/index.ts`
+- [x] All props documented in JSDoc
+- [x] Component tests written (15+ tests expected):
+  - [x] Toggle favorite on/off
+  - [x] Display tag count
+  - [x] Tag click callback
+  - [x] Accessibility attributes
+  - [x] Dark mode rendering
+  - [x] Edge cases (no tags, many tags)
+- [x] All tests pass
+- [x] No regressions in existing UI tests
+- [x] Linting passes
 - [ ] Storybook story created (optional but recommended)
