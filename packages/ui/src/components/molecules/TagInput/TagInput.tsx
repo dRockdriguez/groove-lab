@@ -8,6 +8,8 @@ export interface TagInputProps {
   isOpen: boolean;
   /** Called when the modal should be closed */
   onClose: () => void;
+  /** Optional exercise title shown in the modal header */
+  exerciseTitle?: string;
   /** Optional class name appended to the root element */
   className?: string;
 }
@@ -18,7 +20,13 @@ export interface TagInputProps {
  * Opens as a centered dialog, reads tags from localStorage via `getExerciseTags`,
  * and writes changes immediately via `addTag` / `removeTag`.
  */
-export const TagInput: React.FC<TagInputProps> = ({ exerciseId, isOpen, onClose, className }) => {
+export const TagInput: React.FC<TagInputProps> = ({
+  exerciseId,
+  isOpen,
+  onClose,
+  exerciseTitle,
+  className,
+}) => {
   const titleId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -112,7 +120,7 @@ export const TagInput: React.FC<TagInputProps> = ({ exerciseId, isOpen, onClose,
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
           <h2 id={titleId} className="text-base font-semibold text-white">
-            Manage Tags
+            {exerciseTitle ? `Tags for "${exerciseTitle}"` : 'Manage Tags'}
           </h2>
           <button
             type="button"
