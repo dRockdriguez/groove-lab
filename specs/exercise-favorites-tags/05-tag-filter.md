@@ -1,7 +1,7 @@
 # Spec: Tag Filter Component
 
-**Status:** Draft
-**Last updated:** 2026-03-23
+**Status:** Implemented
+**Last updated:** 2026-03-24
 
 ---
 
@@ -49,85 +49,85 @@ Renders:
 
 ### Tag Display
 
-- [ ] Component loads distinct tags via `getDistinctTags()` from storage layer (spec 01)
-- [ ] All unique tags are displayed as clickable buttons/pills
-- [ ] Tags are sorted alphabetically (case-insensitive)
-- [ ] Tags are displayed inline or as flex-wrapped grid
-- [ ] If no tags exist in library, shows "No tags available" message
-- [ ] Each tag button is clearly labeled with tag name
-- [ ] No duplicates shown
+- [x] Component loads distinct tags via `getDistinctTags()` from storage layer (spec 01)
+- [x] All unique tags are displayed as clickable buttons/pills
+- [x] Tags are sorted alphabetically (case-insensitive)
+- [x] Tags are displayed inline or as flex-wrapped grid
+- [x] If no tags exist in library, shows "No tags available" message
+- [x] Each tag button is clearly labeled with tag name
+- [x] No duplicates shown
 
 ### Tag Selection
 
-- [ ] Single click on tag toggles selection (selected ↔ unselected)
-- [ ] Selected tags appear visually distinct (e.g., filled, highlighted, accent color)
-- [ ] Unselected tags appear muted or gray
-- [ ] Multiple tags can be selected simultaneously
-- [ ] Selection state is stored in `selectedTags` prop
-- [ ] Clicking selected tag deselects it (toggle)
-- [ ] Clicking unselected tag selects it (toggle)
+- [x] Single click on tag toggles selection (selected ↔ unselected)
+- [x] Selected tags appear visually distinct (e.g., filled, highlighted, accent color)
+- [x] Unselected tags appear muted or gray
+- [x] Multiple tags can be selected simultaneously
+- [x] Selection state is stored in `selectedTags` prop
+- [x] Clicking selected tag deselects it (toggle)
+- [x] Clicking unselected tag selects it (toggle)
 
 ### Selection Callback
 
-- [ ] Each tag toggle calls `onSelectedTagsChange(updatedTags: string[])`
-- [ ] Callback receives all currently selected tags (not just the one toggled)
-- [ ] Callback allows parent to update filter state (sessionStorage)
-- [ ] Callback is debounced or immediate (no delay required)
+- [x] Each tag toggle calls `onSelectedTagsChange(updatedTags: string[])`
+- [x] Callback receives all currently selected tags (not just the one toggled)
+- [x] Callback allows parent to update filter state (sessionStorage)
+- [x] Callback is debounced or immediate (no delay required)
 
 ### Clear Button
 
-- [ ] "Clear All" button is visible only if tags are selected
-- [ ] Clicking "Clear All" calls `onSelectedTagsChange([])`
-- [ ] Button has clear visual style (e.g., red, trash icon)
-- [ ] Button has `aria-label` describing action
+- [x] "Clear All" button is visible only if tags are selected
+- [x] Clicking "Clear All" calls `onSelectedTagsChange([])`
+- [x] Button has clear visual style (e.g., red, trash icon)
+- [x] Button has `aria-label` describing action
 
 ### User Feedback
 
-- [ ] Selected tags visually distinct from unselected
-- [ ] Optionally shows feedback text like "Filtering by: rock AND fast" when tags selected
-- [ ] Feedback updates immediately as user selects/deselects tags
-- [ ] Clear indication of AND logic (not OR)
+- [x] Selected tags visually distinct from unselected
+- [x] Optionally shows feedback text like "Filtering by: rock AND fast" when tags selected
+- [x] Feedback updates immediately as user selects/deselects tags
+- [x] Clear indication of AND logic (not OR)
 
 ### Accessibility
 
-- [ ] Each tag button has `aria-pressed` attribute (true if selected, false otherwise)
-- [ ] "Clear All" button has `aria-label` (e.g., "Clear all tag filters")
-- [ ] Component container has `role="region"` or `aria-label` describing purpose
-- [ ] Tab key navigates through all tag buttons
-- [ ] Enter/Space activates tag toggle
-- [ ] Keyboard navigation logical (left-to-right, top-to-bottom)
+- [x] Each tag button has `aria-pressed` attribute (true if selected, false otherwise)
+- [x] "Clear All" button has `aria-label` (e.g., "Clear all tag filters")
+- [x] Component container has `role="region"` or `aria-label` describing purpose
+- [x] Tab key navigates through all tag buttons
+- [x] Enter/Space activates tag toggle
+- [x] Keyboard navigation logical (left-to-right, top-to-bottom)
 
 ### Styling
 
-- [ ] Uses TailwindCSS classes only
-- [ ] Dark mode support (readable in light and dark themes)
-- [ ] Selected tag: accent color (e.g., green), filled background, white text
-- [ ] Unselected tag: gray, outlined or filled light background
-- [ ] Hover state: tag brightens or scales on hover
-- [ ] Focus state: outline or ring visible (WCAG)
-- [ ] "Clear All" button: secondary or destructive color
-- [ ] Responsive: tags wrap on small screens; works on mobile and desktop
+- [x] Uses TailwindCSS classes only
+- [x] Dark mode support (readable in light and dark themes)
+- [x] Selected tag: accent color (e.g., green), filled background, white text
+- [x] Unselected tag: gray, outlined or filled light background
+- [x] Hover state: tag brightens or scales on hover
+- [x] Focus state: outline or ring visible (WCAG)
+- [x] "Clear All" button: secondary or destructive color
+- [x] Responsive: tags wrap on small screens; works on mobile and desktop
 
 ### Props
 
-- [ ] `selectedTags: string[]` — Current selected tags (from parent/sessionStorage)
-- [ ] `onSelectedTagsChange: (tags: string[]) => void` — Callback for tag selection changes
-- [ ] `className?: string` — Optional, appended to root element
-- [ ] All props have type annotations
+- [x] `selectedTags: string[]` — Current selected tags (from parent/sessionStorage)
+- [x] `onSelectedTagsChange: (tags: string[]) => void` — Callback for tag selection changes
+- [x] `className?: string` — Optional, appended to root element
+- [x] All props have type annotations
 
 ### State & Effects
 
-- [ ] Component derives tag list from storage on mount
-- [ ] Component re-renders when `selectedTags` prop changes
-- [ ] No local state for tag list; always reads from storage
-- [ ] Calls `getDistinctTags()` to get available tags
-- [ ] Updates `selectedTags` via callback (parent manages state)
+- [x] Component derives tag list from storage on mount
+- [x] Component re-renders when `selectedTags` prop changes
+- [x] No local state for tag list; always reads from storage
+- [x] Calls `getDistinctTags()` to get available tags
+- [x] Updates `selectedTags` via callback (parent manages state)
 
 ### Performance
 
-- [ ] Tag list retrieved once on mount (or when storage updates externally)
-- [ ] No unnecessary re-renders when user toggles tags
-- [ ] No memory leaks on unmount
+- [x] Tag list retrieved once on mount (or when storage updates externally)
+- [x] No unnecessary re-renders when user toggles tags
+- [x] No memory leaks on unmount
 
 ---
 
@@ -155,23 +155,23 @@ Renders:
 
 ## Definition of Done
 
-- [ ] Spec reviewed and accepted
-- [ ] Component created at `packages/ui/src/components/molecules/TagFilter/`
-- [ ] Component exported via `packages/ui/src/index.ts`
-- [ ] All props documented in JSDoc
-- [ ] Component tests written (18+ tests expected):
-  - [ ] Display all available tags
-  - [ ] Toggle tag selection
-  - [ ] Multiple tag selection
-  - [ ] Clear all button visibility
-  - [ ] Clear all functionality
-  - [ ] Callback called with correct data
-  - [ ] Accessibility attributes (`aria-pressed`)
-  - [ ] Keyboard interaction (Tab, Enter/Space)
-  - [ ] Dark mode rendering
-  - [ ] Edge cases (no tags, many tags, very long names)
-  - [ ] Alphabetical sorting
-- [ ] All tests pass
-- [ ] No regressions in existing UI tests
-- [ ] Linting passes
+- [x] Spec reviewed and accepted
+- [x] Component created at `packages/ui/src/components/molecules/TagFilter/`
+- [x] Component exported via `packages/ui/src/index.ts`
+- [x] All props documented in JSDoc
+- [x] Component tests written (18+ tests expected):
+  - [x] Display all available tags
+  - [x] Toggle tag selection
+  - [x] Multiple tag selection
+  - [x] Clear all button visibility
+  - [x] Clear all functionality
+  - [x] Callback called with correct data
+  - [x] Accessibility attributes (`aria-pressed`)
+  - [x] Keyboard interaction (Tab, Enter/Space)
+  - [x] Dark mode rendering
+  - [x] Edge cases (no tags, many tags, very long names)
+  - [x] Alphabetical sorting
+- [x] All tests pass
+- [x] No regressions in existing UI tests
+- [x] Linting passes
 - [ ] Storybook story created (optional but recommended)
