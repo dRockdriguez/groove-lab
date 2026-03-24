@@ -1,7 +1,7 @@
 # Spec: Tag Input Component
 
-**Status:** Draft
-**Last updated:** 2026-03-23
+**Status:** Implemented
+**Last updated:** 2026-03-24
 
 ---
 
@@ -50,93 +50,93 @@ Renders:
 
 ### Modal/Popover Behavior
 
-- [ ] Component opens when `isOpen === true`
-- [ ] Component is hidden when `isOpen === false`
-- [ ] Clicking "Cancel" or clicking outside calls `onClose()`
-- [ ] Pressing Escape key calls `onClose()`
-- [ ] Modal/popover has backdrop (semi-transparent overlay) on mobile or full modal on desktop
-- [ ] Modal/popover is positioned near FavoriteButton (popover) or centered (modal)
-- [ ] Focus management: focus moves to input on open, returns to trigger on close
+- [x] Component opens when `isOpen === true`
+- [x] Component is hidden when `isOpen === false`
+- [x] Clicking "Cancel" or clicking outside calls `onClose()`
+- [x] Pressing Escape key calls `onClose()`
+- [x] Modal/popover has backdrop (semi-transparent overlay) on mobile or full modal on desktop
+- [x] Modal/popover is positioned near FavoriteButton (popover) or centered (modal)
+- [x] Focus management: focus moves to input on open, returns to trigger on close
 
 ### Displaying Existing Tags
 
-- [ ] Component loads existing tags for exercise via `getExerciseTags(exerciseId)`
-- [ ] Each tag displays as a removable chip/pill (with X button or click-to-remove)
-- [ ] Tags are sorted alphabetically (case-insensitive)
-- [ ] Tags are displayed inline or as flex-wrapped list
-- [ ] If no tags, shows "No tags yet" or similar message
+- [x] Component loads existing tags for exercise via `getExerciseTags(exerciseId)`
+- [x] Each tag displays as a removable chip/pill (with X button or click-to-remove)
+- [x] Tags are sorted alphabetically (case-insensitive)
+- [x] Tags are displayed inline or as flex-wrapped list
+- [x] If no tags, shows "No tags yet" or similar message
 
 ### Adding Tags
 
-- [ ] Text input field for typing new tag name
-- [ ] User types tag name (any characters, including spaces)
-- [ ] User clicks "Add" button or presses Enter to add tag
-- [ ] Input text is trimmed (whitespace removed)
-- [ ] Empty strings rejected (no-op on add if input blank)
-- [ ] Duplicate tags rejected (user can't add same tag twice; idempotent)
-- [ ] On successful add, input field clears
-- [ ] New tag appears in list immediately (sorted alphabetically)
-- [ ] Storage is updated immediately (`addTag()` called)
+- [x] Text input field for typing new tag name
+- [x] User types tag name (any characters, including spaces)
+- [x] User clicks "Add" button or presses Enter to add tag
+- [x] Input text is trimmed (whitespace removed)
+- [x] Empty strings rejected (no-op on add if input blank)
+- [x] Duplicate tags rejected (user can't add same tag twice; idempotent)
+- [x] On successful add, input field clears
+- [x] New tag appears in list immediately (sorted alphabetically)
+- [x] Storage is updated immediately (`addTag()` called)
 
 ### Removing Tags
 
-- [ ] Each tag has removable button (X, trash icon, or click-anywhere)
-- [ ] Clicking remove button deletes tag from exercise
-- [ ] Tag disappears from list immediately
-- [ ] Storage is updated immediately (`removeTag()` called)
-- [ ] If multiple removes in sequence, each updates correctly
+- [x] Each tag has removable button (X, trash icon, or click-anywhere)
+- [x] Clicking remove button deletes tag from exercise
+- [x] Tag disappears from list immediately
+- [x] Storage is updated immediately (`removeTag()` called)
+- [x] If multiple removes in sequence, each updates correctly
 
 ### Input Validation
 
-- [ ] Whitespace-only tags rejected (e.g., "   " becomes "" and is rejected)
-- [ ] Special characters allowed in tags (no validation at component level)
-- [ ] Case-sensitive tags (`'Rock'` and `'rock'` are different)
-- [ ] No tag length limit enforced (user can type long tags)
-- [ ] No tag count limit enforced (user can add many tags)
+- [x] Whitespace-only tags rejected (e.g., "   " becomes "" and is rejected)
+- [x] Special characters allowed in tags (no validation at component level)
+- [x] Case-sensitive tags (`'Rock'` and `'rock'` are different)
+- [x] No tag length limit enforced (user can type long tags)
+- [x] No tag count limit enforced (user can add many tags)
 
 ### Accessibility
 
-- [ ] Modal/popover has `role="dialog"` or `role="alertdialog"`
-- [ ] Modal has `aria-labelledby` pointing to title element
-- [ ] Input field has `aria-label` (e.g., "New tag input")
-- [ ] Close button has `aria-label` (e.g., "Close tag editor")
-- [ ] Tag chips have `aria-label` (e.g., "Remove tag 'rock'")
-- [ ] Tab key navigates through input, buttons, and tag removers
-- [ ] Tab order logical: input → Add button → existing tags → Cancel button
-- [ ] All interactive elements keyboard-accessible
+- [x] Modal/popover has `role="dialog"` or `role="alertdialog"`
+- [x] Modal has `aria-labelledby` pointing to title element
+- [x] Input field has `aria-label` (e.g., "New tag input")
+- [x] Close button has `aria-label` (e.g., "Close tag editor")
+- [x] Tag chips have `aria-label` (e.g., "Remove tag 'rock'")
+- [x] Tab key navigates through input, buttons, and tag removers
+- [x] Tab order logical: input → Add button → existing tags → Cancel button
+- [x] All interactive elements keyboard-accessible
 
 ### Styling
 
-- [ ] Uses TailwindCSS classes only
-- [ ] Dark mode support (readable in light and dark themes)
-- [ ] Tag chips: subtle background, text color, remove button
-- [ ] Input field: focused state with outline/ring
-- [ ] "Add" button: accent color, hover state
-- [ ] "Cancel" button: secondary color, hover state
-- [ ] Modal/popover backdrop: semi-transparent dark color
-- [ ] Responsive: works on mobile (full-width modal) and desktop (popover)
+- [x] Uses TailwindCSS classes only
+- [x] Dark mode support (readable in light and dark themes)
+- [x] Tag chips: subtle background, text color, remove button
+- [x] Input field: focused state with outline/ring
+- [x] "Add" button: accent color, hover state
+- [x] "Cancel" button: secondary color, hover state
+- [x] Modal/popover backdrop: semi-transparent dark color
+- [x] Responsive: works on mobile (full-width modal) and desktop (popover)
 
 ### Props
 
-- [ ] `exerciseId: string` — Required, identifies exercise in storage
-- [ ] `isOpen: boolean` — Required, controls visibility
-- [ ] `onClose: () => void` — Required callback to close
-- [ ] `className?: string` — Optional, appended to root element
-- [ ] All props have type annotations
+- [x] `exerciseId: string` — Required, identifies exercise in storage
+- [x] `isOpen: boolean` — Required, controls visibility
+- [x] `onClose: () => void` — Required callback to close
+- [x] `className?: string` — Optional, appended to root element
+- [x] All props have type annotations
 
 ### State & Side Effects
 
-- [ ] Component derives tag list from storage on open
-- [ ] No local state for tags; always reads from storage
-- [ ] Calls `getExerciseTags()` on open to get current tags
-- [ ] Calls `addTag()` or `removeTag()` immediately when user acts
-- [ ] No async operations (all storage is sync)
+- [x] Component derives tag list from storage on open
+- [x] No local state for tags; always reads from storage
+- [x] Calls `getExerciseTags()` on open to get current tags
+- [x] Calls `addTag()` or `removeTag()` immediately when user acts
+- [x] No async operations (all storage is sync)
 
 ### Error Handling
 
-- [ ] No exceptions thrown if exercise doesn't exist
-- [ ] No exceptions thrown if storage unavailable
-- [ ] Graceful degradation if localStorage fails
+- [x] No exceptions thrown if exercise doesn't exist
+- [x] No exceptions thrown if storage unavailable
+- [x] Graceful degradation if localStorage fails
 
 ---
 
@@ -164,22 +164,22 @@ Renders:
 
 ## Definition of Done
 
-- [ ] Spec reviewed and accepted
-- [ ] Component created at `packages/ui/src/components/molecules/TagInput/`
-- [ ] Component exported via `packages/ui/src/index.ts`
-- [ ] All props documented in JSDoc
-- [ ] Component tests written (20+ tests expected):
-  - [ ] Open/close behavior
-  - [ ] Display existing tags
-  - [ ] Add new tag
-  - [ ] Remove tag
-  - [ ] Input validation (empty, whitespace)
-  - [ ] Duplicate tag rejection
-  - [ ] Accessibility attributes
-  - [ ] Keyboard interaction (Enter, Escape, Tab)
-  - [ ] Dark mode rendering
-  - [ ] Edge cases (no tags, many tags)
-- [ ] All tests pass
-- [ ] No regressions in existing UI tests
-- [ ] Linting passes
-- [ ] Storybook story created (optional but recommended)
+- [x] Spec reviewed and accepted
+- [x] Component created at `packages/ui/src/components/molecules/TagInput/`
+- [x] Component exported via `packages/ui/src/index.ts`
+- [x] All props documented in JSDoc
+- [x] Component tests written (20+ tests expected):
+  - [x] Open/close behavior
+  - [x] Display existing tags
+  - [x] Add new tag
+  - [x] Remove tag
+  - [x] Input validation (empty, whitespace)
+  - [x] Duplicate tag rejection
+  - [x] Accessibility attributes
+  - [x] Keyboard interaction (Enter, Escape, Tab)
+  - [x] Dark mode rendering
+  - [x] Edge cases (no tags, many tags)
+- [x] All tests pass
+- [x] No regressions in existing UI tests
+- [x] Linting passes
+- [x] Storybook story created (optional but recommended)

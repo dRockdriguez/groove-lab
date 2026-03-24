@@ -57,6 +57,8 @@ export { HitCounter } from './components/molecules/HitCounter';
 export type { HitCounterProps } from './components/molecules/HitCounter';
 export { FavoriteButton } from './components/molecules/FavoriteButton';
 export type { FavoriteButtonProps } from './components/molecules/FavoriteButton';
+export { TagInput } from './components/molecules/TagInput';
+export type { TagInputProps } from './components/molecules/TagInput';
 // Organisms
 export { Table } from './components/organisms/Table';
 export type { TableProps, Column } from './components/organisms/Table';
