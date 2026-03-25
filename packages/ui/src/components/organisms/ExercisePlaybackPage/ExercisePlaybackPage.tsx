@@ -853,6 +853,8 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             activeGlows={activeGlows}
             scoringEvents={scoringEvents}
             playheadOffsetPx={250}
+            onSeek={handleSeek}
+            isPlaying={playbackState === 'playing'}
           />
         </div>
       </div>

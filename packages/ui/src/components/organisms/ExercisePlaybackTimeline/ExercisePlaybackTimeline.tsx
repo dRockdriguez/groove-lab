@@ -1,6 +1,6 @@
 import React from 'react';
 import type { MidiEvent } from '@groovelab/types';
-import { getDrumColor } from '@groovelab/utils';
+import { getDrumColor, clamp } from '@groovelab/utils';
 import { TrackLabel } from '../../molecules/TrackLabel';
 import type { ScoringEvent, ScoringClassification } from '@groovelab/utils';
 
@@ -73,6 +73,10 @@ export interface ExercisePlaybackTimelineProps {
   scoringEvents?: ScoringEvent[];
   /** Horizontal offset for playhead in pixels (default: 250) */
   playheadOffsetPx?: number;
+  /** Called continuously during drag-to-seek with the new seek position in ms */
+  onSeek?: (timeMs: number) => void;
+  /** When true, the drag-to-seek gesture is disabled (default: false) */
+  isPlaying?: boolean;
   className?: string;
 }
 
@@ -92,10 +96,16 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   activeGlows,
   scoringEvents,
   playheadOffsetPx = 250,
+  onSeek,
+  isPlaying = false,
   className = '',
 }) => {
   const tracksRef = React.useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = React.useState(0);
+
+  // ─── Seek drag state (refs to avoid re-renders) ────────────────────────────
+  const seekDragStartX = React.useRef<number | null>(null);
+  const seekDragStartTimeMs = React.useRef<number | null>(null);
 
   // ─── ResizeObserver to measure container width for scrolling ───────────────
   React.useEffect(() => {
@@ -149,6 +159,38 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
 
   // ─── Mouse handlers for drag-to-select ────────────────────────────────────
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // ── Drag-to-seek (Alt+drag when paused) ──
+    if (e.altKey && !isPlaying && onSeek) {
+      if (containerWidth <= 0 || durationMs <= 0) return;
+      seekDragStartX.current = e.clientX;
+      seekDragStartTimeMs.current = currentTimeMs;
+      document.body.style.cursor = 'grabbing';
+
+      const handleSeekMove = (moveEvent: MouseEvent) => {
+        if (seekDragStartX.current === null || seekDragStartTimeMs.current === null) return;
+        const deltaX = moveEvent.clientX - seekDragStartX.current;
+        const newTimeMs = clamp(
+          seekDragStartTimeMs.current - (deltaX / containerWidth) * durationMs,
+          0,
+          durationMs,
+        );
+        onSeek(Math.round(newTimeMs));
+      };
+
+      const handleSeekUp = () => {
+        seekDragStartX.current = null;
+        seekDragStartTimeMs.current = null;
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', handleSeekMove);
+        document.removeEventListener('mouseup', handleSeekUp);
+      };
+
+      document.addEventListener('mousemove', handleSeekMove);
+      document.addEventListener('mouseup', handleSeekUp);
+      return;
+    }
+
+    // ── Loop creation (no Alt key) ──
     if (isLoopActive || !onLoopStartChange || !onLoopEndChange) return;
     const timeMs = getTimeFromMouseEvent(e);
     setDragStartMs(timeMs);
@@ -295,7 +337,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
         <div
           ref={tracksRef}
           className="relative flex-1 overflow-hidden"
-          onMouseDown={onLoopStartChange && onLoopEndChange ? handleMouseDown : undefined}
+          onMouseDown={onLoopStartChange || onLoopEndChange || onSeek ? handleMouseDown : undefined}
           onMouseMove={onLoopStartChange && onLoopEndChange ? handleMouseMove : undefined}
           onMouseUp={onLoopStartChange && onLoopEndChange ? handleMouseUp : undefined}
           style={{ cursor: isDragging ? 'col-resize' : undefined }}
