@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { isFavorite, toggleFavorite, getExerciseTags } from '@groovelab/utils';
+import { isFavorite, toggleFavorite, getExerciseTags, useLocalStorageListener } from '@groovelab/utils';
 
 export interface FavoriteButtonProps {
   /** Exercise ID used to look up favorite state and tags in storage */
@@ -36,16 +36,10 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     setState(readState(exerciseId));
   }, [exerciseId]);
 
-  // Listen for storage events from other tabs
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'groovelab_favorites' || e.key === 'groovelab_tags') {
-        setState(readState(exerciseId));
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [exerciseId]);
+  // Re-sync on any localStorage change to watched keys (same tab + cross-tab)
+  useLocalStorageListener(['groovelab_favorites', 'groovelab_tags'], () => {
+    setState(readState(exerciseId));
+  });
 
   const handleHeartClick = useCallback(() => {
     const next = toggleFavorite(exerciseId);

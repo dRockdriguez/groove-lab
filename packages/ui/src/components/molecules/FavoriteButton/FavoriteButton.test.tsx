@@ -5,13 +5,14 @@ import { FavoriteButton } from './FavoriteButton';
 import * as utils from '@groovelab/utils';
 
 // Mock the storage utilities
-vi.mock('@groovelab/utils', async () => {
-  const actual = await vi.importActual<typeof utils>('@groovelab/utils');
+vi.mock('@groovelab/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof utils>();
   return {
     ...actual,
     isFavorite: vi.fn(),
     toggleFavorite: vi.fn(),
     getExerciseTags: vi.fn(),
+    // useLocalStorageListener is the real implementation (not mocked)
   };
 });
 

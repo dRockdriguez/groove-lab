@@ -4,6 +4,7 @@ import {
   filterExercises,
   getSelectedFilterTags,
   setSelectedFilterTags,
+  useLocalStorageListener,
 } from '@groovelab/utils';
 import { InstrumentButton } from '../../atoms/InstrumentButton';
 import { ExerciseSectionList } from '../../molecules/ExerciseSectionList';
@@ -56,6 +57,10 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByIns
     setSelectedFilterTagsState([]);
     setSelectedFilterTags([]);
   };
+
+  // Re-filter when tags or favorites change in localStorage (same tab + cross-tab)
+  // The filterExercises call below reads from storage directly, so a re-render is sufficient.
+  useLocalStorageListener(['groovelab_tags', 'groovelab_favorites']);
 
   const isAnyFilterActive = showFavoritesOnly || selectedFilterTags.length > 0;
 
