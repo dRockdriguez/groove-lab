@@ -25,6 +25,8 @@ export { FeedbackBadge } from './components/atoms/FeedbackBadge';
 export type { FeedbackBadgeProps } from './components/atoms/FeedbackBadge';
 export { ToleranceSelector } from './components/atoms/ToleranceSelector';
 export type { ToleranceSelectorProps } from './components/atoms/ToleranceSelector';
+export { NavigationMenu } from './components/atoms/NavigationMenu';
+export type { NavigationMenuProps, NavigationMenuItem } from './components/atoms/NavigationMenu';
 
 // Molecules
 export { Header } from './components/molecules/Header';
