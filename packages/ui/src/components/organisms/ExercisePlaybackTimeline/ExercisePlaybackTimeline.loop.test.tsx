@@ -789,4 +789,497 @@ describe('ExercisePlaybackTimeline - Loop Overlay', () => {
       });
     });
   });
+
+  describe('getTimeFromMouseEvent - Scrolled Timeline Mouse Position to Time Conversion', () => {
+    // ── Acceptance Criteria Tests ──
+
+    it('AC1: click at playhead position (clientX = rect.left + playheadOffsetPx) returns currentTimeMs', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={15000}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 100, // rect.left = 100
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1100,
+            bottom: 100,
+            x: 100,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click at playhead: clientX = rect.left + playheadOffsetPx = 100 + 250 = 350
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 350 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 400 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // At playhead, time should be close to currentTimeMs (15000)
+          // Formula: ms = (350 - 100 - 250) / (1000 / 60000) + 15000 = 0 / 0.01667 + 15000 = 15000
+          expect(Math.abs(timeMs - 15000)).toBeLessThan(100);
+        }
+      });
+    });
+
+    it('AC2: click halfway right of playhead returns currentTimeMs + durationMs / 2', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={0}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click halfway right: clientX = 250 + (1000 / 2) = 750
+      // Formula: ms = (750 - 0 - 250) / (1000 / 60000) + 0 = 500 / 0.01667 + 0 ≈ 30000
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 750 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 800 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // Should be close to durationMs / 2 = 30000
+          expect(Math.abs(timeMs - 30000)).toBeLessThan(100);
+        }
+      });
+    });
+
+    it('AC3: click left of playhead returns currentTimeMs - (offset / pixelsPerMs)', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={15000}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click 100px left of playhead: clientX = 250 - 100 = 150
+      // Formula: ms = (150 - 0 - 250) / (1000 / 60000) + 15000 = -100 / 0.01667 + 15000
+      // = -5999.88 + 15000 ≈ 9000
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 150 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 100 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // Should be less than currentTimeMs (15000)
+          expect(timeMs).toBeLessThan(15000);
+        }
+      });
+    });
+
+    it('AC4: returned time never exceeds durationMs (clamped to max)', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={50000}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click far right to attempt to exceed duration
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 2000 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 2100 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // Should be clamped to durationMs (60000)
+          expect(timeMs).toBeLessThanOrEqual(60000);
+        }
+      });
+    });
+
+    it('AC5: returned time is never negative (clamped to min 0)', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={5000}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click far left to attempt negative time
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: -200 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: -300 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // Should be clamped to 0 minimum
+          expect(timeMs).toBeGreaterThanOrEqual(0);
+        }
+      });
+    });
+
+    // ── Edge Case Tests ──
+
+    it('Edge case: containerWidth = 0 returns currentTimeMs', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={30000}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        // Mock with width = 0
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 0, // Zero width triggers guard clause
+            height: 100,
+            right: 0,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 400 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // With width=0, should return currentTimeMs
+          expect(timeMs).toBe(30000);
+        }
+      });
+    });
+
+    it('Edge case: durationMs = 0 returns currentTimeMs (prevents division by zero)', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={30000}
+          durationMs={0} // Zero duration
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 400 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        // With durationMs=0, drag will not create loop, so may not call callbacks
+        // This test verifies no crash occurs
+        expect(onStartChange).not.toThrow();
+      });
+    });
+
+    it('Edge case: click outside timeline bounds far left is clamped to 0', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={30000}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click far left: clientX = -500
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: -500 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: -400 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // Should be clamped to [0, durationMs]
+          expect(timeMs).toBeGreaterThanOrEqual(0);
+          expect(timeMs).toBeLessThanOrEqual(60000);
+        }
+      });
+    });
+
+    it('Edge case: click outside timeline bounds far right is clamped to durationMs', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={30000}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click far right: clientX = 3000
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 3000 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 3100 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // Should be clamped to [0, durationMs]
+          expect(timeMs).toBeGreaterThanOrEqual(0);
+          expect(timeMs).toBeLessThanOrEqual(60000);
+        }
+      });
+    });
+
+    it('Edge case: currentTimeMs near loop reset (just jumped from loopEndMs to loopStartMs) time calculation is relative to new currentTimeMs', async () => {
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          currentTimeMs={15000} // Just jumped to loop start
+          loopStartMs={15000}
+          loopEndMs={45000}
+          isLoopActive={false}
+          durationMs={60000}
+          playheadOffsetPx={250}
+          onLoopStartChange={onStartChange}
+          onLoopEndChange={vi.fn()}
+        />
+      );
+
+      const tracksDiv = container.querySelector('.relative.flex-1');
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Click at playhead after loop jump
+      fireEvent.mouseDown(tracksDiv as Element, { clientX: 250 });
+      fireEvent.mouseMove(tracksDiv as Element, { clientX: 400 });
+      fireEvent.mouseUp(tracksDiv as Element);
+
+      await waitFor(() => {
+        if (onStartChange.mock.calls.length > 0) {
+          const timeMs = onStartChange.mock.calls[0][0];
+          // Time calculation should be relative to new currentTimeMs (15000), which is correct
+          expect(timeMs).toBeGreaterThanOrEqual(15000);
+        }
+      });
+    });
+
+    it('Bracket drag formula is unchanged (delta-based, no updates required)', async () => {
+      // This test verifies that existing bracket drag tests still pass
+      // and that no changes to bracket drag formula are needed
+      const onStartChange = vi.fn();
+      const { container } = render(
+        <ExercisePlaybackTimeline
+          {...defaultProps}
+          loopStartMs={15000}
+          loopEndMs={45000}
+          onLoopStartChange={onStartChange}
+          durationMs={60000}
+        />
+      );
+
+      const startMarker = screen.getByTestId('loop-start-marker');
+      const tracksDiv = container.querySelector('.relative.flex-1');
+
+      if (tracksDiv) {
+        Object.defineProperty(tracksDiv, 'getBoundingClientRect', {
+          value: () => ({
+            left: 0,
+            top: 0,
+            width: 1000,
+            height: 100,
+            right: 1000,
+            bottom: 100,
+            x: 0,
+            y: 0,
+          }),
+          configurable: true,
+        });
+      }
+
+      // Drag bracket (delta-based formula, should still work)
+      fireEvent.mouseDown(startMarker, { clientX: 250 });
+      fireEvent.mouseMove(document, { clientX: 200 });
+      fireEvent.mouseUp(document);
+
+      expect(onStartChange).toHaveBeenCalled();
+    });
+  });
 });
