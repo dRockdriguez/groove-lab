@@ -66,7 +66,7 @@ const steps: Record<string, Step> = {
   plan: {
     label: 'Plan spec',
     prompt: 'prompts/plan-spec.md',
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-6',
   },
   implement: {
     label: 'Implement feature from tests',
@@ -330,26 +330,43 @@ function buildFallbackHandoff(stepKey: string, status: 'completed' | 'failed', o
   };
 }
 
+// Truncate handoff JSON to reduce token consumption: keep only essential fields, cap array sizes
+function truncateHandoffForContext(handoff: StepHandoff): StepHandoff {
+  const maxArrayItems = 3; // Keep first 3 items per array
+  return {
+    version: handoff.version,
+    stepKey: handoff.stepKey,
+    status: handoff.status,
+    summary: handoff.summary.length > 200 ? handoff.summary.slice(0, 200) + '…' : handoff.summary,
+    acceptanceCriteria: handoff.acceptanceCriteria.slice(0, maxArrayItems),
+    filesChanged: handoff.filesChanged.slice(0, maxArrayItems),
+    testsAdded: handoff.testsAdded.slice(0, maxArrayItems),
+    verification: handoff.verification.slice(0, maxArrayItems),
+    openIssues: [],  // Skip to save tokens—covered by status
+    nextStepGuidance: handoff.nextStepGuidance.slice(0, 2),
+  };
+}
+
 function buildStepContextBlock(context: WorkflowContext): string {
   if (context.steps.length === 0) {
     return '';
   }
 
   const recentSteps = context.steps.slice(-3);
-  const lines = recentSteps.flatMap((step) => [
-    `- ${step.label} (${step.stepKey})`,
-    `  model: ${step.model}`,
-    `  status: ${step.status}`,
-    `  completedAt: ${step.completedAt}`,
-    `  handoff:`,
-    ...JSON.stringify(
-      step.handoff ?? buildFallbackHandoff(step.stepKey, step.status, step.outputSummary),
-      null,
-      2
-    )
-      .split('\n')
-      .map((line) => `    ${line}`),
-  ]);
+  const lines = recentSteps.flatMap((step) => {
+    const handoff = step.handoff ?? buildFallbackHandoff(step.stepKey, step.status, step.outputSummary);
+    const truncatedHandoff = truncateHandoffForContext(handoff);
+    return [
+      `- ${step.label} (${step.stepKey})`,
+      `  model: ${step.model}`,
+      `  status: ${step.status}`,
+      `  completedAt: ${step.completedAt}`,
+      `  handoff:`,
+      ...JSON.stringify(truncatedHandoff, null, 2)
+        .split('\n')
+        .map((line) => `    ${line}`),
+    ];
+  });
 
   return [
     '',
