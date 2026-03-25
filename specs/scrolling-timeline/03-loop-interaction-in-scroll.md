@@ -1,6 +1,6 @@
 # Spec: Loop Drag Interaction in Scrolled Timeline
 
-**Status:** Draft
+**Status:** Implemented
 **Last updated:** 2026-03-25
 
 ## Scope
@@ -73,15 +73,15 @@ T = (x - playheadOffsetPx) / (containerWidth / durationMs) + currentTimeMs
 
 ## Definition of Done
 
-- [ ] `getTimeFromMouseEvent` handler function body replaced with new formula
-- [ ] Guard clause added: `if (containerWidth <= 0 || durationMs <= 0) return currentTimeMs;`
-- [ ] `relativeX`, `pixelsPerMs`, `ms` calculated as per formula
-- [ ] Time clamped to `[0, durationMs]` using `Math.max(0, Math.min(durationMs, ms))`
-- [ ] Bracket drag handler left unchanged (delta-based formula is correct)
-- [ ] `ExercisePlaybackTimeline.loop.test.tsx` drag-to-create tests (~8 tests) updated:
+- [x] `getTimeFromMouseEvent` handler function body replaced with new formula
+- [x] Guard clause added: `if (containerWidth <= 0 || durationMs <= 0) return currentTimeMs;`
+- [x] `relativeX`, `pixelsPerMs`, `ms` calculated as per formula
+- [x] Time clamped to `[0, durationMs]` using `Math.max(0, Math.min(durationMs, ms))`
+- [x] Bracket drag handler left unchanged (delta-based formula is correct)
+- [x] `ExercisePlaybackTimeline.loop.test.tsx` drag-to-create tests (~8 tests) updated:
   - ResizeObserver mocked with `contentRect.width = 1000`
   - Test click clientX values adjusted to match new formula expectations
   - E.g., to click at currentTime: `clientX = rect.left + playheadOffsetPx`
   - Bracket drag tests (~6 tests) remain unchanged, no assertions modified
-- [ ] All ExercisePlaybackTimeline tests pass
-- [ ] No changes to other components
+- [x] All ExercisePlaybackTimeline tests pass
+- [x] No changes to other components
