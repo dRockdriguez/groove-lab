@@ -100,6 +100,8 @@ Specs are organized by dependency layer:
 - **Specs 03, 04, 05** (UI components) — Depend on spec 01, independent from each other
 - **Spec 06** (ExerciseCard enhancement) — Depends on spec 03
 - **Spec 07** (ExerciseBrowser integration) — Depends on specs 02, 03, 04, 05, 06
+- **Spec 08** (Real-time sync) — Depends on spec 01; enhances all downstream components
+- **Spec 09** (Inline badges) — Depends on specs 01, 03, 08; improves ExerciseCard UX
 
 | # | File | Scope | Dependency |
 |---|------|-------|------------|
@@ -110,6 +112,8 @@ Specs are organized by dependency layer:
 | 05 | `05-tag-filter.md` | Filter UI: available tags, selection, search, clear button | 02 |
 | 06 | `06-exercise-card-enhancement.md` | Integrate FavoriteButton into ExerciseCard | 03 |
 | 07 | `07-exercise-browser-integration.md` | Integrate all: favorites toggle, tag filtering, updated ExerciseCard | 02, 03, 04, 05, 06 |
+| 08 | `08-real-time-tag-updates.md` | Real-time localStorage sync via hook/notifier (cross-tab & in-tab) | 01 |
+| 09 | `09-inline-tag-badges.md` | Display up to 3 tags as badges in ExerciseCard, "+X more" indicator | 01, 03, 08 |
 
 ---
 
@@ -153,6 +157,9 @@ Specs are organized by dependency layer:
 
 ## Status
 
-- **Status**: Draft
+- **Status**: In Progress
 - **Created**: 2026-03-23
-- **Mini-specs ready for implementation**: Awaiting acceptance
+- **Last updated**: 2026-03-25
+- **Specs 01–07**: Implemented and verified
+- **Specs 08–09**: Draft (created 2026-03-25)
+- **Next phase**: Implement Specs 08 & 09 to address real-time sync + UX improvements

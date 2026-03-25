@@ -4,18 +4,23 @@ import userEvent from '@testing-library/user-event';
 import { TagFilter } from './TagFilter';
 import { getDistinctTags } from '@groovelab/utils';
 
-// Mock getDistinctTags from @groovelab/utils
-vi.mock('@groovelab/utils', () => ({
-  getDistinctTags: vi.fn(() => [
-    'rock',
-    'fast',
-    'solo',
-    'warm-up',
-    'groove',
-    'rhythm',
-    'rudiments',
-  ]),
-}));
+// Mock getDistinctTags and useLocalStorageListener from @groovelab/utils
+vi.mock('@groovelab/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@groovelab/utils')>();
+  return {
+    ...actual,
+    getDistinctTags: vi.fn(() => [
+      'rock',
+      'fast',
+      'solo',
+      'warm-up',
+      'groove',
+      'rhythm',
+      'rudiments',
+    ]),
+    // useLocalStorageListener is the real implementation (not mocked)
+  };
+});
 
 describe('TagFilter', () => {
   let mockOnSelectedTagsChange: ReturnType<typeof vi.fn>;

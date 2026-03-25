@@ -5,30 +5,27 @@ import { FavoriteButton } from './FavoriteButton';
 import * as utils from '@groovelab/utils';
 
 // Mock the storage utilities
-vi.mock('@groovelab/utils', async () => {
-  const actual = await vi.importActual<typeof utils>('@groovelab/utils');
+vi.mock('@groovelab/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof utils>();
   return {
     ...actual,
     isFavorite: vi.fn(),
     toggleFavorite: vi.fn(),
-    getExerciseTags: vi.fn(),
+    // useLocalStorageListener is the real implementation (not mocked)
   };
 });
 
 const mockIsFavorite = vi.mocked(utils.isFavorite);
 const mockToggleFavorite = vi.mocked(utils.toggleFavorite);
-const mockGetExerciseTags = vi.mocked(utils.getExerciseTags);
 
 describe('FavoriteButton', () => {
   beforeEach(() => {
     // Reset all mocks
     mockIsFavorite.mockClear();
     mockToggleFavorite.mockClear();
-    mockGetExerciseTags.mockClear();
     // Default mock implementations
     mockIsFavorite.mockReturnValue(false);
     mockToggleFavorite.mockReturnValue(true);
-    mockGetExerciseTags.mockReturnValue([]);
   });
 
   afterEach(() => {
@@ -38,7 +35,6 @@ describe('FavoriteButton', () => {
   describe('Rendering — Heart Icon', () => {
     it('should render a heart icon (SVG element)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -48,7 +44,6 @@ describe('FavoriteButton', () => {
 
     it('should render an unfilled/hollow heart when exercise is NOT favorited', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { container } = render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -60,7 +55,6 @@ describe('FavoriteButton', () => {
 
     it('should render a filled/solid heart when exercise IS favorited', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { container } = render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -71,7 +65,6 @@ describe('FavoriteButton', () => {
 
     it('should show gray/muted color on unfilled heart', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -83,7 +76,6 @@ describe('FavoriteButton', () => {
 
     it('should show red color on filled heart', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -94,80 +86,45 @@ describe('FavoriteButton', () => {
     });
   });
 
-  describe('Rendering — Tag Badge', () => {
-    it('should render a tag count badge when tags exist', () => {
+  describe('Rendering — Heart Only (No Tag Badge)', () => {
+    it('should NOT render a numeric tag count badge', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1', 'tag2', 'tag3']);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
-      expect(screen.getByText('3')).toBeInTheDocument();
-    });
-
-    it('should NOT render badge when no tags exist', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
-
-      render(<FavoriteButton exerciseId="ex-123" />);
-
-      // Badge should not exist; text content with a number shouldn't be rendered
-      // except for heart button text
+      // No numeric badge should appear
       const badges = screen.queryAllByText(/^\d+$/);
       expect(badges.length).toBe(0);
     });
 
-    it('should render badge with small rounded pill style', () => {
+    it('should render only one button (the heart button)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      render(<FavoriteButton exerciseId="ex-123" onTagsClick={onTagsClick} />);
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-
-      expect(badgeButton).toHaveClass('rounded-full', 'text-xs', 'font-medium');
-    });
-
-    it('should render badge with gray background in light mode', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      render(<FavoriteButton exerciseId="ex-123" onTagsClick={onTagsClick} />);
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-
-      expect(badgeButton).toHaveClass('bg-gray-100', 'dark:bg-gray-700');
-    });
-
-    it('should show correct tag count (e.g., 1 tag)', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
-      expect(screen.getByText('1')).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button');
+      expect(buttons.length).toBe(1);
+      expect(buttons[0]).toHaveAttribute('aria-label', expect.stringMatching(/favorites/i));
     });
 
-    it('should show correct tag count (e.g., 27 tags)', () => {
+    it('should render only heart button even when exercise has many tags in storage', () => {
       mockIsFavorite.mockReturnValue(false);
-      const manyTags = Array.from({ length: 27 }, (_, i) => `tag${i + 1}`);
-      mockGetExerciseTags.mockReturnValue(manyTags);
+
+      // Even if tags exist in localStorage, FavoriteButton shows heart only
+      localStorage.setItem('groovelab_tags', JSON.stringify({ 'ex-123': ['a', 'b', 'c'] }));
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
-      expect(screen.getByText('27')).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button');
+      expect(buttons.length).toBe(1);
+
+      localStorage.clear();
     });
   });
 
   describe('Rendering — Inline-Friendly Layout', () => {
     it('should use inline-flex for compact layout', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { container } = render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -177,7 +134,6 @@ describe('FavoriteButton', () => {
 
     it('should have no extra margin/padding on root', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { container } = render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -192,7 +148,6 @@ describe('FavoriteButton', () => {
     it('should call toggleFavorite when heart is clicked', async () => {
       mockIsFavorite.mockReturnValue(false);
       mockToggleFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(<FavoriteButton exerciseId="ex-456" />);
@@ -208,7 +163,6 @@ describe('FavoriteButton', () => {
     it('should update visual state immediately after click', async () => {
       mockIsFavorite.mockReturnValue(false);
       mockToggleFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(<FavoriteButton exerciseId="ex-456" />);
@@ -232,7 +186,6 @@ describe('FavoriteButton', () => {
         favoriteState = !favoriteState;
         return favoriteState;
       });
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(<FavoriteButton exerciseId="ex-456" />);
@@ -259,7 +212,6 @@ describe('FavoriteButton', () => {
       mockIsFavorite.mockReturnValue(false);
       // toggleFavorite handles unavailable localStorage internally; just test it doesn't throw
       mockToggleFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(<FavoriteButton exerciseId="ex-456" />);
@@ -274,123 +226,9 @@ describe('FavoriteButton', () => {
     });
   });
 
-  describe('Tag Count — Display & Updates', () => {
-    it('should display tag count correctly (3 tags)', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1', 'tag2', 'tag3']);
-
-      render(<FavoriteButton exerciseId="ex-789" />);
-
-      expect(screen.getByText('3')).toBeInTheDocument();
-    });
-
-    it('should not display badge when tag count is 0', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
-
-      render(<FavoriteButton exerciseId="ex-789" />);
-
-      const badges = screen.queryAllByText(/^\d+$/);
-      expect(badges.length).toBe(0);
-    });
-
-    it('should update tag count if storage changes (storage event)', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1', 'tag2']);
-
-      const { rerender } = render(<FavoriteButton exerciseId="ex-789" />);
-
-      expect(screen.getByText('2')).toBeInTheDocument();
-
-      // Simulate storage event from another tab
-      mockGetExerciseTags.mockReturnValue(['tag1', 'tag2', 'tag3', 'tag4']);
-
-      const storageEvent = new StorageEvent('storage', {
-        key: 'groovelab_tags',
-        oldValue: null,
-        newValue: null,
-      });
-      window.dispatchEvent(storageEvent);
-
-      // Wait for re-render
-      rerender(<FavoriteButton exerciseId="ex-789" />);
-      expect(screen.getByText('4')).toBeInTheDocument();
-    });
-  });
-
-  describe('Tag Click Handler', () => {
-    it('should render tag badge as button when onTagsClick is provided', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      render(
-        <FavoriteButton exerciseId="ex-789" onTagsClick={onTagsClick} />
-      );
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-      expect(badgeButton).toBeInTheDocument();
-    });
-
-    it('should render tag badge as span (non-interactive) when onTagsClick is NOT provided', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      render(<FavoriteButton exerciseId="ex-789" />);
-
-      const badge = screen.getByText('1');
-
-      // Should be a span, not a button (query by role should fail for span)
-      expect(screen.queryByRole('button', { name: /tag/i })).not.toBeInTheDocument();
-      // Verify the badge element itself is a span
-      expect(badge.tagName.toLowerCase()).toBe('span');
-    });
-
-    it('should call onTagsClick when tag badge button is clicked', async () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      const user = userEvent.setup();
-
-      render(
-        <FavoriteButton exerciseId="ex-789" onTagsClick={onTagsClick} />
-      );
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-      await user.click(badgeButton);
-
-      expect(onTagsClick).toHaveBeenCalled();
-    });
-
-    it('should call onTagsClick with no arguments', async () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      const user = userEvent.setup();
-
-      render(
-        <FavoriteButton exerciseId="ex-789" onTagsClick={onTagsClick} />
-      );
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-      await user.click(badgeButton);
-
-      expect(onTagsClick).toHaveBeenCalledWith();
-    });
-  });
-
   describe('Accessibility', () => {
     it('should have aria-label "Add to favorites" when not favorited', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -402,7 +240,6 @@ describe('FavoriteButton', () => {
 
     it('should have aria-label "Remove from favorites" when favorited', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -414,7 +251,6 @@ describe('FavoriteButton', () => {
 
     it('should have aria-pressed attribute matching favorite state', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -426,7 +262,6 @@ describe('FavoriteButton', () => {
 
     it('should be keyboard-accessible (Tab focuses the button)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -441,7 +276,6 @@ describe('FavoriteButton', () => {
     it('should respond to Enter key press on heart button', async () => {
       mockIsFavorite.mockReturnValue(false);
       mockToggleFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(<FavoriteButton exerciseId="ex-123" />);
@@ -459,7 +293,6 @@ describe('FavoriteButton', () => {
     it('should respond to Space key press on heart button', async () => {
       mockIsFavorite.mockReturnValue(false);
       mockToggleFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(<FavoriteButton exerciseId="ex-123" />);
@@ -473,42 +306,11 @@ describe('FavoriteButton', () => {
 
       expect(mockToggleFavorite).toHaveBeenCalled();
     });
-
-    it('should have accessible label for tag badge button', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      render(
-        <FavoriteButton exerciseId="ex-123" onTagsClick={onTagsClick} />
-      );
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-      expect(badgeButton).toHaveAttribute('aria-label');
-      expect(badgeButton.getAttribute('aria-label')).toMatch(/tag/i);
-    });
-
-    it('should have accessible label for tag badge span (display-only)', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      render(<FavoriteButton exerciseId="ex-123" />);
-
-      const badge = screen.getByText('1');
-
-      // The badge element itself (span) should have aria-label
-      expect(badge).toHaveAttribute('aria-label');
-      const label = badge.getAttribute('aria-label') || '';
-      expect(label).toMatch(/tag/i);
-    });
   });
 
   describe('Styling — Tailwind Classes', () => {
     it('should use Tailwind classes only (no inline styles on heart)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -525,7 +327,6 @@ describe('FavoriteButton', () => {
 
     it('should apply hover state (hover:scale-110)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -537,7 +338,6 @@ describe('FavoriteButton', () => {
 
     it('should apply focus state (focus-visible:ring-2)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -549,7 +349,6 @@ describe('FavoriteButton', () => {
 
     it('should have dark mode variant on unfilled heart', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -561,7 +360,6 @@ describe('FavoriteButton', () => {
 
     it('should have dark mode variant on filled heart', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -570,52 +368,19 @@ describe('FavoriteButton', () => {
       });
       expect(heartButton).toHaveClass('dark:text-red-400');
     });
-
-    it('should apply dark mode styles to tag badge', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      render(
-        <FavoriteButton exerciseId="ex-123" onTagsClick={onTagsClick} />
-      );
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-
-      expect(badgeButton).toHaveClass('dark:bg-gray-700', 'dark:text-gray-300');
-    });
   });
 
   describe('Props', () => {
     it('should accept exerciseId prop (required)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-unique-id" />);
 
       expect(mockIsFavorite).toHaveBeenCalledWith('ex-unique-id');
     });
 
-    it('should accept onTagsClick prop (optional)', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
-
-      const onTagsClick = vi.fn();
-      render(
-        <FavoriteButton exerciseId="ex-123" onTagsClick={onTagsClick} />
-      );
-
-      const badgeButton = screen.getByRole('button', {
-        name: /tag.*click to manage/i,
-      });
-      expect(badgeButton).toBeInTheDocument();
-    });
-
     it('should accept className prop (optional)', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { container } = render(
         <FavoriteButton
@@ -630,7 +395,6 @@ describe('FavoriteButton', () => {
 
     it('should append className to root element', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { container } = render(
         <FavoriteButton
@@ -647,26 +411,15 @@ describe('FavoriteButton', () => {
   describe('State Management', () => {
     it('should read isFavorite from storage on mount', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
       expect(mockIsFavorite).toHaveBeenCalledWith('ex-123');
     });
 
-    it('should read getExerciseTags from storage on mount', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1', 'tag2']);
-
-      render(<FavoriteButton exerciseId="ex-123" />);
-
-      expect(mockGetExerciseTags).toHaveBeenCalledWith('ex-123');
-    });
-
     it('should update visual state immediately after click (no flashing)', async () => {
       mockIsFavorite.mockReturnValue(false);
       mockToggleFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(
@@ -688,7 +441,6 @@ describe('FavoriteButton', () => {
 
     it('should re-render on exerciseId change', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { rerender } = render(
         <FavoriteButton exerciseId="ex-1" />
@@ -698,7 +450,6 @@ describe('FavoriteButton', () => {
 
       mockIsFavorite.mockClear();
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
 
       rerender(<FavoriteButton exerciseId="ex-2" />);
 
@@ -708,7 +459,6 @@ describe('FavoriteButton', () => {
     it('should listen to storage events and re-sync on groovelab_favorites key change', () => {
       let favoriteState = false;
       mockIsFavorite.mockImplementation(() => favoriteState);
-      mockGetExerciseTags.mockReturnValue([]);
 
       const { rerender } = render(
         <FavoriteButton exerciseId="ex-123" />
@@ -727,35 +477,11 @@ describe('FavoriteButton', () => {
       rerender(<FavoriteButton exerciseId="ex-123" />);
       expect(screen.getByRole('button', { name: /remove/i })).toBeInTheDocument();
     });
-
-    it('should listen to storage events and re-sync on groovelab_tags key change', () => {
-      mockIsFavorite.mockReturnValue(false);
-      let tagList = ['tag1'];
-      mockGetExerciseTags.mockImplementation(() => tagList);
-
-      const { rerender } = render(
-        <FavoriteButton exerciseId="ex-123" />
-      );
-
-      expect(screen.getByText('1')).toBeInTheDocument();
-
-      // Simulate storage event (tags changed in another tab)
-      tagList = ['tag1', 'tag2', 'tag3'];
-      const storageEvent = new StorageEvent('storage', {
-        key: 'groovelab_tags',
-        newValue: 'some-value',
-      });
-      window.dispatchEvent(storageEvent);
-
-      rerender(<FavoriteButton exerciseId="ex-123" />);
-      expect(screen.getByText('3')).toBeInTheDocument();
-    });
   });
 
   describe('Initial Render', () => {
     it('should render correct favorite state on first render', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -765,34 +491,22 @@ describe('FavoriteButton', () => {
       expect(heartButton).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('should render correct tag count on first render', () => {
-      mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1', 'tag2', 'tag3', 'tag4']);
-
-      render(<FavoriteButton exerciseId="ex-123" />);
-
-      expect(screen.getByText('4')).toBeInTheDocument();
-    });
-
     it('should not show visual jank (no loading/flash) on mount', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue(['tag1']);
 
       const { container } = render(
         <FavoriteButton exerciseId="ex-123" />
       );
 
-      // Verify both heart and badge are rendered immediately
+      // Verify heart is rendered immediately with no loading state
       const svg = container.querySelector('svg[fill="none"]');
       expect(svg).toBeInTheDocument();
-      expect(screen.getByText('1')).toBeInTheDocument();
     });
   });
 
   describe('Edge Cases', () => {
-    it('should render heart only when no tags exist', () => {
+    it('should render heart only', () => {
       mockIsFavorite.mockReturnValue(true);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId="ex-123" />);
 
@@ -801,19 +515,9 @@ describe('FavoriteButton', () => {
       });
       expect(heartButton).toBeInTheDocument();
 
-      // No badge
+      // No numeric badge
       const badges = screen.queryAllByText(/^\d+$/);
       expect(badges.length).toBe(0);
-    });
-
-    it('should display exact count with many tags (27)', () => {
-      mockIsFavorite.mockReturnValue(false);
-      const manyTags = Array.from({ length: 27 }, (_, i) => `tag${i}`);
-      mockGetExerciseTags.mockReturnValue(manyTags);
-
-      render(<FavoriteButton exerciseId="ex-123" />);
-
-      expect(screen.getByText('27')).toBeInTheDocument();
     });
 
     it('should toggle from favorited to unfavorited', async () => {
@@ -823,7 +527,6 @@ describe('FavoriteButton', () => {
         favoriteState = false;
         return favoriteState;
       });
-      mockGetExerciseTags.mockReturnValue([]);
 
       const user = userEvent.setup();
       render(<FavoriteButton exerciseId="ex-123" />);
@@ -840,7 +543,6 @@ describe('FavoriteButton', () => {
 
     it('should handle missing exerciseId gracefully', () => {
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       // Should not throw
       expect(() => {
@@ -851,7 +553,6 @@ describe('FavoriteButton', () => {
     it('should handle very long exerciseId (no display impact)', () => {
       const longId = 'ex-' + 'a'.repeat(500);
       mockIsFavorite.mockReturnValue(false);
-      mockGetExerciseTags.mockReturnValue([]);
 
       render(<FavoriteButton exerciseId={longId} />);
 

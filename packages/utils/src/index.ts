@@ -1,4 +1,9 @@
 import type { FavoritesStore, InstrumentExercises, InstrumentType, TagsStore } from '@groovelab/types';
+import { LocalStorageNotifier } from './notifier/LocalStorageNotifier';
+
+// ─── Re-exports ───────────────────────────────────────────────────────────────
+export { LocalStorageNotifier } from './notifier/LocalStorageNotifier';
+export { useLocalStorageListener } from './hooks/useLocalStorageListener';
 
 // ─── Time ─────────────────────────────────────────────────────────────────────
 
@@ -613,9 +618,11 @@ export function getFavorites(): FavoritesStore {
 export function setFavorites(favorites: FavoritesStore): void {
   if (!_isLocalStorageAvailable()) {
     _favoritesMemory = favorites;
+    LocalStorageNotifier.notifyChange(FAVORITES_KEY, null);
     return;
   }
   _writeLocalStorage(FAVORITES_KEY, favorites);
+  LocalStorageNotifier.notifyChange(FAVORITES_KEY, localStorage.getItem(FAVORITES_KEY));
 }
 
 /** Returns true if the given exerciseId is marked as favorite. */
@@ -652,9 +659,11 @@ export function getTags(): TagsStore {
 export function setTags(tags: TagsStore): void {
   if (!_isLocalStorageAvailable()) {
     _tagsMemory = tags;
+    LocalStorageNotifier.notifyChange(TAGS_KEY, null);
     return;
   }
   _writeLocalStorage(TAGS_KEY, tags);
+  LocalStorageNotifier.notifyChange(TAGS_KEY, localStorage.getItem(TAGS_KEY));
 }
 
 /** Returns tags for a specific exercise. Returns [] if not found. */
