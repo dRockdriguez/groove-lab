@@ -54,7 +54,6 @@ export const TagFilter: React.FC<TagFilterProps> = ({
       {/* Header */}
       <div>
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Tags</h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Filter by multiple tags</p>
       </div>
 
       {/* Tag buttons */}
