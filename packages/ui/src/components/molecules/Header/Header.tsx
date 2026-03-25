@@ -68,6 +68,8 @@ export const Header: React.FC<HeaderProps> = ({ navigationItems, activeHref: act
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
   const [detectedActiveHref, setDetectedActiveHref] = useState<string | undefined>(undefined);
+  const [toolsButtonVisible, setToolsButtonVisible] = useState(false);
+  const [toolsSidebarOpen, setToolsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const initial = getInitialTheme();
@@ -113,6 +115,29 @@ export const Header: React.FC<HeaderProps> = ({ navigationItems, activeHref: act
     });
   }, []);
 
+  // Listen for tools sidebar availability and state changes
+  useEffect(() => {
+    const onAvailable = () => setToolsButtonVisible(true);
+    const onUnavailable = () => {
+      setToolsButtonVisible(false);
+      setToolsSidebarOpen(false);
+    };
+    const onState = (e: Event) => {
+      const customEvent = e as CustomEvent<{ isOpen: boolean }>;
+      setToolsSidebarOpen(customEvent.detail.isOpen);
+    };
+
+    document.addEventListener('tools-sidebar-available', onAvailable);
+    document.addEventListener('tools-sidebar-unavailable', onUnavailable);
+    document.addEventListener('tools-sidebar-state', onState);
+
+    return () => {
+      document.removeEventListener('tools-sidebar-available', onAvailable);
+      document.removeEventListener('tools-sidebar-unavailable', onUnavailable);
+      document.removeEventListener('tools-sidebar-state', onState);
+    };
+  }, []);
+
   // Use prop-provided values if given, otherwise use internal defaults
   const resolvedItems = navigationItems ?? DEFAULT_NAV_ITEMS;
   const resolvedActiveHref = activeHrefProp ?? detectedActiveHref;
@@ -120,7 +145,28 @@ export const Header: React.FC<HeaderProps> = ({ navigationItems, activeHref: act
   return (
     <header className="w-full flex items-center justify-between px-4 py-2">
       <NavigationMenu items={resolvedItems} activeHref={resolvedActiveHref} />
-      <ThemeToggle theme={theme} onToggle={handleToggle} />
+      <div className="flex items-center gap-2">
+        {toolsButtonVisible && !toolsSidebarOpen && (
+          <button
+            type="button"
+            onClick={() => document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'))}
+            aria-label="Toggle tools sidebar (Ctrl+T)"
+            aria-controls="tools-sidebar-panel"
+            data-testid="tools-sidebar-toggle"
+            className={[
+              'flex items-center justify-center w-10 h-10 rounded-md',
+              'bg-gray-100 dark:bg-gray-800',
+              'hover:bg-gray-200 dark:hover:bg-gray-700',
+              'border border-gray-200 dark:border-gray-700',
+              'transition-colors',
+              'focus:outline-none focus:ring-2 focus:ring-green-500',
+            ].join(' ')}
+          >
+            <span aria-hidden="true" className="text-lg leading-none">≡</span>
+          </button>
+        )}
+        <ThemeToggle theme={theme} onToggle={handleToggle} />
+      </div>
     </header>
   );
 };

@@ -65,7 +65,7 @@ describe('ToolsSidebar', () => {
       />
     );
     const panel = screen.getByRole('complementary');
-    expect(panel).toHaveClass('top-0', 'left-0', 'h-full');
+    expect(panel).toHaveClass('top-0', 'right-0', 'h-full');
   });
 
   it('sidebar has mobile drawer layout classes', () => {
@@ -97,71 +97,7 @@ describe('ToolsSidebar', () => {
     expect(screen.getByRole('button', { name: /toggle metronome/i })).toBeInTheDocument();
   });
 
-  // ── AC3: Sidebar has a toggle button (hamburger icon or chevron)
-
-  it('renders toggle button with hamburger icon when sidebar is closed', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen={false}
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toBeInTheDocument();
-    expect(toggleButton.textContent).toContain('≡'); // Hamburger icon
-  });
-
-  it('renders toggle button with left-chevron icon when sidebar is open', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toBeInTheDocument();
-    expect(toggleButton.textContent).toContain('◀'); // Left-chevron icon
-  });
-
-  it('toggle button has aria-label mentioning keyboard shortcut', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen={false}
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toHaveAttribute('aria-label', 'Toggle tools sidebar (Ctrl+T)');
-  });
-
-  it('toggle button has aria-expanded reflecting open state', () => {
-    const onToggle = vi.fn();
-    const { rerender } = render(
-      <ToolsSidebar
-        isOpen={false}
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    let toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
-
-    rerender(
-      <ToolsSidebar
-        isOpen
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
-  });
+  // ── AC3: Sidebar toggle button now rendered in ExercisePlaybackPage header
 
   // ── AC8: Sidebar has semi-transparent backdrop on mobile when open
 
@@ -220,46 +156,6 @@ describe('ToolsSidebar', () => {
 
   // ── AC9: Toggle button remains visible/accessible at all times
 
-  it('toggle button is visible when sidebar is open', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toBeInTheDocument();
-    expect(toggleButton).not.toHaveClass('hidden');
-  });
-
-  it('toggle button is visible when sidebar is closed', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen={false}
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toBeInTheDocument();
-    expect(toggleButton).not.toHaveClass('hidden');
-  });
-
-  it('toggle button has fixed positioning (z-40) to stay on top', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen={false}
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toHaveClass('fixed', 'z-40');
-  });
 
   // ── AC13: Sidebar is accessible
 
@@ -292,19 +188,6 @@ describe('ToolsSidebar', () => {
     );
   });
 
-  it('toggle button is keyboard accessible (Tab focus)', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen={false}
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    // Button should not have tabindex="-1"
-    expect(toggleButton).not.toHaveAttribute('tabindex', '-1');
-  });
 
   // ── AC14: Sidebar respects color scheme (dark/light mode)
 
@@ -362,7 +245,7 @@ describe('ToolsSidebar', () => {
     expect(sidebar).toHaveClass('sm:translate-x-0');
   });
 
-  it('sidebar applies -translate-x-full when closed (desktop)', () => {
+  it('sidebar applies translate-x-full when closed (desktop)', () => {
     const onToggle = vi.fn();
     render(
       <ToolsSidebar
@@ -372,7 +255,7 @@ describe('ToolsSidebar', () => {
       />
     );
     const sidebar = screen.getByRole('complementary');
-    expect(sidebar).toHaveClass('sm:-translate-x-full');
+    expect(sidebar).toHaveClass('sm:translate-x-full');
   });
 
   it('sidebar applies translate-y-0 when open (mobile)', () => {
@@ -442,23 +325,9 @@ describe('ToolsSidebar', () => {
     expect(sidebar).toHaveClass('max-sm:max-h-[60vh]');
   });
 
-  // ── Toggle button callback tests
+  // ── Toggle button callback tests (toggle button now in ExercisePlaybackPage, not ToolsSidebar)
 
-  it('calls onToggle when toggle button is clicked', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen={false}
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    expect(onToggle).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onToggle when close button inside sidebar header is clicked', () => {
+  it('close button inside sidebar header calls onToggle', () => {
     const onToggle = vi.fn();
     render(
       <ToolsSidebar
@@ -467,10 +336,9 @@ describe('ToolsSidebar', () => {
         metronomeProps={defaultMetronomeProps}
       />
     );
-    // Find the close button in the header (second toggle button)
-    const closeButtons = screen.getAllByRole('button', { name: /toggle tools sidebar/i });
-    expect(closeButtons.length).toBeGreaterThanOrEqual(2);
-    fireEvent.click(closeButtons[1]); // Header close button
+    // Find the close button in the sidebar header by looking for the panel button
+    const closeButton = screen.getAllByRole('button', { name: /toggle tools sidebar/i })[0];
+    fireEvent.click(closeButton);
     expect(onToggle).toHaveBeenCalled();
   });
 
@@ -487,19 +355,6 @@ describe('ToolsSidebar', () => {
     );
     const sidebar = screen.getByRole('complementary');
     expect(sidebar).toHaveClass('z-30');
-  });
-
-  it('toggle button has higher z-index than sidebar (z-40)', () => {
-    const onToggle = vi.fn();
-    render(
-      <ToolsSidebar
-        isOpen
-        onToggle={onToggle}
-        metronomeProps={defaultMetronomeProps}
-      />
-    );
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toHaveClass('z-40');
   });
 
   it('backdrop has z-index between sidebar and button (z-20)', () => {

@@ -137,8 +137,8 @@ describe('ExercisePlaybackPage — Scoring Integration', () => {
     it('should keep sound playback unconditional (plays regardless of playback state)', async () => {
       render(<ExercisePlaybackPage exercise={mockExercise} />);
 
-      // Component should render with controls available for sound playback
-      expect(screen.getByTestId('tools-sidebar-toggle')).toBeInTheDocument();
+      // Component should render with sidebar available (button now in Header)
+      expect(screen.getByRole('complementary')).toBeInTheDocument();
     });
 
     it('should keep 50ms per-note debounce for scoring hits', async () => {
@@ -312,8 +312,8 @@ describe('ExercisePlaybackPage — Scoring Integration', () => {
     it('should render tolerance selector in sidebar', () => {
       render(<ExercisePlaybackPage exercise={mockExercise} />);
 
-      // Component should render with tools sidebar available
-      expect(screen.getByTestId('tools-sidebar-toggle')).toBeInTheDocument();
+      // Component should render with tools sidebar available (button now in Header)
+      expect(screen.getByRole('complementary')).toBeInTheDocument();
     });
 
     it('should default to medium tolerance', () => {

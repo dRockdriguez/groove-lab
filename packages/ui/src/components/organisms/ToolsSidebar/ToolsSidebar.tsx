@@ -53,34 +53,6 @@ export const ToolsSidebar: React.FC<ToolsSidebarProps> = ({
         />
       )}
 
-      {/* ── Always-visible toggle button ──────────────────────────────────────
-          Rendered at fixed top-left at a higher z-index than the sidebar so
-          it remains accessible whether the sidebar is open or closed.        */}
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label="Toggle tools sidebar (Ctrl+T)"
-        aria-expanded={isOpen}
-        aria-controls="tools-sidebar-panel"
-        className={[
-          'fixed top-4 left-4 z-40',
-          'flex items-center justify-center w-10 h-10',
-          'rounded-md',
-          'bg-gray-100 dark:bg-gray-800',
-          'hover:bg-gray-200 dark:hover:bg-gray-700',
-          'border border-gray-200 dark:border-gray-700',
-          'shadow',
-          'transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-green-500',
-        ].join(' ')}
-        data-testid="tools-sidebar-toggle"
-      >
-        {/* Hamburger (closed) ↔ Left-chevron (open) */}
-        <span aria-hidden="true" className="text-lg leading-none">
-          {isOpen ? '◀' : '≡'}
-        </span>
-      </button>
-
       {/* ── Sidebar panel ─────────────────────────────────────────────────────
           Desktop/tablet  : fixed left, 320 px wide, slides horizontally.
           Mobile < 640px  : bottom drawer, full-width, max 60 vh, slides up.
@@ -88,8 +60,8 @@ export const ToolsSidebar: React.FC<ToolsSidebarProps> = ({
       <aside
         id="tools-sidebar-panel"
         className={[
-          // Base positioning (desktop / tablet)
-          'fixed top-0 left-0 h-full z-30',
+          // Base positioning (desktop / tablet) — now on the right
+          'fixed top-0 right-0 h-full z-30',
           // Desktop width
           'sm:w-80',
           // Mobile: bottom drawer
@@ -97,15 +69,15 @@ export const ToolsSidebar: React.FC<ToolsSidebarProps> = ({
           // Very small: full screen modal (< 320px handled by max-sm catching all)
           // Background & border
           'bg-gray-50 dark:bg-gray-900',
-          'border-r border-gray-200 dark:border-gray-700 sm:border-r',
-          'max-sm:border-t max-sm:border-r-0',
+          'border-l border-gray-200 dark:border-gray-700 sm:border-l',
+          'max-sm:border-t max-sm:border-l-0',
           'shadow-lg',
           // Scroll if content exceeds viewport height
           'overflow-y-auto',
           // Slide animation
           'transition-transform duration-300 ease-in-out',
-          // Desktop: slide left/right
-          isOpen ? 'sm:translate-x-0' : 'sm:-translate-x-full',
+          // Desktop: slide right (open pushes right edge to 0, closed pushes it off-screen right)
+          isOpen ? 'sm:translate-x-0' : 'sm:translate-x-full',
           // Mobile: slide up/down
           isOpen ? 'max-sm:translate-y-0' : 'max-sm:translate-y-full',
           className,
@@ -132,7 +104,7 @@ export const ToolsSidebar: React.FC<ToolsSidebarProps> = ({
             ].join(' ')}
           >
             <span aria-hidden="true" className="text-sm text-gray-600 dark:text-gray-400">
-              ◀
+              ▶
             </span>
           </button>
         </div>
