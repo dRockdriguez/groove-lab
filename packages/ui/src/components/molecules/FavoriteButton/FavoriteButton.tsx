@@ -1,81 +1,67 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { isFavorite, toggleFavorite, getExerciseTags, useLocalStorageListener } from '@groovelab/utils';
+import { isFavorite, toggleFavorite, useLocalStorageListener } from '@groovelab/utils';
 
 export interface FavoriteButtonProps {
-  /** Exercise ID used to look up favorite state and tags in storage */
+  /** Exercise ID used to look up favorite state in storage */
   exerciseId: string;
-  /** Called when the user clicks the tag badge (if present) */
-  onTagsClick?: () => void;
   /** Optional class name appended to the root element */
   className?: string;
 }
 
-/** Reads current state from localStorage and returns { favorited, tagCount } */
-function readState(exerciseId: string): { favorited: boolean; tagCount: number } {
-  return {
-    favorited: isFavorite(exerciseId),
-    tagCount: getExerciseTags(exerciseId).length,
-  };
+/** Reads current favorite state from localStorage */
+function readFavorited(exerciseId: string): boolean {
+  return isFavorite(exerciseId);
 }
 
 /**
- * FavoriteButton — inline heart icon with optional tag count badge.
+ * FavoriteButton — inline heart icon that toggles favorite state.
  *
  * Clicking the heart toggles the exercise's favorite state in localStorage.
- * If `onTagsClick` is provided, clicking the tag badge fires that callback.
+ * Tag badges are displayed separately in ExerciseCard (not here).
  */
 export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   exerciseId,
-  onTagsClick,
   className = '',
 }) => {
-  const [state, setState] = useState(() => readState(exerciseId));
+  const [favorited, setFavorited] = useState(() => readFavorited(exerciseId));
 
   // Re-sync when the exerciseId changes
   useEffect(() => {
-    setState(readState(exerciseId));
+    setFavorited(readFavorited(exerciseId));
   }, [exerciseId]);
 
   // Re-sync on any localStorage change to watched keys (same tab + cross-tab)
-  useLocalStorageListener(['groovelab_favorites', 'groovelab_tags'], () => {
-    setState(readState(exerciseId));
+  useLocalStorageListener(['groovelab_favorites'], () => {
+    setFavorited(readFavorited(exerciseId));
   });
 
   const handleHeartClick = useCallback(() => {
     const next = toggleFavorite(exerciseId);
-    setState((prev) => ({ ...prev, favorited: next }));
+    setFavorited(next);
   }, [exerciseId]);
 
-  const handleTagClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onTagsClick?.();
-    },
-    [onTagsClick],
-  );
-
-  const heartLabel = state.favorited ? 'Remove from favorites' : 'Add to favorites';
+  const heartLabel = favorited ? 'Remove from favorites' : 'Add to favorites';
 
   return (
-    <div className={['inline-flex items-center gap-1.5', className].join(' ')}>
+    <div className={['inline-flex items-center', className].join(' ')}>
       {/* Heart button */}
       <button
         type="button"
         aria-label={heartLabel}
-        aria-pressed={state.favorited}
+        aria-pressed={favorited}
         onClick={handleHeartClick}
         className={[
           'inline-flex items-center justify-center',
           'rounded p-0.5',
           'transition-transform duration-100 ease-in-out',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
-          state.favorited
+          favorited
             ? 'text-red-500 dark:text-red-400 focus-visible:ring-red-400'
             : 'text-gray-400 dark:text-gray-500 hover:text-red-400 dark:hover:text-red-400 focus-visible:ring-gray-400',
           'hover:scale-110',
         ].join(' ')}
       >
-        {state.favorited ? (
+        {favorited ? (
           /* Filled heart */
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -107,37 +93,6 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           </svg>
         )}
       </button>
-
-      {/* Tag count badge — only rendered when tags exist */}
-      {state.tagCount > 0 &&
-        (onTagsClick ? (
-          <button
-            type="button"
-            onClick={handleTagClick}
-            aria-label={`${state.tagCount} ${state.tagCount === 1 ? 'tag' : 'tags'}, click to manage`}
-            className={[
-              'inline-flex items-center gap-0.5 px-1.5 py-0.5',
-              'rounded-full text-xs font-medium',
-              'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
-              'hover:bg-gray-200 dark:hover:bg-gray-600',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-gray-400',
-              'transition-colors duration-100',
-            ].join(' ')}
-          >
-            {state.tagCount}
-          </button>
-        ) : (
-          <span
-            aria-label={`${state.tagCount} ${state.tagCount === 1 ? 'tag' : 'tags'}`}
-            className={[
-              'inline-flex items-center px-1.5 py-0.5',
-              'rounded-full text-xs font-medium',
-              'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
-            ].join(' ')}
-          >
-            {state.tagCount}
-          </span>
-        ))}
     </div>
   );
 };
