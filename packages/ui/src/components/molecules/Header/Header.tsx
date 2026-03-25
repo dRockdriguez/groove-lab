@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ThemeToggle } from '../../atoms/ThemeToggle';
+import { NavigationMenu, NavigationMenuItem } from '../../atoms/NavigationMenu';
 
-export interface HeaderProps {}
+export interface HeaderProps {
+  navigationItems?: NavigationMenuItem[];
+  activeHref?: string;
+}
 
 function getInitialTheme(): 'light' | 'dark' {
   if (typeof window === 'undefined') return 'light';
@@ -22,7 +26,7 @@ function getInitialTheme(): 'light' | 'dark' {
   return 'light';
 }
 
-export const Header: React.FC<HeaderProps> = () => {
+export const Header: React.FC<HeaderProps> = ({ navigationItems = [], activeHref }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
 
@@ -50,7 +54,8 @@ export const Header: React.FC<HeaderProps> = () => {
   }, []);
 
   return (
-    <header className="w-full flex justify-end px-4 py-2">
+    <header className="w-full flex items-center justify-between px-4 py-2">
+      <NavigationMenu items={navigationItems} activeHref={activeHref} />
       <ThemeToggle theme={theme} onToggle={handleToggle} />
     </header>
   );
