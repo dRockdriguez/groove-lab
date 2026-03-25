@@ -1,7 +1,13 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { InstrumentExercises, InstrumentType } from '@groovelab/types';
+import {
+  filterExercises,
+  getSelectedFilterTags,
+  setSelectedFilterTags,
+} from '@groovelab/utils';
 import { InstrumentButton } from '../../atoms/InstrumentButton';
 import { ExerciseSectionList } from '../../molecules/ExerciseSectionList';
+import { TagFilter } from '../../molecules/TagFilter';
 
 export interface ExerciseBrowserProps {
   exercisesByInstrument: InstrumentExercises[];
@@ -27,7 +33,31 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByIns
     });
     return allSectionIds;
   });
+
+  // ── Filter State ──────────────────────────────────────────────────────────
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [selectedFilterTags, setSelectedFilterTagsState] = useState<string[]>(() => {
+    return getSelectedFilterTags();
+  });
+
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Persist filter tags to sessionStorage whenever they change
+  useEffect(() => {
+    setSelectedFilterTags(selectedFilterTags);
+  }, [selectedFilterTags]);
+
+  const handleTagsChange = (tags: string[]) => {
+    setSelectedFilterTagsState(tags);
+  };
+
+  const handleClearFilters = () => {
+    setShowFavoritesOnly(false);
+    setSelectedFilterTagsState([]);
+    setSelectedFilterTags([]);
+  };
+
+  const isAnyFilterActive = showFavoritesOnly || selectedFilterTags.length > 0;
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -38,10 +68,6 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByIns
     }
     setExpandedSections(newExpanded);
   };
-
-  const activeData = exercisesByInstrument.find(
-    (entry) => entry.instrumentType === selectedInstrument
-  );
 
   const tabId = (type: InstrumentType) => `tab-${type}`;
 
@@ -59,7 +85,24 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByIns
     }
   };
 
+  // Apply filter logic
+  const filteredData = filterExercises(
+    exercisesByInstrument,
+    selectedInstrument,
+    showFavoritesOnly,
+    selectedFilterTags
+  );
+
+  const activeData = filteredData[0];
   const hasSections = activeData && activeData.sections.length > 0;
+
+  // Count total matching exercises across all filtered sections
+  const totalMatchingExercises = activeData
+    ? activeData.sections.reduce((sum, section) => sum + section.exercises.length, 0)
+    : 0;
+
+  // Check if all exercises have been filtered out
+  const allFilteredOut = isAnyFilterActive && hasSections && totalMatchingExercises === 0;
 
   return (
     <div>
@@ -80,13 +123,122 @@ export const ExerciseBrowser: React.FC<ExerciseBrowserProps> = ({ exercisesByIns
           />
         ))}
       </div>
+
+      {/* ── Filter Controls ────────────────────────────────────────────────── */}
+      <div
+        aria-label="Exercise filters"
+        className="flex flex-col gap-4 mb-6"
+      >
+        {/* Favorites toggle + Clear Filters row */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Favorites toggle button */}
+          <button
+            type="button"
+            aria-label="Show favorites only"
+            aria-pressed={showFavoritesOnly}
+            onClick={() => setShowFavoritesOnly((prev) => !prev)}
+            className={[
+              'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium',
+              'transition-colors duration-150',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+              showFavoritesOnly
+                ? [
+                    'bg-red-500 text-white dark:bg-red-600',
+                    'hover:bg-red-600 dark:hover:bg-red-500',
+                    'focus-visible:ring-red-400',
+                  ].join(' ')
+                : [
+                    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                    'hover:bg-gray-200 dark:hover:bg-gray-700',
+                    'focus-visible:ring-gray-400',
+                  ].join(' '),
+            ].join(' ')}
+          >
+            {/* Heart icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              width="16"
+              height="16"
+              aria-hidden="true"
+              fill={showFavoritesOnly ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth={showFavoritesOnly ? 0 : 1.5}
+            >
+              <path
+                fillRule="evenodd"
+                d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Favorites Only
+          </button>
+
+          {/* Clear Filters button — only visible when any filter is active */}
+          {isAnyFilterActive && (
+            <button
+              type="button"
+              aria-label="Clear all filters"
+              onClick={handleClearFilters}
+              className={[
+                'inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium',
+                'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+                'hover:bg-gray-300 dark:hover:bg-gray-600',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-gray-400',
+                'transition-colors duration-150',
+              ].join(' ')}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                width="14"
+                height="14"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Reset Filters
+            </button>
+          )}
+        </div>
+
+        {/* Tag filter section */}
+        <TagFilter
+          selectedTags={selectedFilterTags}
+          onSelectedTagsChange={handleTagsChange}
+        />
+      </div>
+
+      {/* ── Results Feedback ───────────────────────────────────────────────── */}
+      {isAnyFilterActive && (
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Showing{' '}
+          <span className="font-semibold text-gray-900 dark:text-gray-100">
+            {totalMatchingExercises}
+          </span>{' '}
+          {totalMatchingExercises === 1 ? 'exercise' : 'exercises'}
+        </p>
+      )}
+
+      {/* ── Exercise List ──────────────────────────────────────────────────── */}
       <div
         role="tabpanel"
         aria-labelledby={tabId(selectedInstrument)}
         tabIndex={0}
         className="space-y-6"
       >
-        {hasSections ? (
+        {allFilteredOut ? (
+          <p className="text-gray-500 dark:text-gray-400 italic">
+            {showFavoritesOnly && selectedFilterTags.length === 0
+              ? 'No favorites yet. Mark exercises as favorites to see them here.'
+              : 'No exercises match your filters'}
+          </p>
+        ) : hasSections ? (
           activeData.sections.map((section) => (
             <ExerciseSectionList
               key={section.id}

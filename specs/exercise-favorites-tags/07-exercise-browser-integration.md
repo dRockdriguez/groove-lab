@@ -1,7 +1,7 @@
 # Spec: Exercise Browser Integration
 
-**Status:** Draft
-**Last updated:** 2026-03-23
+**Status:** Implemented
+**Last updated:** 2026-03-25
 
 ---
 
@@ -56,108 +56,108 @@ New UI sections:
 
 ### New State
 
-- [ ] Add `showFavoritesOnly: boolean` state (default: false)
-- [ ] Add `selectedFilterTags: string[]` state (from sessionStorage key `'groovelab_filter_tags'`)
-- [ ] Initialize `selectedFilterTags` from sessionStorage on mount
-- [ ] Persist `selectedFilterTags` to sessionStorage on every change
-- [ ] Clear `selectedFilterTags` when component unmounts (optional, or on manual "Clear All")
+- [x] Add `showFavoritesOnly: boolean` state (default: false)
+- [x] Add `selectedFilterTags: string[]` state (from sessionStorage key `'groovelab_filter_tags'`)
+- [x] Initialize `selectedFilterTags` from sessionStorage on mount
+- [x] Persist `selectedFilterTags` to sessionStorage on every change
+- [x] Clear `selectedFilterTags` when component unmounts (optional, or on manual "Clear All")
 
 ### Favorites Toggle Button
 
-- [ ] New button/toggle: "♥ Favorites Only" (heart icon + text)
-- [ ] Clicking toggles `showFavoritesOnly` state (true ↔ false)
-- [ ] Button visual state changes based on toggle (filled/unfilled, color change)
-- [ ] Button has accessible label (e.g., "Show favorites only")
-- [ ] Button has `aria-pressed` attribute reflecting state
+- [x] New button/toggle: "♥ Favorites Only" (heart icon + text)
+- [x] Clicking toggles `showFavoritesOnly` state (true ↔ false)
+- [x] Button visual state changes based on toggle (filled/unfilled, color change)
+- [x] Button has accessible label (e.g., "Show favorites only")
+- [x] Button has `aria-pressed` attribute reflecting state
 
 ### Clear Filters Button
 
-- [ ] "Clear All" or "Reset Filters" button visible if any filter active
+- [x] "Clear All" or "Reset Filters" button visible if any filter active
   - At least one tag selected, OR
   - Favorites toggle is ON
-- [ ] Clicking clears all filters:
+- [x] Clicking clears all filters:
   - Sets `showFavoritesOnly = false`
   - Sets `selectedFilterTags = []`
   - Updates sessionStorage
-- [ ] Button has clear visual style (e.g., secondary color)
-- [ ] Button is hidden when no filters active
+- [x] Button has clear visual style (e.g., secondary color)
+- [x] Button is hidden when no filters active
 
 ### Tag Filter Integration
 
-- [ ] TagFilter component (spec 05) imported and rendered
-- [ ] TagFilter receives `selectedTags={selectedFilterTags}`
-- [ ] TagFilter receives `onSelectedTagsChange={(tags) => setSelectedFilterTags(tags)}`
-- [ ] TagFilter callback updates sessionStorage immediately
-- [ ] TagFilter displays all available tags (distinct, sorted)
-- [ ] User can select/deselect multiple tags
+- [x] TagFilter component (spec 05) imported and rendered
+- [x] TagFilter receives `selectedTags={selectedFilterTags}`
+- [x] TagFilter receives `onSelectedTagsChange={(tags) => setSelectedFilterTags(tags)}`
+- [x] TagFilter callback updates sessionStorage immediately
+- [x] TagFilter displays all available tags (distinct, sorted)
+- [x] User can select/deselect multiple tags
 
 ### Exercise Filtering
 
-- [ ] Call `filterExercises()` from spec 02 with:
+- [x] Call `filterExercises()` from spec 02 with:
   - Current `exercisesByInstrument`
   - Current `selectedInstrument`
   - Current `showFavoritesOnly`
   - Current `selectedFilterTags`
-- [ ] Display filtered results (sections + exercises)
-- [ ] Empty sections included in structure (exercises list may be empty)
-- [ ] If all exercises filtered out, shows appropriate message (e.g., "No exercises match selected filters")
-- [ ] Filtering happens in real-time (no loading states)
+- [x] Display filtered results (sections + exercises)
+- [x] Empty sections included in structure (exercises list may be empty)
+- [x] If all exercises filtered out, shows appropriate message (e.g., "No exercises match selected filters")
+- [x] Filtering happens in real-time (no loading states)
 
 ### Filter Results Feedback
 
-- [ ] Optional: Show count of matching exercises (e.g., "Showing 5 exercises")
-- [ ] Optional: Show active filter summary (e.g., "Favorites + rock + fast")
-- [ ] Feedback updates immediately as filters change
-- [ ] Feedback is helpful but not required (nice-to-have)
+- [x] Optional: Show count of matching exercises (e.g., "Showing 5 exercises")
+- [x] Optional: Show active filter summary (e.g., "Favorites + rock + fast")
+- [x] Feedback updates immediately as filters change
+- [x] Feedback is helpful but not required (nice-to-have)
 
 ### Section Expansion State
 
-- [ ] Existing section expand/collapse toggle preserved
-- [ ] Expand state independent of filters (filters don't auto-expand/collapse sections)
-- [ ] User can expand/collapse sections while filters active
-- [ ] Expanded sections state persists across filter changes (within session)
+- [x] Existing section expand/collapse toggle preserved
+- [x] Expand state independent of filters (filters don't auto-expand/collapse sections)
+- [x] User can expand/collapse sections while filters active
+- [x] Expanded sections state persists across filter changes (within session)
 
 ### Backward Compatibility
 
-- [ ] Existing ExerciseBrowserProps interface unchanged
-- [ ] Existing component behavior unchanged (all filters default to "show all")
-- [ ] Instrument selector works as before
-- [ ] Section expand/collapse works as before
-- [ ] Link navigation to exercise playback unaffected
-- [ ] Existing tests still pass (no regression)
+- [x] Existing ExerciseBrowserProps interface unchanged
+- [x] Existing component behavior unchanged (all filters default to "show all")
+- [x] Instrument selector works as before
+- [x] Section expand/collapse works as before
+- [x] Link navigation to exercise playback unaffected
+- [x] Existing tests still pass (no regression)
 
 ### Accessibility
 
-- [ ] Filter section has clear heading or `aria-label`
-- [ ] Favorites toggle has `aria-pressed`
-- [ ] "Clear All" button has clear `aria-label`
-- [ ] TagFilter component provides accessibility (spec 05)
-- [ ] Keyboard navigation works throughout
-- [ ] No hidden content unless visually hidden (dark color, off-screen)
+- [x] Filter section has clear heading or `aria-label`
+- [x] Favorites toggle has `aria-pressed`
+- [x] "Clear All" button has clear `aria-label`
+- [x] TagFilter component provides accessibility (spec 05)
+- [x] Keyboard navigation works throughout
+- [x] No hidden content unless visually hidden (dark color, off-screen)
 
 ### Styling
 
-- [ ] Filters section uses TailwindCSS classes only
-- [ ] Favorites toggle button matches app theme
-- [ ] "Clear All" button matches app theme
-- [ ] Filter UI responsive (wraps on mobile)
-- [ ] Dark mode supported
-- [ ] No visual regression from existing browser
+- [x] Filters section uses TailwindCSS classes only
+- [x] Favorites toggle button matches app theme
+- [x] "Clear All" button matches app theme
+- [x] Filter UI responsive (wraps on mobile)
+- [x] Dark mode supported
+- [x] No visual regression from existing browser
 
 ### SessionStorage Management
 
-- [ ] On component mount: read `groovelab_filter_tags` from sessionStorage
-- [ ] On filter change: write updated tags to sessionStorage immediately
-- [ ] On component unmount or manually: clear sessionStorage key (optional)
-- [ ] If sessionStorage unavailable (private browsing): gracefully degrade to in-memory state
-- [ ] SessionStorage key: `'groovelab_filter_tags'`
+- [x] On component mount: read `groovelab_filter_tags` from sessionStorage
+- [x] On filter change: write updated tags to sessionStorage immediately
+- [x] On component unmount or manually: clear sessionStorage key (optional)
+- [x] If sessionStorage unavailable (private browsing): gracefully degrade to in-memory state
+- [x] SessionStorage key: `'groovelab_filter_tags'`
 
 ### Mobile Responsiveness
 
-- [ ] Filters section responsive (stacks on small screens)
-- [ ] Tag filter buttons wrap naturally
-- [ ] Favorites toggle stays accessible on mobile
-- [ ] "Clear All" button prominent and clickable
+- [x] Filters section responsive (stacks on small screens)
+- [x] Tag filter buttons wrap naturally
+- [x] Favorites toggle stays accessible on mobile
+- [x] "Clear All" button prominent and clickable
 
 ---
 
@@ -185,29 +185,29 @@ New UI sections:
 
 ## Definition of Done
 
-- [ ] Spec reviewed and accepted
-- [ ] ExerciseBrowser component modified at `packages/ui/src/components/organisms/ExerciseBrowser/`
-- [ ] New state added: `showFavoritesOnly`, `selectedFilterTags`
-- [ ] Favorites toggle button implemented
-- [ ] "Clear All" button implemented
-- [ ] TagFilter component imported and integrated
-- [ ] `filterExercises()` function called with current filter state
-- [ ] Exercise list displays filtered results
-- [ ] SessionStorage integration working (persist/restore filter tags)
-- [ ] Component still exports from `packages/ui/src/index.ts`
-- [ ] Component tests updated/added (12+ new tests expected):
-  - [ ] Favorites toggle works
-  - [ ] "Clear All" works
-  - [ ] Tag filter updates
-  - [ ] Combined filters work (favorites + tags)
-  - [ ] Empty results message shows
-  - [ ] SessionStorage read/write
-  - [ ] Mobile responsive
-  - [ ] Keyboard navigation
-  - [ ] Dark mode works
-  - [ ] Instrument switching with filters active
-  - [ ] No regressions in existing browser tests
-- [ ] All tests pass (existing + new)
-- [ ] No regressions in parent/sibling component tests
-- [ ] Linting passes
-- [ ] TypeScript compiles without errors
+- [x] Spec reviewed and accepted
+- [x] ExerciseBrowser component modified at `packages/ui/src/components/organisms/ExerciseBrowser/`
+- [x] New state added: `showFavoritesOnly`, `selectedFilterTags`
+- [x] Favorites toggle button implemented
+- [x] "Clear All" button implemented
+- [x] TagFilter component imported and integrated
+- [x] `filterExercises()` function called with current filter state
+- [x] Exercise list displays filtered results
+- [x] SessionStorage integration working (persist/restore filter tags)
+- [x] Component still exports from `packages/ui/src/index.ts`
+- [x] Component tests updated/added (12+ new tests expected):
+  - [x] Favorites toggle works
+  - [x] "Clear All" works
+  - [x] Tag filter updates
+  - [x] Combined filters work (favorites + tags)
+  - [x] Empty results message shows
+  - [x] SessionStorage read/write
+  - [x] Mobile responsive
+  - [x] Keyboard navigation
+  - [x] Dark mode works
+  - [x] Instrument switching with filters active
+  - [x] No regressions in existing browser tests
+- [x] All tests pass (existing + new)
+- [x] No regressions in parent/sibling component tests
+- [x] Linting passes (fixed 2 unused variable warnings)
+- [x] TypeScript compiles without errors
