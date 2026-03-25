@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getDistinctTags } from '@groovelab/utils';
+import { getDistinctTags, useLocalStorageListener } from '@groovelab/utils';
 
 export interface TagFilterProps {
   /** Currently selected tags (controlled by parent/sessionStorage) */
@@ -26,6 +26,11 @@ export const TagFilter: React.FC<TagFilterProps> = ({
   useEffect(() => {
     setAvailableTags(getDistinctTags());
   }, []);
+
+  // Re-load available tags when localStorage tags key changes (same tab + cross-tab)
+  useLocalStorageListener(['groovelab_tags'], () => {
+    setAvailableTags(getDistinctTags());
+  });
 
   const handleTagToggle = (tag: string) => {
     if (selectedTags.includes(tag)) {
