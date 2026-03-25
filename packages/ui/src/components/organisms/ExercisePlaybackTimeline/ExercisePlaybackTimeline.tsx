@@ -1,6 +1,6 @@
 import React from 'react';
 import type { MidiEvent } from '@groovelab/types';
-import { clamp, getDrumColor } from '@groovelab/utils';
+import { getDrumColor } from '@groovelab/utils';
 import { TrackLabel } from '../../molecules/TrackLabel';
 import type { ScoringEvent, ScoringClassification } from '@groovelab/utils';
 
@@ -90,6 +90,24 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   className = '',
 }) => {
   const tracksRef = React.useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = React.useState(0);
+
+  // ─── ResizeObserver to measure container width for scrolling ───────────────
+  React.useEffect(() => {
+    if (!tracksRef.current) return;
+    // Initial measurement
+    setContainerWidth(tracksRef.current.getBoundingClientRect().width);
+
+    // Use ResizeObserver if available (not in JSDOM test environments)
+    if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (entry) setContainerWidth(entry.contentRect.width);
+      });
+      observer.observe(tracksRef.current);
+      return () => observer.disconnect();
+    }
+  }, []);
 
   // ─── Scoring events lookup: note → most recent ScoringEvent ───────────────
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -112,12 +130,16 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
   const [dragCurrentMs, setDragCurrentMs] = React.useState<number | null>(null);
   const [isDraggingLoop, setIsDraggingLoop] = React.useState(false);
 
-  // ─── Helper: Convert mouse position to milliseconds ────────────────────────
+  // ─── Helper: Convert mouse position to milliseconds (accounts for scroll) ───
   const getTimeFromMouseEvent = (e: React.MouseEvent<HTMLDivElement> | MouseEvent): number => {
-    if (!tracksRef.current || durationMs <= 0) return 0;
+    if (!tracksRef.current || durationMs <= 0) return currentTimeMs;
     const rect = tracksRef.current.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    return Math.round(ratio * durationMs);
+    const relativeX = e.clientX - rect.left;
+    // Use containerWidth if available; otherwise fall back to rect.width for JSDOM tests
+    const width = containerWidth > 0 ? containerWidth : rect.width;
+    if (width <= 0) return currentTimeMs;
+    const ms = (relativeX - playheadOffsetPx) / (width / durationMs) + currentTimeMs;
+    return Math.round(Math.max(0, Math.min(durationMs, ms)));
   };
 
   // ─── Mouse handlers for drag-to-select ────────────────────────────────────
@@ -151,6 +173,12 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
     onLoopDragEnd?.();
   };
 
+  // ─── Calculate scroll offset ────────────────────────────────────────────────
+  const scrollTranslateX =
+    containerWidth > 0 && durationMs > 0
+      ? -(currentTimeMs / durationMs) * containerWidth + playheadOffsetPx
+      : playheadOffsetPx;
+
   if (midiEvents.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 text-gray-500 dark:text-gray-400">
@@ -168,8 +196,6 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
     eventsByNote[note] = midiEvents.filter((e) => e.note === note);
   }
 
-  const rawPlayheadPercent = durationMs > 0 ? (currentTimeMs / durationMs) * 100 : 0;
-  const playheadPercent = clamp(rawPlayheadPercent, 0, 100);
 
   // Calculate metronome marker positions
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -263,13 +289,32 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
         {/* Tracks with playhead (relative positioned) */}
         <div
           ref={tracksRef}
-          className="relative flex-1"
+          className="relative flex-1 overflow-hidden"
           onMouseDown={onLoopStartChange && onLoopEndChange ? handleMouseDown : undefined}
           onMouseMove={onLoopStartChange && onLoopEndChange ? handleMouseMove : undefined}
           onMouseUp={onLoopStartChange && onLoopEndChange ? handleMouseUp : undefined}
           style={{ cursor: isDragging ? 'col-resize' : undefined }}
         >
-          {/* Metronome markers overlay */}
+          {/* Playhead (fixed at playheadOffsetPx, outside scrolling container) */}
+          <div
+            data-testid="playhead"
+            className="absolute top-0 bottom-0 w-0.5 bg-green-500 z-10 pointer-events-none"
+            style={{
+              left: `${playheadOffsetPx}px`,
+            }}
+            aria-hidden="true"
+          />
+
+          {/* Inner scrolling container (all content scrolls under the fixed playhead) */}
+          <div
+            style={{
+              transform: `translateX(${scrollTranslateX}px)`,
+              position: 'relative',
+              width: '100%',
+              willChange: 'transform',
+            }}
+          >
+            {/* Metronome markers overlay */}
           {metronomeMarkers.length > 0 && (
             <div
               role="img"
@@ -385,20 +430,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
             </>
           )}
 
-          {/* Playhead */}
-          <div
-            data-testid="playhead"
-            className="absolute top-0 bottom-0 w-0.5 bg-green-500 z-10 pointer-events-none"
-            style={{
-              left: `${playheadPercent}%`,
-              transform: `translateX(${playheadOffsetPx}px)`,
-              position: 'absolute',
-              pointerEvents: 'none',
-            }}
-            aria-hidden="true"
-          />
-
-          {/* Tracks */}
+            {/* Tracks */}
           {uniqueNotes.map((note) => {
             const glowEvent = activeGlows?.get(note);
             let glowOverlay: React.ReactNode = null;
@@ -455,6 +487,8 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
               </div>
             );
           })}
+          </div>
+          {/* End of inner scrolling container */}
         </div>
       </div>
     </div>

@@ -9,11 +9,11 @@ import type { MidiEvent } from '@groovelab/utils';
 // AC1: Prop playheadOffsetPx?: number optional on ExercisePlaybackTimelineProps
 // AC2: Default value is 250px if not provided
 // AC3: Prop accepts any non-negative integer (0 to disable offset)
-// AC4: Offset applied to visual position only, not underlying time
-// AC5: Playhead positioned at left: playheadPercent% + transform: translateX(playheadOffsetPx px)
-// AC6: Playhead class unchanged (absolute top-0 bottom-0 w-0.5 bg-green-500 z-10 pointer-events-none)
-// AC7: Loop/metronome/note markers unaffected by offset prop
-// AC8: Click-to-seek time calculation unaffected by offset
+// AC4: Playhead positioned at fixed left: playheadOffsetPx px (no percentage, no transform)
+// AC5: Playhead class unchanged (absolute top-0 bottom-0 w-0.5 bg-green-500 z-10 pointer-events-none)
+// AC6: Loop/metronome/note markers unaffected by offset prop
+// AC7: Click-to-seek time calculation unaffected by offset
+// AC8: Playhead does not change position as currentTimeMs changes (fixed visual offset)
 
 describe('ExercisePlaybackTimeline playhead offset', () => {
   const mockMidiEvents: MidiEvent[] = [
@@ -71,7 +71,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
   // AC2: Default offset is 250px
   // ───────────────────────────────────────────────────────────────────────────
   describe('AC2: default offset is 250px', () => {
-    it('applies transform: translateX(250px) when playheadOffsetPx not provided', () => {
+    it('applies left: 250px when playheadOffsetPx not provided', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -81,10 +81,10 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+      expect(playhead).toHaveStyle({ left: '250px' });
     });
 
-    it('applies transform: translateX(250px) when playheadOffsetPx is undefined', () => {
+    it('applies left: 250px when playheadOffsetPx is undefined', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -95,7 +95,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+      expect(playhead).toHaveStyle({ left: '250px' });
     });
 
     it('default offset is rendered in inline style attribute', () => {
@@ -108,9 +108,9 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      const transformValue = playhead.style.transform;
-      expect(transformValue).toMatch(/translateX\(\d+px\)/);
-      expect(transformValue).toContain('250');
+      const leftValue = playhead.style.left;
+      expect(leftValue).toMatch(/\d+px/);
+      expect(leftValue).toContain('250');
     });
   });
 
@@ -118,7 +118,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
   // AC3: Offset accepts any non-negative integer
   // ───────────────────────────────────────────────────────────────────────────
   describe('AC3: offset accepts non-negative integers', () => {
-    it('applies transform: translateX(0px) when playheadOffsetPx is 0', () => {
+    it('applies left: 0px when playheadOffsetPx is 0', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -129,10 +129,10 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(0px)' });
+      expect(playhead).toHaveStyle({ left: '0px' });
     });
 
-    it('applies transform: translateX(150px) when playheadOffsetPx is 150', () => {
+    it('applies left: 150px when playheadOffsetPx is 150', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -143,10 +143,10 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(150px)' });
+      expect(playhead).toHaveStyle({ left: '150px' });
     });
 
-    it('applies transform: translateX(300px) when playheadOffsetPx is 300', () => {
+    it('applies left: 300px when playheadOffsetPx is 300', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -157,10 +157,10 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(300px)' });
+      expect(playhead).toHaveStyle({ left: '300px' });
     });
 
-    it('applies transform: translateX(500px) for large custom offset', () => {
+    it('applies left: 500px for large custom offset', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -171,10 +171,10 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(500px)' });
+      expect(playhead).toHaveStyle({ left: '500px' });
     });
 
-    it('applies transform: translateX(1px) for minimal offset', () => {
+    it('applies left: 1px for minimal offset', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -185,63 +185,44 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(1px)' });
+      expect(playhead).toHaveStyle({ left: '1px' });
     });
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // AC4: Offset is visual only, not underlying time
+  // AC4: Playhead positioned at fixed left: playheadOffsetPx px
   // ───────────────────────────────────────────────────────────────────────────
-  describe('AC4: offset is visual only, not underlying time', () => {
-    it('left percentage position matches currentTimeMs regardless of offset', () => {
+  describe('AC4: playhead at fixed pixel position', () => {
+    it('left position is always at playheadOffsetPx regardless of currentTimeMs', () => {
       // At 50% duration (1000ms of 2000ms total)
       const { container, rerender } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
           durationMs={2000}
           currentTimeMs={1000}
-          playheadOffsetPx={0}
+          playheadOffsetPx={250}
         />
       );
 
       const playhead1 = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      const leftStyle1 = playhead1.style.left;
+      expect(playhead1).toHaveStyle({ left: '250px' });
 
+      // Change currentTimeMs to 0% but playhead should stay at 250px
       rerender(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
           durationMs={2000}
-          currentTimeMs={1000}
+          currentTimeMs={0}
           playheadOffsetPx={250}
         />
       );
 
       const playhead2 = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      const leftStyle2 = playhead2.style.left;
-
-      expect(leftStyle1).toBe(leftStyle2);
-      expect(leftStyle1).toContain('50');
+      expect(playhead2).toHaveStyle({ left: '250px' });
     });
 
-    it('left percentage calculated from currentTimeMs/durationMs unaffected by offset', () => {
-      // At 25% duration (500ms of 2000ms total)
-      const { container } = render(
-        <ExercisePlaybackTimeline
-          midiEvents={mockMidiEvents}
-          durationMs={2000}
-          currentTimeMs={500}
-          playheadOffsetPx={250}
-        />
-      );
-
-      const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      const leftValue = playhead.style.left;
-
-      // 500ms / 2000ms = 0.25 = 25%
-      expect(leftValue).toContain('25');
-    });
-
-    it('left percentage tracks time changes independently of offset', () => {
+    it('left position remains fixed when time changes and offset is constant', () => {
+      // Start at 25% (500ms of 2000ms)
       const { container, rerender } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -252,8 +233,9 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       let playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead.style.left).toContain('25'); // 500/2000
+      expect(playhead).toHaveStyle({ left: '250px' });
 
+      // Move to 50% (1000ms) — playhead should stay at 250px
       rerender(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -264,15 +246,42 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead.style.left).toContain('50'); // 1000/2000
+      expect(playhead).toHaveStyle({ left: '250px' });
+    });
+
+    it('playhead position only changes when offset prop changes', () => {
+      const { container, rerender } = render(
+        <ExercisePlaybackTimeline
+          midiEvents={mockMidiEvents}
+          durationMs={2000}
+          currentTimeMs={500}
+          playheadOffsetPx={100}
+        />
+      );
+
+      let playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
+      expect(playhead).toHaveStyle({ left: '100px' });
+
+      // Change offset
+      rerender(
+        <ExercisePlaybackTimeline
+          midiEvents={mockMidiEvents}
+          durationMs={2000}
+          currentTimeMs={500}
+          playheadOffsetPx={300}
+        />
+      );
+
+      playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
+      expect(playhead).toHaveStyle({ left: '300px' });
     });
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // AC5: Playhead positioned with both left: % and transform: translateX()
+  // AC5: Playhead positioned at fixed left: playheadOffsetPx px
   // ───────────────────────────────────────────────────────────────────────────
-  describe('AC5: playhead positioned at left: % + transform: translateX()', () => {
-    it('playhead has left percentage style', () => {
+  describe('AC5: playhead positioned at fixed pixel offset', () => {
+    it('playhead has left pixel style (not percentage)', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -286,10 +295,11 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       const leftValue = playhead.style.left;
 
       expect(leftValue).toBeTruthy();
-      expect(leftValue).toMatch(/\d+\.?\d*%/);
+      expect(leftValue).toMatch(/\d+px/);
+      expect(leftValue).not.toMatch(/%/);
     });
 
-    it('playhead has both left and transform in inline styles', () => {
+    it('playhead has left in inline styles (no transform property)', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -302,11 +312,12 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
 
       expect(playhead.style.left).toBeTruthy();
-      expect(playhead.style.transform).toBeTruthy();
-      expect(playhead.style.transform).toContain('translateX(250px)');
+      expect(playhead.style.left).toContain('250px');
+      // Should NOT have a transform style
+      expect(playhead.style.transform).toBe('');
     });
 
-    it('transform is translateX format regardless of offset value', () => {
+    it('left is pixel format regardless of offset value', () => {
       const offsets = [0, 100, 250, 500];
 
       for (const offset of offsets) {
@@ -320,14 +331,14 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
         );
 
         const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-        expect(playhead.style.transform).toMatch(/^translateX\(\d+px\)$/);
-        expect(playhead.style.transform).toContain(String(offset));
+        expect(playhead.style.left).toMatch(/^\d+px$/);
+        expect(playhead.style.left).toBe(`${offset}px`);
       }
     });
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // AC6: Playhead class and appearance unchanged
+  // AC6: Playhead class and appearance unchanged (offset does not affect styling)
   // ───────────────────────────────────────────────────────────────────────────
   describe('AC6: playhead class and appearance unchanged', () => {
     it('playhead retains absolute positioning class', () => {
@@ -577,27 +588,12 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // AC8: Click-to-seek time unaffected by offset
+  // AC8: Playhead does not change position as currentTimeMs changes
   // ───────────────────────────────────────────────────────────────────────────
-  describe('AC8: click-to-seek unaffected by offset', () => {
-    it('playhead position is calculated from time, not offset', () => {
-      // The playhead visual offset should not affect the underlying time calculation.
-      // The left percentage should be purely based on currentTimeMs/durationMs.
+  describe('AC8: playhead position fixed regardless of currentTimeMs', () => {
+    it('playhead left position is always at playheadOffsetPx regardless of time changes', () => {
+      // Start at 500ms
       const { container, rerender } = render(
-        <ExercisePlaybackTimeline
-          midiEvents={mockMidiEvents}
-          durationMs={2000}
-          currentTimeMs={500}
-          playheadOffsetPx={0}
-        />
-      );
-
-      const playheadInitial = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      const initialLeft = playheadInitial.style.left;
-      const initialTransform = playheadInitial.style.transform;
-
-      // Change offset but keep time the same
-      rerender(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
           durationMs={2000}
@@ -606,15 +602,21 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
         />
       );
 
-      const playheadAfter = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      const afterLeft = playheadAfter.style.left;
-      const afterTransform = playheadAfter.style.transform;
+      const playheadInitial = container.querySelector('[data-testid="playhead"]') as HTMLElement;
+      expect(playheadInitial.style.left).toBe('250px');
 
-      // Left percentage (time-based) should be identical
-      expect(initialLeft).toBe(afterLeft);
-      // Initial had translateX(0px), after has translateX(250px)
-      expect(initialTransform).toContain('0px');
-      expect(afterTransform).toContain('250px');
+      // Change to 1000ms — playhead should stay at 250px
+      rerender(
+        <ExercisePlaybackTimeline
+          midiEvents={mockMidiEvents}
+          durationMs={2000}
+          currentTimeMs={1000}
+          playheadOffsetPx={250}
+        />
+      );
+
+      const playheadAfter = container.querySelector('[data-testid="playhead"]') as HTMLElement;
+      expect(playheadAfter.style.left).toBe('250px');
     });
   });
 
@@ -622,7 +624,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
   // Edge cases
   // ───────────────────────────────────────────────────────────────────────────
   describe('Edge cases: dynamic offset changes', () => {
-    it('updates playhead transform when offset prop changes', () => {
+    it('updates playhead left position when offset prop changes', () => {
       const { container, rerender } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -633,7 +635,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       let playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(100px)' });
+      expect(playhead).toHaveStyle({ left: '100px' });
 
       rerender(
         <ExercisePlaybackTimeline
@@ -645,10 +647,10 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(300px)' });
+      expect(playhead).toHaveStyle({ left: '300px' });
     });
 
-    it('offset applies correctly at 0% timeline position', () => {
+    it('offset is fixed at 0% timeline position (currentTimeMs=0)', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -659,11 +661,10 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead.style.left).toContain('0');
-      expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+      expect(playhead).toHaveStyle({ left: '250px' });
     });
 
-    it('offset applies correctly at 100% timeline position', () => {
+    it('offset is fixed at 100% timeline position (currentTimeMs=duration)', () => {
       const { container } = render(
         <ExercisePlaybackTimeline
           midiEvents={mockMidiEvents}
@@ -674,8 +675,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead.style.left).toContain('100');
-      expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+      expect(playhead).toHaveStyle({ left: '250px' });
     });
 
     it('handles very large offset values', () => {
@@ -689,7 +689,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(1000px)' });
+      expect(playhead).toHaveStyle({ left: '1000px' });
     });
 
     it('offset renders correctly with narrow container', () => {
@@ -705,7 +705,7 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
       );
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-      expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+      expect(playhead).toHaveStyle({ left: '250px' });
     });
   });
 
@@ -739,7 +739,6 @@ describe('ExercisePlaybackTimeline playhead offset', () => {
 
       const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
       expect(playhead).toHaveClass('pointer-events-none');
-      expect(playhead.style.pointerEvents).toBe('none');
     });
 
     it('playhead is aria-hidden from accessibility tree', () => {

@@ -48,7 +48,7 @@ describe('ExercisePlaybackTimeline', () => {
     expect(container.querySelector('[data-testid="playhead"]')).toBeInTheDocument();
   });
 
-  it('positions playhead at correct position based on current time', () => {
+  it('positions playhead at fixed offset position', () => {
     const { container } = render(
       <ExercisePlaybackTimeline
         midiEvents={mockEvents}
@@ -57,7 +57,7 @@ describe('ExercisePlaybackTimeline', () => {
       />
     );
     const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-    expect(playhead.style.left).toBe('50%');
+    expect(playhead.style.left).toBe('250px');
   });
 
   it('displays "no note data" message when midiEvents is empty', () => {

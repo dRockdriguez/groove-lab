@@ -380,7 +380,7 @@ describe('Playhead with glow and colors', () => {
     );
 
     const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-    expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+    expect(playhead).toHaveStyle({ left: '250px' });
   });
 
   it('playhead is visible above note colors and glow (z-10 class)', () => {
@@ -532,7 +532,7 @@ describe('Data integration: prop wiring', () => {
     );
 
     const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-    expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+    expect(playhead).toHaveStyle({ left: '250px' });
   });
 
   it('no activeGlows → no glow overlays', () => {
@@ -593,7 +593,7 @@ describe('Data integration: prop wiring', () => {
 
     // Playhead with offset
     const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-    expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
+    expect(playhead).toHaveStyle({ left: '250px' });
   });
 });
 
@@ -761,10 +761,9 @@ describe('Complex scenario 1: Full playback with all feedback features', () => {
     const glowOverlays = container.querySelectorAll('[data-testid="track-glow-overlay"]');
     expect(glowOverlays.length).toBe(2);
 
-    // Playhead with offset
+    // Playhead with offset (fixed at 250px)
     const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
-    expect(playhead).toHaveStyle({ transform: 'translateX(250px)' });
-    expect(playhead.style.left).toContain('40'); // 800ms / 2000ms = 40%
+    expect(playhead).toHaveStyle({ left: '250px' });
   });
 });
 
@@ -1080,7 +1079,6 @@ describe('Regression: Existing behavior unchanged', () => {
 
     const playhead = container.querySelector('[data-testid="playhead"]') as HTMLElement;
     expect(playhead).toHaveClass('pointer-events-none');
-    expect(playhead.style.pointerEvents).toBe('none');
   });
 
   it('playhead is aria-hidden (not in accessibility tree)', () => {
