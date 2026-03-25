@@ -48,6 +48,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <FavoriteButton
               exerciseId={exercise.id}
+              onTagsClick={handleOpenTagInput}
               className="shrink-0"
             />
             <h3 className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">

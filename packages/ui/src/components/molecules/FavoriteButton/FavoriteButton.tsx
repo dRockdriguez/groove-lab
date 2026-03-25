@@ -4,6 +4,8 @@ import { isFavorite, toggleFavorite, useLocalStorageListener } from '@groovelab/
 export interface FavoriteButtonProps {
   /** Exercise ID used to look up favorite state in storage */
   exerciseId: string;
+  /** Optional callback when user clicks tags icon to open tag editor */
+  onTagsClick?: () => void;
   /** Optional class name appended to the root element */
   className?: string;
 }
@@ -21,6 +23,7 @@ function readFavorited(exerciseId: string): boolean {
  */
 export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   exerciseId,
+  onTagsClick,
   className = '',
 }) => {
   const [favorited, setFavorited] = useState(() => readFavorited(exerciseId));
@@ -35,15 +38,23 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     setFavorited(readFavorited(exerciseId));
   });
 
-  const handleHeartClick = useCallback(() => {
+  const handleHeartClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const next = toggleFavorite(exerciseId);
     setFavorited(next);
   }, [exerciseId]);
 
+  const handleTagsClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onTagsClick?.();
+  }, [onTagsClick]);
+
   const heartLabel = favorited ? 'Remove from favorites' : 'Add to favorites';
 
   return (
-    <div className={['inline-flex items-center', className].join(' ')}>
+    <div className={['inline-flex items-center gap-1', className].join(' ')}>
       {/* Heart button */}
       <button
         type="button"
@@ -93,6 +104,35 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           </svg>
         )}
       </button>
+
+      {/* Tags button (if callback provided) */}
+      {onTagsClick && (
+        <button
+          type="button"
+          aria-label="Manage tags"
+          onClick={handleTagsClick}
+          className={[
+            'inline-flex items-center justify-center',
+            'rounded p-0.5',
+            'transition-transform duration-100 ease-in-out',
+            'text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-blue-400',
+            'hover:scale-110',
+          ].join(' ')}
+        >
+          {/* Tag icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            width="18"
+            height="18"
+            aria-hidden="true"
+          >
+            <path d="M6.75 2.25A2.25 2.25 0 004.5 4.5v6a2.25 2.25 0 002.25 2.25h12a2.25 2.25 0 002.25-2.25v-6a2.25 2.25 0 00-2.25-2.25h-12zM3.75 15h16.5a.75.75 0 00-.75.75v2.25a2.25 2.25 0 01-2.25 2.25h-12a2.25 2.25 0 01-2.25-2.25V15.75a.75.75 0 00-.75-.75z" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 };
