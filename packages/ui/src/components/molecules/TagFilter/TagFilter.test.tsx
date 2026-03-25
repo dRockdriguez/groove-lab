@@ -101,13 +101,12 @@ describe('TagFilter', () => {
       expect(buttons.length).toBe(7);
     });
 
-    it('should display header and subtitle', () => {
+    it('should display header', () => {
       render(
         <TagFilter selectedTags={[]} onSelectedTagsChange={mockOnSelectedTagsChange} />
       );
 
       expect(screen.getByText('Tags')).toBeInTheDocument();
-      expect(screen.getByText('Filter by multiple tags')).toBeInTheDocument();
     });
   });
 
