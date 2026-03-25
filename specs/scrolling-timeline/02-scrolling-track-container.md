@@ -1,7 +1,8 @@
 # Spec: Scrolling Track Container with ResizeObserver
 
-**Status:** Draft
+**Status:** Implemented
 **Last updated:** 2026-03-25
+**Verified:** 2026-03-25
 
 ## Scope
 
@@ -84,14 +85,14 @@ useEffect(() => {
 
 ## Definition of Done
 
-- [ ] State `containerWidth: number` added, initialized to 0
-- [ ] `useEffect` with ResizeObserver added to measure container width
-- [ ] Initial width measurement via `getBoundingClientRect()` on mount
-- [ ] `scrollTranslateX` calculated correctly (formula verified)
-- [ ] Inner container div created with correct `transform`, `position: 'relative'`, `width: '100%'`, `willChange: 'transform'`
-- [ ] Playhead moved outside inner container (sibling position)
-- [ ] Outer `tracksRef` div has `overflow: hidden` added
-- [ ] All note/loop/beat markers still render with their original `%` positioning (no changes to internal positioning logic)
-- [ ] ResizeObserver mocked in all test files that need it
-- [ ] All ExercisePlaybackTimeline tests pass
-- [ ] No changes to other components
+- [x] State `containerWidth: number` added, initialized to 0
+- [x] `useEffect` with ResizeObserver added to measure container width
+- [x] Initial width measurement via `getBoundingClientRect()` on mount
+- [x] `scrollTranslateX` calculated correctly (formula verified)
+- [x] Inner container div created with correct `transform`, `position: 'relative'`, `width: '100%'`, `willChange: 'transform'`
+- [x] Playhead moved outside inner container (sibling position)
+- [x] Outer `tracksRef` div has `overflow: hidden` added
+- [x] All note/loop/beat markers still render with their original `%` positioning (no changes to internal positioning logic)
+- [x] ResizeObserver mocked in all test files that need it (`ExercisePlaybackTimeline.scrolling.test.tsx` — 29 tests)
+- [x] All ExercisePlaybackTimeline tests pass (1407 total, 0 regressions)
+- [x] No changes to other components
