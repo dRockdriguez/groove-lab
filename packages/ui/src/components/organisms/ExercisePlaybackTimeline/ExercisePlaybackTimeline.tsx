@@ -4,6 +4,11 @@ import { getDrumColor } from '@groovelab/utils';
 import { TrackLabel } from '../../molecules/TrackLabel';
 import type { ScoringEvent, ScoringClassification } from '@groovelab/utils';
 
+// ─── Row height constant ───────────────────────────────────────────────────────
+// Must match the h-10 Tailwind class applied to track rows (2.5rem = 40px at base 16px)
+
+const ROW_HEIGHT_PX = 40;
+
 // ─── Glow opacity ──────────────────────────────────────────────────────────────
 
 const GLOW_OPACITY_FACTOR = 0.15;
@@ -456,7 +461,7 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
             }
 
             return (
-              <div key={note} className="border-b border-gray-200 dark:border-gray-700 h-10 relative">
+              <div key={note} className="h-10 relative">
                 {glowOverlay}
                 {eventsByNote[note].map((event, index) => {
                   const leftPercent =
@@ -489,6 +494,24 @@ export const ExercisePlaybackTimeline: React.FC<ExercisePlaybackTimelineProps> =
           })}
           </div>
           {/* End of inner scrolling container */}
+
+          {/* Full-width row separators (absolute, outside scrolling container) */}
+          {uniqueNotes.map((_, i) => (
+            <div
+              key={`separator-${i}`}
+              data-testid="row-separator"
+              aria-hidden="true"
+              className="bg-gray-200 dark:bg-gray-700"
+              style={{
+                position: 'absolute',
+                top: `${(i + 1) * ROW_HEIGHT_PX}px`,
+                left: 0,
+                right: 0,
+                height: '1px',
+                pointerEvents: 'none',
+              }}
+            />
+          ))}
         </div>
       </div>
     </div>

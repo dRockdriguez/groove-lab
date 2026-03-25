@@ -53,6 +53,12 @@ On loop jump (currentTimeMs resets):
 
 3. **03-loop-interaction-in-scroll.md** — Update `getTimeFromMouseEvent` drag handler to account for scroll offset and `containerWidth`. Bracket drag delta calculation is unchanged (delta-based).
 
+4. **04-full-width-row-separators.md** — Move row separator lines out of the inner scrolling container and into the outer `tracksRef` container as absolutely-positioned elements. Ensures separator lines span the full visible width at all times, regardless of `scrollTranslateX`.
+
+5. **05-drag-to-seek-main-timeline.md** — Add Alt+drag-to-seek gesture on `ExercisePlaybackTimeline`. Dragging the tracks area with Alt held scrubs the playback position when paused. New props: `onSeek?: (timeMs: number) => void` and `isPlaying?: boolean`.
+
+6. **06-drag-to-seek-minitimeline.md** — Add Alt+drag-to-seek gesture on `MiniTimeline`. Same behavior as spec 05. New prop: `isPlaying?: boolean`.
+
 ## Test Strategy
 
 - Spec 01 tests: All "playhead position" assertions become "playhead always at 250px" assertions
@@ -67,5 +73,10 @@ On loop jump (currentTimeMs resets):
 - [ ] On loop jump, `currentTimeMs` resets and notes snap back
 - [ ] Drag-to-create loop works correctly in scrolled context (clicking at playhead = `currentTimeMs`)
 - [ ] Bracket drag works correctly in scrolled context
-- [ ] All existing ExercisePlaybackTimeline tests pass
-- [ ] No changes to ExercisePlaybackPage, MiniTimeline, or other components
+- [ ] Row separators span the full visible width of the tracks area at all times (not clipped by scrollTranslateX)
+- [ ] Alt+drag on the main timeline tracks area seeks to the correct time position when paused
+- [ ] Alt+drag on the minimap seeks to the correct time position when paused
+- [ ] Alt+drag does not activate during playback (`isPlaying === true`)
+- [ ] Alt+drag does not interfere with loop creation or bracket drag gestures
+- [ ] All existing ExercisePlaybackTimeline and MiniTimeline tests pass
+- [ ] No regressions on related components
