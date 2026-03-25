@@ -333,13 +333,14 @@ describe('Header', () => {
       expect(firstChild).toBe(nav);
     });
 
-    it('should render ThemeToggle as last child (right side)', () => {
+    it('should render ThemeToggle as part of right side container', () => {
       const items = [{ href: '/home', label: 'Home' }];
       render(<Header navigationItems={items} />);
       const header = screen.getByRole('banner');
       const lastChild = header.children[header.children.length - 1];
-      const toggleButton = screen.getByRole('button');
-      expect(lastChild).toBe(toggleButton);
+      // Last child is now a div that contains ThemeToggle
+      const themeButton = screen.getByRole('button', { name: /switch to/i });
+      expect(lastChild).toContainElement(themeButton);
     });
 
     it('should pass navigationItems prop to NavigationMenu', () => {
@@ -434,14 +435,17 @@ describe('Header', () => {
 
       const header = screen.getByRole('banner');
       const nav = screen.getByRole('navigation');
-      const toggleButton = screen.getByRole('button');
+      const themeButton = screen.getByRole('button', { name: /switch to/i });
 
       // Header should have justify-between for proper spacing
       expect(header).toHaveClass('justify-between');
 
-      // Nav should be first, toggle should be last
+      // Nav should be first
       expect(header.children[0]).toBe(nav);
-      expect(header.children[header.children.length - 1]).toBe(toggleButton);
+      // Last child should be a div container (for tools + theme buttons)
+      const lastChild = header.children[header.children.length - 1];
+      expect(lastChild.tagName).toBe('DIV');
+      expect(lastChild).toContainElement(themeButton);
     });
 
     it('should render navigation with custom active state styling', () => {

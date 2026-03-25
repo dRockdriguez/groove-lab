@@ -53,11 +53,15 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
     sessionStorage.clear();
   });
 
-  // ── AC3: Sidebar has a toggle button
+  // ── AC3: Sidebar has toggle functionality via CustomEvents
+  // (The toggle button now lives in the Header, not in ExercisePlaybackPage)
 
-  it('renders the tools sidebar toggle button', () => {
+  it('dispatchesetools-sidebar-available event when mounted', () => {
+    const spy = vi.spyOn(document, 'dispatchEvent');
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    expect(screen.getByTestId('tools-sidebar-toggle')).toBeInTheDocument();
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'tools-sidebar-available',
+    }));
   });
 
   // ── AC4: Sidebar is hidden by default on page load
@@ -65,22 +69,16 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
   it('sidebar is hidden by default on initial load', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
     const sidebar = screen.getByRole('complementary');
-    expect(sidebar).toHaveClass('sm:-translate-x-full');
+    expect(sidebar).toHaveClass('sm:translate-x-full');
   });
 
-  it('toggle button shows hamburger icon when sidebar is closed', () => {
+  // ── Sidebar toggle functionality via CustomEvents
+
+  it('opens sidebar when tools-sidebar-toggle event is dispatched', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton.textContent).toContain('≡');
-  });
 
-  // ── Sidebar toggle functionality
-
-  it('opens sidebar when toggle button is clicked', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-
-    fireEvent.click(toggleButton);
+    // Simulate Header dispatching the toggle event
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
 
     await waitFor(() => {
       const sidebar = screen.getByRole('complementary');
@@ -88,31 +86,19 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
     });
   });
 
-  it('closes sidebar when toggle button is clicked again', async () => {
+  it('closes sidebar when toggle event is dispatched again', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
     // Open
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     await waitFor(() => {
       expect(screen.getByRole('complementary')).toHaveClass('sm:translate-x-0');
     });
 
     // Close
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     await waitFor(() => {
-      expect(screen.getByRole('complementary')).toHaveClass('sm:-translate-x-full');
-    });
-  });
-
-  it('toggle button shows chevron icon when sidebar is open', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(toggleButton.textContent).toContain('◀');
+      expect(screen.getByRole('complementary')).toHaveClass('sm:translate-x-full');
     });
   });
 
@@ -120,9 +106,8 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   it('persists sidebar open state to sessionStorage', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
 
     await waitFor(() => {
       const stored = sessionStorage.getItem('exerciseTools_sidebarOpen');
@@ -133,14 +118,13 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
   it('persists sidebar closed state to sessionStorage', async () => {
     // First open, then close
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     await waitFor(() => {
       expect(sessionStorage.getItem('exerciseTools_sidebarOpen')).toBe('true');
     });
 
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     await waitFor(() => {
       expect(sessionStorage.getItem('exerciseTools_sidebarOpen')).toBe('false');
     });
@@ -161,7 +145,7 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
 
     const sidebar = screen.getByRole('complementary');
-    expect(sidebar).toHaveClass('sm:-translate-x-full');
+    expect(sidebar).toHaveClass('sm:translate-x-full');
   });
 
   // ── AC10: Keyboard shortcut to toggle sidebar (Ctrl+T)
@@ -171,7 +155,7 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
     const sidebar = screen.getByRole('complementary');
 
     // Initially closed
-    expect(sidebar).toHaveClass('sm:-translate-x-full');
+    expect(sidebar).toHaveClass('sm:translate-x-full');
 
     // Press Ctrl+T
     fireEvent.keyDown(document, { key: 't', ctrlKey: true });
@@ -196,7 +180,7 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
     // Should be closed
     await waitFor(() => {
-      expect(sidebar).toHaveClass('sm:-translate-x-full');
+      expect(sidebar).toHaveClass('sm:translate-x-full');
     });
   });
 
@@ -215,9 +199,8 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   it('renders backdrop when sidebar is open', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
 
     await waitFor(() => {
       expect(screen.getByTestId('tools-sidebar-backdrop')).toBeInTheDocument();
@@ -232,10 +215,9 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   it('closes sidebar when backdrop is clicked', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
     // Open sidebar
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     await waitFor(() => {
       expect(screen.getByTestId('tools-sidebar-backdrop')).toBeInTheDocument();
     });
@@ -288,44 +270,12 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
   // Note: More LoopRepetitionCounter tests would be added once loop controls
   // are wired up in ExercisePlaybackPage (currently they're stubs).
 
-  // ── Accessibility of toggle button
-
-  it('toggle button has aria-label with keyboard shortcut hint', () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toHaveAttribute('aria-label', 'Toggle tools sidebar (Ctrl+T)');
-  });
-
-  it('toggle button has aria-expanded attribute', () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    // Should be "false" by default
-    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('toggle button aria-expanded changes to true when opened', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-
-    fireEvent.click(toggleButton);
-
-    await waitFor(() => {
-      expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
-    });
-  });
-
   // ── Z-index layering
 
   it('sidebar is positioned above timeline (z-index)', () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
     const sidebar = screen.getByRole('complementary');
     expect(sidebar).toHaveClass('z-30');
-  });
-
-  it('toggle button is positioned above sidebar (z-index)', () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    expect(toggleButton).toHaveClass('z-40');
   });
 
   // ── Dark mode support
@@ -349,10 +299,9 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   it('timeline is visible and functional when sidebar is open', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
     // Open sidebar
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
 
     await waitFor(() => {
       expect(screen.getByRole('complementary')).toHaveClass('sm:translate-x-0');
@@ -366,9 +315,8 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   it('sidebar displays "Tools" label in header', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
 
     await waitFor(() => {
       expect(screen.getByText('Tools')).toBeInTheDocument();
@@ -400,28 +348,6 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
     expect(sidebar).toHaveClass('max-sm:bottom-0', 'max-sm:w-full');
   });
 
-  // ── Sidebar visibility across toggle states
-
-  it('toggle button remains visible when sidebar transitions', async () => {
-    render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-
-    // Should be visible initially
-    expect(toggleButton).toBeInTheDocument();
-
-    // Open sidebar
-    fireEvent.click(toggleButton);
-    await waitFor(() => {
-      expect(toggleButton).toBeInTheDocument();
-    });
-
-    // Close sidebar
-    fireEvent.click(toggleButton);
-    await waitFor(() => {
-      expect(toggleButton).toBeInTheDocument();
-    });
-  });
-
   // ── sessionStorage validation
 
   it('handles malformed sessionStorage gracefully', () => {
@@ -430,7 +356,7 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
     // Should not throw and sidebar should be in default (closed) state
     render(<ExercisePlaybackPage exercise={mockExercise} />);
     const sidebar = screen.getByRole('complementary');
-    expect(sidebar).toHaveClass('sm:-translate-x-full');
+    expect(sidebar).toHaveClass('sm:translate-x-full');
   });
 
   // ── Sidebar accessibility role
@@ -452,21 +378,21 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   // ── AC5: ExercisePlaybackPage calls setVolume on volume change
 
-  it('renders drum volume slider in sidebar', () => {
+  it('renders drum volume slider in sidebar', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
     // Open sidebar to access controls
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     // Volume slider should be rendered
-    expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
+    });
   });
 
   it('calls drumSoundEngineRef.setVolume(volume/100) when slider changes', async () => {
     const { container } = render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
 
     // Open sidebar
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     await waitFor(() => {
       expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
     });
@@ -482,27 +408,32 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   // ── AC8 & 9: Mute toggles engine volume
 
-  it('renders mute button in drum volume section', () => {
+  it('renders mute button in drum volume section', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    expect(screen.getByRole('button', { name: /mute drums/i })).toBeInTheDocument();
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /mute drums/i })).toBeInTheDocument();
+    });
   });
 
-  it('mute button starts with aria-pressed="false"', () => {
+  it('mute button starts with aria-pressed="false"', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    const muteButton = screen.getByRole('button', { name: /mute drums/i });
-    expect(muteButton).toHaveAttribute('aria-pressed', 'false');
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+    await waitFor(() => {
+      const muteButton = screen.getByRole('button', { name: /mute drums/i });
+      expect(muteButton).toHaveAttribute('aria-pressed', 'false');
+    });
   });
 
   // ── AC10 & 11: Volume persistence to sessionStorage
 
   it('persists volume value to sessionStorage key exerciseTools_drumVolume', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
+    });
 
     const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
     fireEvent.change(slider, { target: { value: '60' } });
@@ -515,8 +446,11 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   it('persists muted state to sessionStorage key exerciseTools_drumMuted', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /mute drums/i })).toBeInTheDocument();
+    });
 
     const muteButton = screen.getByRole('button', { name: /mute drums/i });
     fireEvent.click(muteButton);
@@ -529,48 +463,55 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   // ── AC12: Restore from sessionStorage on page load
 
-  it('restores volume from sessionStorage on page load (default: 70)', () => {
+  it('restores volume from sessionStorage on page load (default: 70)', async () => {
     sessionStorage.clear();
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
-    expect(slider.value).toBe('70');
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+    await waitFor(() => {
+      const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
+      expect(slider.value).toBe('70');
+    });
   });
 
-  it('restores custom volume value from sessionStorage on page load', () => {
+  it('restores custom volume value from sessionStorage on page load', async () => {
     sessionStorage.setItem('exerciseTools_drumVolume', '45');
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
-    expect(slider.value).toBe('45');
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+    await waitFor(() => {
+      const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
+      expect(slider.value).toBe('45');
+    });
   });
 
-  it('restores muted state from sessionStorage on page load (default: false)', () => {
+  it('restores muted state from sessionStorage on page load (default: false)', async () => {
     sessionStorage.clear();
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    const muteButton = screen.getByRole('button', { name: /mute drums/i });
-    expect(muteButton).toHaveAttribute('aria-pressed', 'false');
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+    await waitFor(() => {
+      const muteButton = screen.getByRole('button', { name: /mute drums/i });
+      expect(muteButton).toHaveAttribute('aria-pressed', 'false');
+    });
   });
 
-  it('restores muted state true from sessionStorage on page load', () => {
+  it('restores muted state true from sessionStorage on page load', async () => {
     sessionStorage.setItem('exerciseTools_drumMuted', 'true');
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    const muteButton = screen.getByRole('button', { name: /mute drums/i });
-    expect(muteButton).toHaveAttribute('aria-pressed', 'true');
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+    await waitFor(() => {
+      const muteButton = screen.getByRole('button', { name: /mute drums/i });
+      expect(muteButton).toHaveAttribute('aria-pressed', 'true');
+    });
   });
 
   // ── Edge case: Volume at 0 does not toggle mute button
 
   it('volume slider at 0 does not toggle mute button aria-pressed', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
+    });
 
     const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
     const muteButton = screen.getByRole('button', { name: /mute drums/i });
@@ -586,8 +527,11 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   it('slider visual updates when muted but engine volume behavior is controlled by mute state', async () => {
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
+    });
 
     const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
     const muteButton = screen.getByRole('button', { name: /mute drums/i });
@@ -607,17 +551,18 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
 
   // ── Edge case: Invalid sessionStorage fallback
 
-  it('silently falls back to defaults when sessionStorage contains invalid volume', () => {
+  it('silently falls back to defaults when sessionStorage contains invalid volume', async () => {
     sessionStorage.setItem('exerciseTools_drumVolume', 'invalid');
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
-    const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
-    // Should default to 70 on invalid parse
-    expect(slider.value).toBe('70');
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
+    await waitFor(() => {
+      const slider = screen.getByLabelText('Drum volume') as HTMLInputElement;
+      // Should default to 70 on invalid parse
+      expect(slider.value).toBe('70');
+    });
   });
 
-  it('silently falls back when sessionStorage is unavailable', () => {
+  it('silently falls back when sessionStorage is unavailable', async () => {
     // Mock sessionStorage to throw
     const originalSessionStorage = global.sessionStorage;
     Object.defineProperty(global, 'sessionStorage', {
@@ -634,10 +579,11 @@ describe('ExercisePlaybackPage — Tools Sidebar Integration', () => {
     });
 
     render(<ExercisePlaybackPage exercise={mockExercise} />);
-    const toggleButton = screen.getByTestId('tools-sidebar-toggle');
-    fireEvent.click(toggleButton);
+    document.dispatchEvent(new CustomEvent('tools-sidebar-toggle'));
     // Should render with defaults without throwing
-    expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText('Drum volume')).toBeInTheDocument();
+    });
 
     // Restore original sessionStorage
     Object.defineProperty(global, 'sessionStorage', {

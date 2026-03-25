@@ -645,6 +645,30 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleToggleToolsSidebar]);
 
+  // ─── CustomEvent: Notify Header that tools sidebar is available ──────────
+  useEffect(() => {
+    document.dispatchEvent(new CustomEvent('tools-sidebar-available'));
+    return () => {
+      document.dispatchEvent(new CustomEvent('tools-sidebar-unavailable'));
+    };
+  }, []);
+
+  // ─── CustomEvent: Notify Header when sidebar state changes ────────────────
+  useEffect(() => {
+    document.dispatchEvent(
+      new CustomEvent('tools-sidebar-state', { detail: { isOpen: toolsSidebarOpen } })
+    );
+  }, [toolsSidebarOpen]);
+
+  // ─── CustomEvent: Listen for toggle request from Header button ───────────
+  useEffect(() => {
+    const handleToggleRequest = () => {
+      handleToggleToolsSidebar();
+    };
+    document.addEventListener('tools-sidebar-toggle', handleToggleRequest);
+    return () => document.removeEventListener('tools-sidebar-toggle', handleToggleRequest);
+  }, [handleToggleToolsSidebar]);
+
   // ─── Loop validity ─────────────────────────────────────────────────────────
   const hasValidLoop = loopStartMs < loopEndMs && loopEndMs - loopStartMs >= 500;
   // Only pass loop markers to timelines if there's a valid loop set
@@ -728,8 +752,13 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
       />
 
       {/* ── Main content area ────────────────────────────────────────────────
-          flex-1 so it fills all space not occupied by the sidebar.          */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+          flex-1 so it fills all space not occupied by the sidebar.
+          On desktop with sidebar open, add right margin to avoid overlap.  */}
+      <div className={[
+        'flex-1 flex flex-col overflow-hidden',
+        // When sidebar is open on desktop, shift content to the left
+        toolsSidebarOpen ? 'sm:mr-80' : '',
+      ].join(' ')}>
         {/* Header — use flat text (no nested child spans) so getByText(/bpm/i)
             matches exactly one element, not the label span + the container span. */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 sm:p-6">
@@ -737,7 +766,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             {exercise.title}
           </h1>
           <div
-            className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400"
+            className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400"
             aria-live="polite"
           >
             <span>BPM: {exercise.bpm}</span>
