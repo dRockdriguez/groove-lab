@@ -1,7 +1,7 @@
 # Spec: Drag-to-Seek on MiniTimeline (Alt+Drag When Paused)
 
-**Status:** Draft
-**Last updated:** 2026-03-25
+**Status:** Implemented
+**Last updated:** 2026-03-26
 
 ## Scope
 
@@ -70,13 +70,13 @@ MiniTimeline already has `onSeek` as a required prop. The new `isPlaying` prop i
 
 ## Definition of Done
 
-- [ ] `isPlaying?: boolean` (default `false`) added to `MiniTimelineProps`
-- [ ] Seek drag internal state added: `seekDragStartX` and `seekDragStartTimeMs` via `useRef`
-- [ ] Main container `onMouseDown` handler updated: when `event.altKey === true` AND `!isPlaying`, start seek drag; capture `dragStartX` and `dragStartTimeMs`; set `document.body.style.cursor = 'grabbing'`; attach document-level `mousemove` and `mouseup` handlers; return early (do not fall through to existing drag/click logic)
-- [ ] Document-level `mousemove` handler: compute `deltaX`, get `containerWidth` from `containerRef.current?.getBoundingClientRect().width`, compute `newTimeMs`, call `onSeek(Math.round(clamp(newTimeMs, 0, durationMs)))`
-- [ ] Document-level `mouseup` handler: reset refs, restore cursor, remove listeners
-- [ ] `ExercisePlaybackPage` (or equivalent): add `isPlaying={playbackState === 'playing'}` to `<MiniTimeline>`
-- [ ] New test file `MiniTimeline.seek-drag.test.tsx` added with the following tests:
+- [x] `isPlaying?: boolean` (default `false`) added to `MiniTimelineProps`
+- [x] Seek drag internal state added: `seekDragStartX` and `seekDragStartTimeMs` via `useRef`
+- [x] Main container `onMouseDown` handler updated: when `event.altKey === true` AND `!isPlaying`, start seek drag; capture `dragStartX` and `dragStartTimeMs`; set `document.body.style.cursor = 'grabbing'`; attach document-level `mousemove` and `mouseup` handlers; return early (do not fall through to existing drag/click logic)
+- [x] Document-level `mousemove` handler: compute `deltaX`, get `containerWidth` from `containerRef.current?.getBoundingClientRect().width`, compute `newTimeMs`, call `onSeek(Math.round(clamp(newTimeMs, 0, durationMs)))`
+- [x] Document-level `mouseup` handler: reset refs, restore cursor, remove listeners
+- [x] `ExercisePlaybackPage` (or equivalent): add `isPlaying={playbackState === 'playing'}` to `<MiniTimeline>`
+- [x] New test file `MiniTimeline.seek-drag.test.tsx` added with the following tests:
   - Props: `isPlaying` is optional; component renders without it
   - Drag start: `mousedown` with `altKey=true`, `isPlaying=false` → `onSeek` called on subsequent `mousemove`
   - Drag start: `mousedown` with `altKey=false`, `hasLoopCallbacks=true` → loop create drag fires instead (no seek)
@@ -90,5 +90,6 @@ MiniTimeline already has `onSeek` as a required prop. The new `isPlaying` prop i
   - Bracket drag regression: Alt+drag on bracket handle → bracket drag takes priority
   - Loop create regression: drag without Alt with `hasLoopCallbacks=true` → loop drag still works
   - Click seek regression: click without drag with `hasLoopCallbacks=false` → `onSeek` called via `handleClick`
-- [ ] All existing MiniTimeline tests pass (no regressions)
-- [ ] Spec metadata updated to `Status: Implemented`
+- [x] All existing MiniTimeline tests pass (no regressions) — 1478 total tests passing
+- [x] Spec metadata updated to `Status: Implemented`
+- [x] 21 new seek-drag tests added and passing (0 regressions)

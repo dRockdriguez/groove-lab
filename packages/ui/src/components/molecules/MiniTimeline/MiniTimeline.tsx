@@ -25,6 +25,8 @@ export interface MiniTimelineProps {
   onLoopDragStart?: () => void;
   /** Called when user finishes a loop drag interaction */
   onLoopDragEnd?: () => void;
+  /** When true, the Alt+drag seek gesture is disabled */
+  isPlaying?: boolean;
   className?: string;
 }
 
@@ -58,9 +60,14 @@ export const MiniTimeline: React.FC<MiniTimelineProps> = ({
   onLoopEndChange,
   onLoopDragStart,
   onLoopDragEnd,
+  isPlaying = false,
   className = '',
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // ─── Seek drag refs ────────────────────────────────────────────────────────
+  const seekDragStartX = React.useRef<number | null>(null);
+  const seekDragStartTimeMs = React.useRef<number | null>(null);
 
   // ─── Drag-to-create loop state ─────────────────────────────────────────────
   const [dragStartMs, setDragStartMs] = React.useState<number | null>(null);
@@ -84,6 +91,41 @@ export const MiniTimeline: React.FC<MiniTimelineProps> = ({
 
   // ─── Mouse handlers for drag-to-select ────────────────────────────────────
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Alt+drag seek gesture takes priority when paused
+    if (e.altKey && !isPlaying) {
+      if (!containerRef.current || durationMs <= 0) return;
+      const containerWidth = containerRef.current.getBoundingClientRect().width;
+      if (containerWidth <= 0) return;
+
+      seekDragStartX.current = e.clientX;
+      seekDragStartTimeMs.current = currentTimeMs;
+      document.body.style.cursor = 'grabbing';
+
+      const handleSeekMove = (moveEvent: MouseEvent) => {
+        if (seekDragStartX.current === null || seekDragStartTimeMs.current === null) return;
+        const width = containerRef.current?.getBoundingClientRect().width || 0;
+        if (width <= 0) return;
+        const deltaX = moveEvent.clientX - seekDragStartX.current;
+        const newTimeMs = Math.max(
+          0,
+          Math.min(durationMs, seekDragStartTimeMs.current - (deltaX / width) * durationMs)
+        );
+        onSeek(Math.round(newTimeMs));
+      };
+
+      const handleSeekUp = () => {
+        seekDragStartX.current = null;
+        seekDragStartTimeMs.current = null;
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', handleSeekMove);
+        document.removeEventListener('mouseup', handleSeekUp);
+      };
+
+      document.addEventListener('mousemove', handleSeekMove);
+      document.addEventListener('mouseup', handleSeekUp);
+      return;
+    }
+
     if (!onLoopStartChange || !onLoopEndChange) return;
     const timeMs = getTimeFromMouseEvent(e);
     setDragStartMs(timeMs);
@@ -212,7 +254,7 @@ export const MiniTimeline: React.FC<MiniTimelineProps> = ({
           ? `Timeline overview — loop from ${Math.round(loopStartMs! / 1000)}s to ${Math.round(loopEndMs! / 1000)}s`
           : 'Timeline overview — click to seek'
       }
-      onMouseDown={hasLoopCallbacks ? handleMouseDown : undefined}
+      onMouseDown={handleMouseDown}
       onMouseMove={hasLoopCallbacks ? handleMouseMove : undefined}
       onMouseUp={hasLoopCallbacks ? handleMouseUp : undefined}
       onClick={handleClick}

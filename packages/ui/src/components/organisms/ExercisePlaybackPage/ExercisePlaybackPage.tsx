@@ -836,6 +836,7 @@ export const ExercisePlaybackPage: React.FC<ExercisePlaybackPageProps> = ({
             onSeek={handleSeek}
             bpm={exercise.bpm}
             metronomeEnabled={metronomeEnabled}
+            isPlaying={playbackState === 'playing'}
             {...loopMarkerProps}
           />
 
