@@ -47,10 +47,17 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     return () => window.removeEventListener('storage', handleStorage);
   }, [exerciseId]);
 
-  const handleHeartClick = useCallback(() => {
-    const next = toggleFavorite(exerciseId);
-    setState((prev) => ({ ...prev, favorited: next }));
-  }, [exerciseId]);
+  const handleHeartClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // If onTagsClick is provided and favorited, open tags modal instead of toggling
+    if (onTagsClick && state.favorited) {
+      onTagsClick();
+    } else {
+      const next = toggleFavorite(exerciseId);
+      setState((prev) => ({ ...prev, favorited: next }));
+    }
+  }, [exerciseId, onTagsClick, state.favorited]);
 
   const handleTagClick = useCallback(
     (e: React.MouseEvent) => {
