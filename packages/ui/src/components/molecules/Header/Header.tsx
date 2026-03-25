@@ -7,6 +7,11 @@ export interface HeaderProps {
   activeHref?: string;
 }
 
+const DEFAULT_NAV_ITEMS: NavigationMenuItem[] = [
+  { href: '/', label: 'Home' },
+  { href: '/import', label: 'Import' },
+];
+
 function getInitialTheme(): 'light' | 'dark' {
   if (typeof window === 'undefined') return 'light';
 
@@ -26,14 +31,69 @@ function getInitialTheme(): 'light' | 'dark' {
   return 'light';
 }
 
-export const Header: React.FC<HeaderProps> = ({ navigationItems = [], activeHref }) => {
+/**
+ * Normalize a pathname by stripping hash, query params, and trailing slash.
+ * Returns the normalized path string.
+ */
+function normalizePathname(pathname: string): string {
+  // Strip hash
+  const withoutHash = pathname.split('#')[0];
+  // Strip query params
+  const withoutQuery = withoutHash.split('?')[0];
+  // Strip trailing slash (but preserve root "/")
+  const normalized = withoutQuery.length > 1 ? withoutQuery.replace(/\/$/, '') : withoutQuery;
+  return normalized;
+}
+
+/**
+ * Detect the active href from the current pathname.
+ * Returns the matching menu href, or undefined if no match.
+ */
+function detectActiveHref(pathname: string): string | undefined {
+  const normalized = normalizePathname(pathname);
+
+  if (normalized === '/') return '/';
+  if (normalized === '/import') return '/import';
+  if (normalized.startsWith('/practice')) return '/practice';
+
+  return undefined;
+}
+
+function getCurrentPathname(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return window.location.pathname;
+}
+
+export const Header: React.FC<HeaderProps> = ({ navigationItems, activeHref: activeHrefProp }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
+  const [detectedActiveHref, setDetectedActiveHref] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const initial = getInitialTheme();
     setTheme(initial);
     setMounted(true);
+
+    // Detect active route from current pathname
+    const pathname = getCurrentPathname();
+    if (pathname !== undefined) {
+      setDetectedActiveHref(detectActiveHref(pathname));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Update active href when browser navigates (back/forward)
+    const handlePopState = () => {
+      const pathname = getCurrentPathname();
+      if (pathname !== undefined) {
+        setDetectedActiveHref(detectActiveHref(pathname));
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   useEffect(() => {
@@ -53,9 +113,13 @@ export const Header: React.FC<HeaderProps> = ({ navigationItems = [], activeHref
     });
   }, []);
 
+  // Use prop-provided values if given, otherwise use internal defaults
+  const resolvedItems = navigationItems ?? DEFAULT_NAV_ITEMS;
+  const resolvedActiveHref = activeHrefProp ?? detectedActiveHref;
+
   return (
     <header className="w-full flex items-center justify-between px-4 py-2">
-      <NavigationMenu items={navigationItems} activeHref={activeHref} />
+      <NavigationMenu items={resolvedItems} activeHref={resolvedActiveHref} />
       <ThemeToggle theme={theme} onToggle={handleToggle} />
     </header>
   );

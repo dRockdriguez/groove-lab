@@ -378,12 +378,14 @@ describe('Header', () => {
       expect(links).toHaveLength(0);
     });
 
-    it('should render without navigationItems prop (defaults to empty array)', () => {
+    it('should render without navigationItems prop (uses default Home and Import items)', () => {
       render(<Header />);
       const nav = screen.getByRole('navigation');
       expect(nav).toBeInTheDocument();
       const links = screen.queryAllByRole('link');
-      expect(links).toHaveLength(0);
+      expect(links).toHaveLength(2);
+      expect(links[0]).toHaveAttribute('href', '/');
+      expect(links[1]).toHaveAttribute('href', '/import');
     });
 
     it('should render NavigationMenu without activeHref when not provided', () => {
@@ -455,6 +457,504 @@ describe('Header', () => {
       expect(practiceLink).toHaveClass('font-semibold', 'text-blue-600');
       expect(browseLink).not.toHaveClass('font-semibold');
       expect(browseLink).toHaveClass('text-gray-700');
+    });
+  });
+
+  describe('Active State Detection (Pathname Detection)', () => {
+    // Mock window.location.pathname for testing
+    beforeEach(() => {
+      delete (window as any).location;
+      window.location = { pathname: '/' } as any;
+    });
+
+    afterEach(() => {
+      delete (window as any).location;
+      window.location = { pathname: '/' } as any;
+    });
+
+    describe('AC1: Detect current pathname on mount', () => {
+      it('should detect "/" pathname and set activeHref to "/"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should detect "/import" pathname and set activeHref to "/import"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should detect "/practice/drums/exercise-1" pathname and not highlight Home or Import', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/practice/drums/exercise-1' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(homeLink).not.toHaveClass('font-semibold');
+        expect(importLink).not.toHaveClass('font-semibold');
+      });
+    });
+
+    describe('AC2: Header creates menu items array with Home and Import', () => {
+      it('should render Home and Import links when no navigationItems prop provided', () => {
+        render(<Header />);
+        const links = screen.getAllByRole('link');
+        expect(links).toHaveLength(2);
+        expect(links[0]).toHaveAttribute('href', '/');
+        expect(links[1]).toHaveAttribute('href', '/import');
+      });
+
+      it('should display Home link with correct label', () => {
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toBeInTheDocument();
+      });
+
+      it('should display Import link with correct label', () => {
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toBeInTheDocument();
+      });
+    });
+
+    describe('AC3: Detect "/" route', () => {
+      it('should set activeHref to "/" when pathname is "/"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should mark Home link as active when pathname is "/"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold');
+        expect(homeLink).toHaveClass('text-blue-600');
+      });
+
+      it('should not mark Import link as active when pathname is "/"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).not.toHaveClass('font-semibold');
+        expect(importLink).toHaveClass('text-gray-700');
+      });
+    });
+
+    describe('AC4: Detect "/import" route', () => {
+      it('should set activeHref to "/import" when pathname is "/import"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should mark Import link as active when pathname is "/import"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold');
+        expect(importLink).toHaveClass('text-blue-600');
+      });
+
+      it('should not mark Home link as active when pathname is "/import"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).not.toHaveClass('font-semibold');
+        expect(homeLink).toHaveClass('text-gray-700');
+      });
+    });
+
+    describe('AC5: Detect "/practice/*" route', () => {
+      it('should detect /practice/ pathname as practice route', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/practice/drums/exercise-1' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        const importLink = screen.getByRole('link', { name: /import/i });
+        // Practice routes don't match Home or Import, so neither should be active
+        expect(homeLink).not.toHaveClass('font-semibold');
+        expect(importLink).not.toHaveClass('font-semibold');
+      });
+
+      it('should not highlight any menu item for practice route', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/practice/bass/another-exercise' },
+          writable: true,
+        });
+        render(<Header />);
+        const links = screen.getAllByRole('link');
+        links.forEach((link) => {
+          expect(link).not.toHaveClass('font-semibold', 'text-blue-600');
+        });
+      });
+
+      it('should detect /practice without trailing content', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/practice' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(homeLink).not.toHaveClass('font-semibold');
+        expect(importLink).not.toHaveClass('font-semibold');
+      });
+    });
+
+    describe('AC6: Update activeHref on pathname change (popstate)', () => {
+      it('should update activeHref when popstate event fires', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        const { rerender } = render(<Header />);
+
+        let homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold');
+
+        // Simulate browser back/forward navigation
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+
+        window.dispatchEvent(new PopStateEvent('popstate'));
+
+        // Re-render to allow effect to run
+        rerender(<Header />);
+
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold');
+      });
+
+      it('should update activeHref from "/" to "/import"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        const { rerender } = render(<Header />);
+
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        rerender(<Header />);
+
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should update activeHref from "/import" to "/"', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        const { rerender } = render(<Header />);
+
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        rerender(<Header />);
+
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+    });
+
+    describe('AC7: SSR context (window unavailable)', () => {
+      it('should handle SSR context gracefully when window is undefined', () => {
+        // This test verifies that no crash occurs when window.location is unavailable
+        // In real SSR, window would be undefined, so we can't easily test that here
+        // But we verify the component initializes without activeHref prop
+        render(<Header navigationItems={[]} />);
+        const nav = screen.getByRole('navigation');
+        expect(nav).toBeInTheDocument();
+      });
+
+      it('should render without detected activeHref when no pathname available', () => {
+        render(<Header navigationItems={[]} />);
+        const nav = screen.getByRole('navigation');
+        expect(nav).toBeInTheDocument();
+      });
+    });
+
+    describe('AC8: Component handles mount before pathname detection', () => {
+      it('should render Header without crashing on mount', () => {
+        render(<Header />);
+        const header = screen.getByRole('banner');
+        expect(header).toBeInTheDocument();
+      });
+
+      it('should render NavigationMenu before activeHref is detected', () => {
+        render(<Header />);
+        const nav = screen.getByRole('navigation');
+        expect(nav).toBeInTheDocument();
+      });
+
+      it('should render ThemeToggle without activeHref being set', () => {
+        render(<Header />);
+        const toggleButton = screen.getByRole('button');
+        expect(toggleButton).toBeInTheDocument();
+      });
+    });
+
+    describe('AC9: NavigationMenu receives updated activeHref', () => {
+      it('should pass detected activeHref to NavigationMenu prop', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should reflect activeHref change in NavigationMenu styling', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        const { rerender } = render(<Header />);
+
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        rerender(<Header />);
+
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+    });
+
+    describe('Edge Cases: Pathname Normalization', () => {
+      it('should strip query params for route matching', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import?file=test.mid' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should strip trailing slash for route matching', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import/' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should strip hash fragment for route matching', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import#section' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should handle pathname with query params and trailing slash', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import/?source=web' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should handle pathname with all: query, hash, trailing slash', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import/?file=test.mid#top' },
+          writable: true,
+        });
+        render(<Header />);
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should not highlight any link for unknown pathname', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/unknown' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(homeLink).not.toHaveClass('font-semibold');
+        expect(importLink).not.toHaveClass('font-semibold');
+      });
+
+      it('should not highlight any link for /unknown?params=value', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/unknown?params=value' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(homeLink).not.toHaveClass('font-semibold');
+        expect(importLink).not.toHaveClass('font-semibold');
+      });
+    });
+
+    describe('Edge Cases: Browser Navigation', () => {
+      it('should detect change on browser back button', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        const { rerender } = render(<Header />);
+
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        rerender(<Header />);
+
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold');
+      });
+
+      it('should detect change on browser forward button', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        const { rerender } = render(<Header />);
+
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        rerender(<Header />);
+
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold');
+      });
+    });
+
+    describe('Edge Cases: Root Path Normalization', () => {
+      it('should preserve root path "/" without stripping', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold');
+      });
+
+      it('should not treat "/?query" as root for match purposes', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/?lang=en' },
+          writable: true,
+        });
+        render(<Header />);
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+    });
+
+    describe('Edge Cases: Rapid Route Changes', () => {
+      it('should handle rapid consecutive route changes', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        const { rerender } = render(<Header />);
+
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        window.dispatchEvent(new PopStateEvent('popstate'));
+
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        window.dispatchEvent(new PopStateEvent('popstate'));
+
+        rerender(<Header />);
+
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold');
+      });
+    });
+
+    describe('Prop activeHref takes precedence over detected', () => {
+      it('should use activeHref prop when provided, ignoring detected', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/' },
+          writable: true,
+        });
+        render(<Header activeHref="/import" />);
+
+        const importLink = screen.getByRole('link', { name: /import/i });
+        expect(importLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
+
+      it('should prefer prop activeHref over detected activeHref from pathname', () => {
+        Object.defineProperty(window, 'location', {
+          value: { pathname: '/import' },
+          writable: true,
+        });
+        render(<Header activeHref="/" />);
+
+        const homeLink = screen.getByRole('link', { name: /home/i });
+        expect(homeLink).toHaveClass('font-semibold', 'text-blue-600');
+      });
     });
   });
 });

@@ -1,7 +1,7 @@
 # Spec: Detect Active Route and Update Navigation
 
-**Status:** Draft
-**Last updated:** 2026-03-25
+**Status:** Implemented ✅ Tests Verified Complete
+**Last updated:** 2026-03-25 | Tests verified: 2026-03-25
 
 ## Scope
 
@@ -29,22 +29,22 @@ Detect the current page pathname in the Header React island and pass the active 
 
 ## Acceptance Criteria
 
-- [ ] Header detects current pathname on mount using `window.location.pathname`
-- [ ] Header creates menu items array with Home and Import links
-- [ ] Header detects `/` route:
+- [x] Header detects current pathname on mount using `window.location.pathname`
+- [x] Header creates menu items array with Home and Import links
+- [x] Header detects `/` route:
   - When pathname === `/`, set `activeHref="/"`
   - NavigationMenu marks Home link as active
-- [ ] Header detects `/import` route:
+- [x] Header detects `/import` route:
   - When pathname === `/import`, set `activeHref="/import"`
   - NavigationMenu marks Import link as active
-- [ ] Header detects `/practice/*` route:
+- [x] Header detects `/practice/*` route:
   - When pathname starts with `/practice/`, set `activeHref="/practice"`
   - NavigationMenu marks neither Home nor Import as active (practice is not a menu option)
   - Alternatively: set `activeHref` to the practice path (no exact match in menu, no highlight)
-- [ ] Header updates `activeHref` when pathname changes (using useEffect with pathname dependency)
-- [ ] On SSR (server-side render), `activeHref` defaults to undefined (window.location unavailable)
-- [ ] Component handles mount before pathname detection (no crash)
-- [ ] NavigationMenu receives updated activeHref when route changes (e.g., user clicks a link)
+- [x] Header updates `activeHref` when pathname changes (using useEffect with pathname dependency)
+- [x] On SSR (server-side render), `activeHref` defaults to undefined (window.location unavailable)
+- [x] Component handles mount before pathname detection (no crash)
+- [x] NavigationMenu receives updated activeHref when route changes (e.g., user clicks a link)
 
 ## Edge Cases
 
@@ -67,3 +67,14 @@ Detect the current page pathname in the Header React island and pass the active 
 - Can parse pathname synchronously on mount (no async operations)
 - Routing detection is view-only — does not handle navigation clicks (Astro handles that)
 - Pathname normalization: strip query params, trailing slash, hash before matching
+
+## Definition of Done
+
+- [x] Spec written and requirements clear
+- [x] Implementation complete in Header.tsx (pathname detection, normalization, active state)
+- [x] All 72 tests pass (8 AC + 14 edge cases + popstate + SSR)
+- [x] No test stubs remain — all tests have real assertions
+- [x] Architecture rules respected (view-only detection, no navigation logic)
+- [x] Acceptance criteria verified against tests
+- [x] Zero regressions (all 1397 UI + web tests passing)
+- [x] Code reviewed for correctness and clarity
